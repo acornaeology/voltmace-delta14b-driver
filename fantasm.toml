@@ -15,6 +15,10 @@ base_address = 0x1900
 dir = "binary"
 extension = ""
 metadata = "binary.json"
+# Keep the original Acorn DFS filenames (KEYPAD, JOYSTIK). The version ids are
+# their lower-case forms, so the upper-cased id is the DFS name; the KEYPAD.inf
+# / JOYSTIK.inf sidecars sit beside each binary as a valid DFS pair.
+filename = "{version_id_upper}"
 
 [versions]
 prefixes = ["voltmace-delta-14b-driver"]

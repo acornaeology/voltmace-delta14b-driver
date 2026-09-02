@@ -38,7 +38,7 @@ _version_dirpath = _script_dirpath.parent
 _binary_filepath = (
     os.environ.get('FANTASM_BINARY')
     or os.environ.get('FANTASM_ROM')
-    or str(_version_dirpath / 'binary' / 'voltmace-delta-14b-driver-keypad')
+    or str(_version_dirpath / 'binary' / 'KEYPAD')
 )
 _output_dirpath = Path(
     os.environ.get('FANTASM_OUTPUT_DIR', str(_version_dirpath / 'output'))

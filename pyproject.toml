@@ -8,7 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "fantasm>=1.0.0",
+    "fantasm>=1.1.0",
     "dasmos>=4.2.0",
     "oaknut-basic[cli]>=12.16.0",
 ]
