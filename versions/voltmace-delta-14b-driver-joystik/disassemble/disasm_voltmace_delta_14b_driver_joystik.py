@@ -305,10 +305,11 @@ OSBYTE &80 (ADVAL) and compare the value against the sensitivity thresholds
     # Data
     dd.byte(0x0A97, 1)
     dd.label(0x0A97, 'button_mask')
-    ci(0x0A97, 'Scratch: fire-button mask (NOP at rest)')
+    ci(0x0A97, 'Scratch: fire-button mask (&EA at rest)')
     dd.byte(0x0A98, 1)
     dd.label(0x0A98, 'result_flag')
-    ci(0x0A98, 'Set to &FF when a mapped input reads active')
+    ci(0x0A98, 'Result byte (&EA at rest): the handler zeroes it, then sets it to '
+               '&FF if a mapped input reads active')
     dd.byte(0x0A99, 0x0AB0 - 0x0A99)
     dd.label(0x0A99, 'unused_a')
     dd.comment(0x0A99, 'Unused')
@@ -435,13 +436,14 @@ result_flag.""",
     # Data
     dd.byte(0x0A9B, 1)
     dd.label(0x0A9B, 'row_mask')
-    ci(0x0A9B, 'Scratch: keypad row bit mask')
+    ci(0x0A9B, 'Scratch: keypad row bit mask (&EA at rest)')
     dd.byte(0x0A9C, 1)
     dd.label(0x0A9C, 'col_strobe')
-    ci(0x0A9C, 'Scratch: keypad column strobe')
+    ci(0x0A9C, 'Scratch: keypad column strobe (&EA at rest)')
     dd.byte(0x0A9D, 1)
     dd.label(0x0A9D, 'result_flag')
-    ci(0x0A9D, 'Set to &FF when a mapped input reads active')
+    ci(0x0A9D, 'Result byte (&EA at rest): the handler zeroes it, then sets it to '
+               '&FF if a mapped input reads active')
     dd.byte(0x0A9E, 0x0AB0 - 0x0A9E)
     dd.label(0x0A9E, 'unused_b')
     dd.comment(0x0A9E, 'Unused')
@@ -671,7 +673,7 @@ c(0x19BD, 'Done')
 
 d.byte(0x19BE, 1)
 d.label(0x19BE, 'setup_key_index')
-c(0x19BE, 'Scratch: saved loop index (NOP at rest)')
+c(0x19BE, 'Scratch: saved loop index (&EA at rest)')
 
 # The auto-run command lines, fed to the keyboard buffer one byte at a time.
 d.byte(0x19BF, 2)                    # &15, &0D

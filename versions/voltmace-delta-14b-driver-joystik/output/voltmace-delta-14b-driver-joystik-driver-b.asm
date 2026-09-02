@@ -137,13 +137,13 @@ osbyte        = &fff4
     rts                                                               ; 0a9a: 60          `        ; Done
 ; &0a9b referenced 2 times by &0a7e, &0a8b
 .row_mask
-    equb &ea                                                          ; 0a9b: ea          .        ; Scratch: keypad row bit mask
+    equb &ea                                                          ; 0a9b: ea          .        ; Scratch: keypad row bit mask (&EA at rest)
 ; &0a9c referenced 2 times by &0a71, &0a81
 .col_strobe
-    equb &ea                                                          ; 0a9c: ea          .        ; Scratch: keypad column strobe
+    equb &ea                                                          ; 0a9c: ea          .        ; Scratch: keypad column strobe (&EA at rest)
 ; &0a9d referenced 3 times by &0a18, &0a29, &0a94
 .result_flag
-    equb &ea                                                          ; 0a9d: ea          .        ; Set to &FF when a mapped input reads active
+    equb &ea                                                          ; 0a9d: ea          .        ; Result byte (&EA at rest): the handler zeroes it, then sets it to &FF if a mapped input reads active
 ; Unused
 .unused_b
     equb &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00   ; 0a9e: 00 00 00... ......

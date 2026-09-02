@@ -399,7 +399,7 @@ ct(0x395E, 'Done')
 d.word(0x395F, 2, override=True)
 d.label(0x395F, 'decode_ptr_save')
 d.label(0x3960, 'decode_ptr_save_hi')
-ct(0x395F, "Scratch: caller's decode_ptr saved across decode_basic (NOP NOP at rest)")
+ct(0x395F, "Scratch: caller's decode_ptr saved across decode_basic (&EAEA at rest)")
 
 d.subroutine(
     0x3961, 'patch_basic_header',
@@ -463,7 +463,7 @@ d.label(0x39A8, 'setup_keys_done', move=None)
 ct(0x39A8, 'Done')
 d.byte(0x39A9, 1)
 d.label(0x39A9, 'setup_key_index')
-ct(0x39A9, 'Scratch: saved loop index (NOP at rest)')
+ct(0x39A9, 'Scratch: saved loop index (&EA at rest)')
 
 d.subroutine(
     0x39AA, 'relocate_image',

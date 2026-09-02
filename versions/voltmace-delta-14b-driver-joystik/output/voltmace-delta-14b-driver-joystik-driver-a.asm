@@ -144,10 +144,10 @@ osbyte   = &fff4
     rts                                                               ; 0a96: 60          `        ; Done
 ; &0a97 referenced 2 times by &0a7e, &0a87
 .button_mask
-    equb &ea                                                          ; 0a97: ea          .        ; Scratch: fire-button mask (NOP at rest)
+    equb &ea                                                          ; 0a97: ea          .        ; Scratch: fire-button mask (&EA at rest)
 ; &0a98 referenced 3 times by &0a18, &0a2d, &0a90
 .result_flag
-    equb &ea                                                          ; 0a98: ea          .        ; Set to &FF when a mapped input reads active
+    equb &ea                                                          ; 0a98: ea          .        ; Result byte (&EA at rest): the handler zeroes it, then sets it to &FF if a mapped input reads active
 ; Unused
 .unused_a
     equb &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00   ; 0a99: 00 00 00... ......

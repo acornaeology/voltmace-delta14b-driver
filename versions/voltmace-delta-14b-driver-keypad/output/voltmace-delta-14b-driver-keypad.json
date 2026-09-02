@@ -10924,7 +10924,7 @@
           "decode_ptr_save_hi"
         ]
       },
-      "comment_inline": "Scratch: caller's decode_ptr saved across decode_basic (NOP NOP at rest)",
+      "comment_inline": "Scratch: caller's decode_ptr saved across decode_basic (&EAEA at rest)",
       "xref_summaries": [
         "&395f referenced 2 times by &391f, &3943",
         "&3960 referenced 2 times by &3924, &3948"
@@ -11443,7 +11443,7 @@
       "labels": [
         "setup_key_index"
       ],
-      "comment_inline": "Scratch: saved loop index (NOP at rest)",
+      "comment_inline": "Scratch: saved loop index (&EA at rest)",
       "xref_summaries": [
         "&39a9 referenced 2 times by &3996, &39a0"
       ],

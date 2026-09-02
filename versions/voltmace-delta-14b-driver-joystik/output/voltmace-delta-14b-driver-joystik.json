@@ -1388,7 +1388,7 @@
       "labels": [
         "setup_key_index"
       ],
-      "comment_inline": "Scratch: saved loop index (NOP at rest)",
+      "comment_inline": "Scratch: saved loop index (&EA at rest)",
       "xref_summaries": [
         "&19be referenced 2 times by &19ab, &19b5"
       ],

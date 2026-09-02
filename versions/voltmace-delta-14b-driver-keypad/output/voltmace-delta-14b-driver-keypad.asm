@@ -357,7 +357,7 @@ saved_evntv_hi = saved_evntv+1
 .decode_ptr_save
 ; &3960 referenced 2 times by &3924, &3948
 decode_ptr_save_hi = decode_ptr_save+1
-    equw &eaea                                                        ; 395f: ea ea       ..       ; Scratch: caller's decode_ptr saved across decode_basic (NOP NOP at rest)
+    equw &eaea                                                        ; 395f: ea ea       ..       ; Scratch: caller's decode_ptr saved across decode_basic (&EAEA at rest)
 ; ***************************************************************************************
 ; Repair the BASIC program's first line
 ;
@@ -425,7 +425,7 @@ decode_ptr_save_hi = decode_ptr_save+1
     rts                                                               ; 39a8: 60          `        ; Done
 ; &39a9 referenced 2 times by &3996, &39a0
 .setup_key_index
-    equb &ea                                                          ; 39a9: ea          .        ; Scratch: saved loop index (NOP at rest)
+    equb &ea                                                          ; 39a9: ea          .        ; Scratch: saved loop index (&EA at rest)
 ; ***************************************************************************************
 ; Relocate the program image to &0A00
 ;

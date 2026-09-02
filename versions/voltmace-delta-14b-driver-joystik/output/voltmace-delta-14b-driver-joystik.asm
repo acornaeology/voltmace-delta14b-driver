@@ -186,7 +186,7 @@ decode_ptr_save_hi = decode_ptr_save+1
     rts                                                               ; 19bd: 60          `        ; Done
 ; &19be referenced 2 times by &19ab, &19b5
 .setup_key_index
-    equb &ea                                                          ; 19be: ea          .        ; Scratch: saved loop index (NOP at rest)
+    equb &ea                                                          ; 19be: ea          .        ; Scratch: saved loop index (&EA at rest)
 ; &19bf used as index base 2 times by &1981, &19a4
 .autorun_commands
     equb &15, &0d                                                     ; 19bf: 15 0d       ..       ; CTRL-U + CR: clear the input line
