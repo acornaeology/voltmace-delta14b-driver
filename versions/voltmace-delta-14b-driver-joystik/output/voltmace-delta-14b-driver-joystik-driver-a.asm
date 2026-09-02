@@ -1,0 +1,212 @@
+; Memory locations
+bytev    = &020a
+; &020a referenced 1 time by &0a03
+bytev_hi = &020b
+; &020b referenced 1 time by &0a08
+osbyte   = &fff4
+; &fff4 referenced 3 times by &0a66, &0a72, &0a83
+
+
+    org &0a00
+
+.dasmos_start
+; ***************************************************************************************
+; Install the joystick driver
+;
+; Point BYTEV at the OSBYTE intercept at &0A0D. Called from the BASIC via CALL &A00,
+; after it has saved the previous BYTEV (line 50) and patched the chain slot (line 1840)
+; and sensitivity thresholds (line 1850).
+.install
+    pha                                                               ; 0a00: 48          H        ; Preserve A
+    lda #&0d                                                          ; 0a01: a9 0d       ..       ; BYTEV low byte -> &0D...
+    sta bytev                                                         ; 0a03: 8d 0a 02    ...      ; ...
+    lda #&0a                                                          ; 0a06: a9 0a       ..       ; ...high byte -> &0A...
+    sta bytev_hi                                                      ; 0a08: 8d 0b 02    ...      ; ...so every OSBYTE now enters the handler at &0A0D
+    pla                                                               ; 0a0b: 68          h        ; Restore A
+    rts                                                               ; 0a0c: 60          `        ; Return to the BASIC caller
+; ***************************************************************************************
+; BYTEV handler: map the joystick to INKEY
+;
+; Runs on every OSBYTE; only OSBYTE &81 (INKEY / read key) is intercepted. If the key
+; being tested matches an entry in joystick_map, the matching analogue input is read and,
+; when active, a "key pressed" result is returned; every other call chains to the
+; previous BYTEV.
+.osbyte_intercept
+    cmp #&81                                                          ; 0a0d: c9 81       ..       ; Only intercept OSBYTE &81 (INKEY / read key)
+    bne chain                                                         ; 0a0f: d0 2c       .,       ; other reason codes -> chain to the previous handler
+    pha                                                               ; 0a11: 48          H        ; Preserve A (reason code)...
+    tya                                                               ; 0a12: 98          .        ; Preserve Y (INKEY high byte)...
+    pha                                                               ; 0a13: 48          H        ; ...
+    txa                                                               ; 0a14: 8a          .        ; A := X = the INKEY key number being tested
+    pha                                                               ; 0a15: 48          H        ; ...(X also preserved)
+    ldy #0                                                            ; 0a16: a0 00       ..       ; No match yet...
+    sty result_flag                                                   ; 0a18: 8c 98 0a    ...      ; ...clear the result flag
+; &0a1b referenced 1 time by &0a2b
+.scan_map
+    cmp joystick_map,y                                                ; 0a1b: d9 b0 0a    ...      ; Does the tested key match this map entry?
+    bne scan_next                                                     ; 0a1e: d0 03       ..       ; no -> skip it
+    jsr read_joystick                                                 ; 0a20: 20 4b 0a     K.      ; yes -> read the joystick input for it
+; &0a23 referenced 1 time by &0a1e
+.scan_next
+    iny                                                               ; 0a23: c8          .        ; Step over the 2-byte entry...
+    iny                                                               ; 0a24: c8          .        ; ...
+    cpy #8                                                            ; 0a25: c0 08       ..       ; first (button) block done?
+    beq skip_to_directions                                            ; 0a27: f0 17       ..       ; yes -> jump to the direction block
+; &0a29 referenced 1 time by &0a49
+.scan_more
+    cpy #&18                                                          ; 0a29: c0 18       ..       ; End of the map?
+    bne scan_map                                                      ; 0a2b: d0 ee       ..       ; no -> keep scanning
+    lda result_flag                                                   ; 0a2d: ad 98 0a    ...      ; Did any mapped input read as active?
+    beq not_pressed                                                   ; 0a30: f0 06       ..       ; no -> return the normal INKEY result
+    tax                                                               ; 0a32: aa          .        ; yes: return "key pressed" (X=Y=&FF)...
+    tay                                                               ; 0a33: a8          .        ; ...
+    pla                                                               ; 0a34: 68          h        ; drop the saved X...
+    pla                                                               ; 0a35: 68          h        ; ...Y...
+    pla                                                               ; 0a36: 68          h        ; ...A
+    rts                                                               ; 0a37: 60          `        ; and return, claiming the OSBYTE
+; &0a38 referenced 1 time by &0a30
+.not_pressed
+    pla                                                               ; 0a38: 68          h        ; Restore X...
+    tax                                                               ; 0a39: aa          .        ; ...
+    pla                                                               ; 0a3a: 68          h        ; Restore Y...
+    tay                                                               ; 0a3b: a8          .        ; ...
+    pla                                                               ; 0a3c: 68          h        ; Restore A
+; &0a3d referenced 1 time by &0a0f
+.chain
+    jmp chain_to_old_bytev                                            ; 0a3d: 4c fa 0a    L..      ; Pass the call to the previous BYTEV (chain slot below)
+; &0a40 referenced 1 time by &0a27
+.skip_to_directions
+    iny                                                               ; 0a40: c8          .        ; skip the 8-byte button block
+    iny                                                               ; 0a41: c8          .        ; skip the 8-byte button block
+    iny                                                               ; 0a42: c8          .        ; skip the 8-byte button block
+    iny                                                               ; 0a43: c8          .        ; skip the 8-byte button block
+    iny                                                               ; 0a44: c8          .        ; skip the 8-byte button block
+    iny                                                               ; 0a45: c8          .        ; skip the 8-byte button block
+    iny                                                               ; 0a46: c8          .        ; skip the 8-byte button block
+    iny                                                               ; 0a47: c8          .        ; skip the 8-byte button block
+    clc                                                               ; 0a48: 18          .        ; clear carry for the branch
+    bcc scan_more                                                     ; 0a49: 90 de       ..       ; resume scanning the direction entries
+; ***************************************************************************************
+; Test one analogue input
+;
+; For the matched entry, read its analogue channel with OSBYTE &80 (ADVAL) and compare
+; the value against the sensitivity thresholds (a direction) or AND the fire-button bits
+; (a button); flag a hit in result_flag.
+; &0a4b referenced 1 time by &0a20
+.read_joystick
+    pha                                                               ; 0a4b: 48          H        ; Preserve A...
+    tya                                                               ; 0a4c: 98          .        ; Preserve Y...
+    pha                                                               ; 0a4d: 48          H        ; ...
+    iny                                                               ; 0a4e: c8          .        ; Point at the entry parameter
+    lda joystick_map,y                                                ; 0a4f: b9 b0 0a    ...      ; top nibble = ADC channel...
+    and #&f0                                                          ; 0a52: 29 f0       ).       ; ...
+    lsr a                                                             ; 0a54: 4a          J        ; ...shift it down
+    lsr a                                                             ; 0a55: 4a          J        ; ...shift it down
+    lsr a                                                             ; 0a56: 4a          J        ; ...shift it down
+    lsr a                                                             ; 0a57: 4a          J        ; ...shift it down
+    tax                                                               ; 0a58: aa          .        ; ...into X for OSBYTE &80
+    lda joystick_map,y                                                ; 0a59: b9 b0 0a    ...      ; reload the parameter
+    cpy #&10                                                          ; 0a5c: c0 10       ..       ; direction entry (>= &10) or a fire button?
+    bcs test_button                                                   ; 0a5e: b0 1c       ..       ; > = &10 -> the fire-button path
+    and #1                                                            ; 0a60: 29 01       ).       ; low bit picks which threshold (push vs pull)
+    beq test_high_threshold                                           ; 0a62: f0 0c       ..       ; ...
+    lda #&80                                                          ; 0a64: a9 80       ..       ; OSBYTE &80: read ADC channel X (ADVAL, Y=high byte)...
+    jsr osbyte                                                        ; 0a66: 20 f4 ff     ..      ; ...
+    cpy threshold_lo                                                  ; 0a69: cc fd 0a    ...      ; past the low threshold?
+    bcc read_done                                                     ; 0a6c: 90 25       .%       ; no -> not active
+    bcs active                                                        ; 0a6e: b0 1e       ..       ; yes -> active
+; &0a70 referenced 1 time by &0a62
+.test_high_threshold
+    lda #&80                                                          ; 0a70: a9 80       ..       ; OSBYTE &80: read ADC channel X...
+    jsr osbyte                                                        ; 0a72: 20 f4 ff     ..      ; ...
+    cpy threshold_hi                                                  ; 0a75: cc fe 0a    ...      ; past the high threshold?
+    bcc active                                                        ; 0a78: 90 14       ..       ; no -> active
+    bcs read_done                                                     ; 0a7a: b0 17       ..       ; yes -> not active
+; &0a7c referenced 1 time by &0a5e
+.test_button
+    and #3                                                            ; 0a7c: 29 03       ).       ; fire-button mask (low 2 bits)...
+    sta button_mask                                                   ; 0a7e: 8d 97 0a    ...      ; ...saved
+    lda #&80                                                          ; 0a81: a9 80       ..       ; OSBYTE &80: read ADC channel X...
+    jsr osbyte                                                        ; 0a83: 20 f4 ff     ..      ; ...
+    txa                                                               ; 0a86: 8a          .        ; the returned button bits...
+    and button_mask                                                   ; 0a87: 2d 97 0a    -..      ; ...AND the mask
+    beq read_done                                                     ; 0a8a: f0 07       ..       ; none set -> not active
+    bne active                                                        ; 0a8c: d0 00       ..       ; set -> active
+; &0a8e referenced 3 times by &0a6e, &0a78, &0a8c
+.active
+    lda #&ff                                                          ; 0a8e: a9 ff       ..       ; Flag a hit...
+    sta result_flag                                                   ; 0a90: 8d 98 0a    ...      ; ...in result_flag
+; &0a93 referenced 3 times by &0a6c, &0a7a, &0a8a
+.read_done
+    pla                                                               ; 0a93: 68          h        ; Restore Y...
+    tay                                                               ; 0a94: a8          .        ; ...
+    pla                                                               ; 0a95: 68          h        ; Restore A
+    rts                                                               ; 0a96: 60          `        ; Done
+; &0a97 referenced 2 times by &0a7e, &0a87
+.button_mask
+    equb &ea                                                          ; 0a97: ea          .        ; Scratch: fire-button mask (NOP at rest)
+; &0a98 referenced 3 times by &0a18, &0a2d, &0a90
+.result_flag
+    equb &ea                                                          ; 0a98: ea          .        ; Set to &FF when a mapped input reads active
+; Unused
+.unused_a
+    equb &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00   ; 0a99: 00 00 00... ......
+    equb &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00        ; 0aa5: 00 00 00... ......
+; 2-byte entries (INKEY key number, parameter). The parameter's top nibble is the ADC channel; the low bits select the threshold / fire-button test. Buttons first, then the four directions.
+; &0ab0 used as index base 3 times by &0a1b, &0a4f, &0a59
+.joystick_map
+    equb &00, &10, &00, &11, &00, &20, &00, &21, &00, &30, &00, &31   ; 0ab0: 00 10 00... ......
+    equb &00, &40, &00, &41, &00, &01, &00, &01, &00, &02, &00, &02   ; 0abc: 00 40 00... .@....
+    equb &00, &61, &00, &32, &00, &52, &00, &62, &00, &34, &00, &54   ; 0ac8: 00 61 00... .a....
+    equb &00, &64, &00, &38, &00, &58, &00, &68, &00, &d1, &00, &d1   ; 0ad4: 00 64 00... .d....
+    equb &00, &d1, &00, &b1, &00, &e1, &00, &b2, &00, &d2, &00, &e2   ; 0ae0: 00 d1 00... ......
+    equb &00, &b4, &00, &d4, &00, &e4, &00, &b8, &00, &d8, &00, &e8   ; 0aec: 00 b4 00... ......
+    equb &00, &00                                                     ; 0af8: 00 00       ..    
+; RTS placeholder; the BASIC (line 1840) patches this to JMP <previous BYTEV> so non-INKEY OSBYTEs are chained.
+; &0afa referenced 1 time by &0a3d
+.chain_to_old_bytev
+    equb &60, &00, &00                                                ; 0afa: 60 00 00    `..   
+; &0afd referenced 1 time by &0a69
+.threshold_lo
+    equb &00                                                          ; 0afd: 00          .        ; Low sensitivity threshold (BASIC line 1850: SL%)
+; &0afe referenced 1 time by &0a75
+.threshold_hi
+    equb &00                                                          ; 0afe: 00          .        ; High sensitivity threshold (BASIC line 1850: SH%)
+.unused_a_end
+    equb &00                                                          ; 0aff: 00          .        ; Unused
+.dasmos_end
+
+save dasmos_start, dasmos_end
+
+; Label references by decreasing frequency:
+;     active:               3
+;     joystick_map:         3
+;     osbyte:               3
+;     read_done:            3
+;     result_flag:          3
+;     button_mask:          2
+;     bytev:                1
+;     bytev_hi:             1
+;     chain:                1
+;     chain_to_old_bytev:   1
+;     not_pressed:          1
+;     read_joystick:        1
+;     scan_map:             1
+;     scan_more:            1
+;     scan_next:            1
+;     skip_to_directions:   1
+;     test_button:          1
+;     test_high_threshold:  1
+;     threshold_hi:         1
+;     threshold_lo:         1
+
+; Stats:
+;     Total size (Code + Data) = 256 bytes
+;     Code                     = 151 bytes (59%)
+;     Data                     = 105 bytes (41%)
+;
+;     Number of instructions   = 89
+;     Number of data bytes     = 105 bytes
+;     Number of data words     = 0 bytes
+;     Number of string bytes   = 0 bytes
+;     Number of strings        = 0
