@@ -525,6 +525,7 @@ d.byte(0x39F3, 1)                    # &0D terminator
 d.label(0x39F1, 'oscli_command')
 ct(0x39F1, 'Startup *-command "T." (*TAPE): select the cassette filing system, '
            'CR-terminated')
+# The auto-run command lines, fed to the keyboard buffer one byte at a time.
 d.byte(0x39F4, 2)                    # &15, &0D
 d.string(0x39F6, 8)                  # "PA.=&C00"
 d.byte(0x39FE, 1)
@@ -533,8 +534,13 @@ d.byte(0x3A02, 1)
 d.string(0x3A03, 3)                  # "RUN"
 d.byte(0x3A06, 2)                    # &0D, &00 terminator
 d.label(0x39F4, 'autorun_commands')
-ct(0x39F4, "CTRL-U + CR (clear the input line), then 'PAGE=&C00' / 'OLD' / 'RUN' "
-           "each CR-terminated, then a &00 stop byte")
+ct(0x39F4, 'CTRL-U + CR: clear the input line')
+ct(0x39F6, 'set PAGE to &0C00, where the BASIC now lives')
+ct(0x39FE, 'submit')
+ct(0x39FF, 'reinstate the decoded program (OLD)')
+ct(0x3A02, 'submit')
+ct(0x3A03, 'run it (RUN)')
+ct(0x3A06, 'submit; the &00 then stops the queue copy')
 
 # Padding and decoy around the loader.
 d.comment(0x3869, 'Zero padding between the encrypted BASIC and the *RUN loader')

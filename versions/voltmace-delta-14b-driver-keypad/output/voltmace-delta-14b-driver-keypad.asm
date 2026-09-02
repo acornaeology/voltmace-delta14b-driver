@@ -487,13 +487,13 @@ decode_ptr_save_hi = decode_ptr_save+1
     equb &0d                                                          ; 39f3: 0d          .     
 ; &39f4 used as index base 2 times by &396c, &398f
 .autorun_commands
-    equb &15, &0d                                                     ; 39f4: 15 0d       ..       ; CTRL-U + CR (clear the input line), then 'PAGE=&C00' / 'OLD' / 'RUN' each CR-terminated, then a &00 stop byte
-    equs "PA.=&C00"                                                   ; 39f6: 50 41 2e... PA....
-    equb &0d                                                          ; 39fe: 0d          .     
-    equs "OLD"                                                        ; 39ff: 4f 4c 44    OLD   
-    equb &0d                                                          ; 3a02: 0d          .     
-    equs "RUN"                                                        ; 3a03: 52 55 4e    RUN   
-    equb &0d, &00                                                     ; 3a06: 0d 00       ..    
+    equb &15, &0d                                                     ; 39f4: 15 0d       ..       ; CTRL-U + CR: clear the input line
+    equs "PA.=&C00"                                                   ; 39f6: 50 41 2e... PA....   ; set PAGE to &0C00, where the BASIC now lives
+    equb &0d                                                          ; 39fe: 0d          .        ; submit
+    equs "OLD"                                                        ; 39ff: 4f 4c 44    OLD      ; reinstate the decoded program (OLD)
+    equb &0d                                                          ; 3a02: 0d          .        ; submit
+    equs "RUN"                                                        ; 3a03: 52 55 4e    RUN      ; run it (RUN)
+    equb &0d, &00                                                     ; 3a06: 0d 00       ..       ; submit; the &00 then stops the queue copy
 ; Uninitialised tail of the saved image. The file is a memory dump &1900-&3A80 (the BASIC clears exactly TO &3A80); the loader's code and tables end ~120 bytes short, so this holds whatever occupied the memory at save time. It is referenced by nothing and decodes as neither 6502, tokenised BASIC (raw or bit-rotated), nor text; its byte statistics are those of noise. Inert: the BASIC memory-clear overwrites it at startup.
 .trailing_data
     equb &0d, &83, &fc, &a6, &9a, &0e, &ef, &7c, &d1, &53, &48, &0a   ; 3a08: 0d 83 fc... ......

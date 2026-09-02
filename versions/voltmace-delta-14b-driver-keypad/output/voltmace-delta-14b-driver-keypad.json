@@ -12021,7 +12021,7 @@
       "labels": [
         "autorun_commands"
       ],
-      "comment_inline": "CTRL-U + CR (clear the input line), then 'PAGE=&C00' / 'OLD' / 'RUN' each CR-terminated, then a &00 stop byte",
+      "comment_inline": "CTRL-U + CR: clear the input line",
       "xref_summaries": [
         "&39f4 used as index base 2 times by &396c, &398f"
       ],
@@ -12053,6 +12053,7 @@
         48,
         48
       ],
+      "comment_inline": "set PAGE to &0C00, where the BASIC now lives",
       "type": "string",
       "string": "PA.=&C00"
     },
@@ -12061,6 +12062,7 @@
       "bytes": [
         13
       ],
+      "comment_inline": "submit",
       "type": "byte",
       "values": [
         13
@@ -12073,6 +12075,7 @@
         76,
         68
       ],
+      "comment_inline": "reinstate the decoded program (OLD)",
       "type": "string",
       "string": "OLD"
     },
@@ -12081,6 +12084,7 @@
       "bytes": [
         13
       ],
+      "comment_inline": "submit",
       "type": "byte",
       "values": [
         13
@@ -12093,6 +12097,7 @@
         85,
         78
       ],
+      "comment_inline": "run it (RUN)",
       "type": "string",
       "string": "RUN"
     },
@@ -12102,6 +12107,7 @@
         13,
         0
       ],
+      "comment_inline": "submit; the &00 then stops the queue copy",
       "type": "byte",
       "values": [
         13,
