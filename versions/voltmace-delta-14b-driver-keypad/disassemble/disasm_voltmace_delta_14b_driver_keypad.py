@@ -125,27 +125,59 @@ def ct(addr, text):
 # ---------------------------------------------------------------------------
 # MOS entry points, hardware registers, and OS locations
 # ---------------------------------------------------------------------------
-d.label(0xFFF1, 'osword')
-d.label(0xFFF4, 'osbyte')
-d.label(0xFFF7, 'oscli')
-d.label(0xFE60, 'user_via_orb')    # User 6522 VIA port B (I/O register B)
-d.label(0xFE62, 'user_via_ddrb')   # User 6522 VIA data-direction register B
-d.label(0x0220, 'evntv')           # EVNTV: the event vector
+# MOS entry-point call vectors (group only -- these are JSR targets, not
+# read/write locations).
+d.label(0xFFF1, 'osword', group='os_entry_points',
+        description='OSWORD: the driver calls OSWORD 7 to sound the key-click.')
+d.label(0xFFF4, 'osbyte', group='os_entry_points',
+        description='OSBYTE: used with A=&99 to insert a key into the buffer, '
+                    'A=&0E to enable the vsync event, and to read/set vectors.')
+d.label(0xFFF7, 'oscli', group='os_entry_points',
+        description='OSCLI: issues the *KEY / *FX-style commands the loader '
+                    'queues.')
+
+# Memory-mapped I/O -- the User 6522 VIA that strobes the keypad matrix.
+d.label(0xFE60, 'user_via_orb', group='hardware', access='rw',
+        description='User VIA port B: writes column strobes and the 74LS157 '
+                    'handset-select bit (bit 7); reads the four matrix rows.')
+d.label(0xFE62, 'user_via_ddrb', group='hardware', access='w',
+        description='User VIA data-direction register B: set to &F0 so the '
+                    'four strobe/select lines are outputs, the four rows inputs.')
+
+# OS vectors and workspace.
+d.label(0x0220, 'evntv', group='os_vectors', access='rw', length=2,
+        description='EVNTV, the event vector: the driver saves the old value '
+                    'and points it at its vsync-event handler.')
 d.label(0x0221, 'evntv_hi')
-d.label(0xE8AA, 'os_signature')    # OS ROM byte read to distinguish OS versions
-d.label(0x0300, 'kbd_buffer')      # &0300 page holding the MOS keyboard buffer (&03E0-&03FF)
-d.label(0x0C03, 'basic_line10_len')  # length byte of the relocated BASIC's line 10
+d.label(0x023C, 'autorun_index', group='os_workspace', access='rw',
+        description='Running fill index into the keyboard buffer as the loader '
+                    'queues its PAGE / OLD / RUN commands.')
+d.label(0x0300, 'kbd_buffer', group='os_workspace', access='w',
+        description='Base of the &0300 page holding the MOS keyboard buffer '
+                    '(&03E0-&03FF), written directly on the fast hand-off path.')
+
+# OS ROM and BASIC workspace.
+d.label(0xE8AA, 'os_signature', group='os_rom', access='r',
+        description='OS ROM byte read (for \'O\') to distinguish OS versions '
+                    'and choose the command hand-off path.')
+d.label(0x0C03, 'basic_line10_len', group='basic_workspace', access='w',
+        description='Length byte of the relocated BASIC\'s line 10, patched '
+                    'from 0 back to &16 so the protected program lists and runs.')
 
 # Zero-page scratch used by the relocator/decoder in the tail.
-d.label(0x0070, 'copy_dst')        # &70/&71: block-copy destination pointer
+d.label(0x0070, 'copy_dst', group='zero_page', access='rw', length=2,
+        description='Block-copy destination pointer used by the relocator.')
 d.label(0x0071, 'copy_dst_hi')
-d.label(0x0072, 'copy_src')        # &72/&73: block-copy source pointer
+d.label(0x0072, 'copy_src', group='zero_page', access='rw', length=2,
+        description='Block-copy source pointer used by the relocator.')
 d.label(0x0073, 'copy_src_hi')
-d.label(0x0074, 'copy_rem')        # &74: leftover byte count
-d.label(0x0075, 'copy_pages')      # &75: whole-page count to copy
-d.label(0x0080, 'decode_ptr')      # &80/&81: ROL-decode cursor
+d.label(0x0074, 'copy_rem', group='zero_page', access='rw',
+        description='Leftover (part-page) byte count for the relocator.')
+d.label(0x0075, 'copy_pages', group='zero_page', access='rw',
+        description='Whole-page count for the relocator.')
+d.label(0x0080, 'decode_ptr', group='zero_page', access='rw', length=2,
+        description='ROL-decode cursor sweeping the encrypted BASIC in place.')
 d.label(0x0081, 'decode_ptr_hi')
-d.label(0x023C, 'autorun_index')   # running fill index into the keyboard buffer
 
 # ---------------------------------------------------------------------------
 # install_driver -- the driver, at its &0A00 runtime address

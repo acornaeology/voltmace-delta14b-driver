@@ -507,15 +507,29 @@ def c(addr, text):
 d.comment(0x1900, 'Decoy stub BASIC line (&0D, line 13, RTS bytes) so a naive '
                   '*LOAD/LIST at PAGE sees junk, not the loader')
 
-# MOS entry points, OS locations, and zero page.
-d.label(0xFFF4, 'osbyte')
-d.label(0xE8AA, 'os_signature')    # three OS ROM bytes read as the "OS " tag
+# MOS entry points, OS locations, and zero page. This is the loader's
+# view; the resident drivers add BYTEV, the analogue port and the User
+# VIA on top (see the driver-variant listings).
+d.label(0xFFF4, 'osbyte', group='os_entry_points',
+        description='OSBYTE: used to read/set vectors and enable ADC input '
+                    'while the loader hands off to the BASIC.')
+d.label(0xE8AA, 'os_signature', group='os_rom', access='r', length=3,
+        description='Three OS ROM bytes read as the "OS " tag to distinguish '
+                    'OS versions and choose the command hand-off path.')
 d.label(0xE8AB, 'os_signature_1')
 d.label(0xE8AC, 'os_signature_2')
-d.label(0x0300, 'kbd_buffer')      # &0300 page holding the MOS keyboard buffer
-d.label(0x1C03, 'basic_line10_len')  # length byte of the relocated BASIC's line 10
-d.label(0x0023C, 'autorun_index')  # running fill index into the keyboard buffer
-d.label(0x0080, 'decode_ptr')      # &80/&81: ROL-decode cursor
+d.label(0x0300, 'kbd_buffer', group='os_workspace', access='w',
+        description='Base of the &0300 page holding the MOS keyboard buffer, '
+                    'written directly on the fast hand-off path.')
+d.label(0x1C03, 'basic_line10_len', group='basic_workspace', access='w',
+        description='Length byte of the relocated BASIC\'s line 10, patched '
+                    'from 0 back to &17 so the protected program lists and runs.')
+d.label(0x0023C, 'autorun_index', group='os_workspace', access='rw',
+        description='Running fill index into the keyboard buffer as the loader '
+                    'queues its PAGE / OLD / RUN commands.')
+d.label(0x0080, 'decode_ptr', group='zero_page', access='rw', length=2,
+        description='ROL-decode cursor sweeping the encrypted drivers and BASIC '
+                    'in place.')
 d.label(0x0081, 'decode_ptr_hi')
 
 d.subroutine(

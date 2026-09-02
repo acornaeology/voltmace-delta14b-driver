@@ -59,7 +59,55 @@
     "os_signature_2": 59564,
     "osbyte": 65524
   },
-  "memory_map": [],
+  "memory_map": [
+    {
+      "addr": 128,
+      "name": "decode_ptr",
+      "length": 2,
+      "group": "zero_page",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "ROL-decode cursor sweeping the encrypted drivers and BASIC in place."
+    },
+    {
+      "addr": 572,
+      "name": "autorun_index",
+      "group": "os_workspace",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "Running fill index into the keyboard buffer as the loader queues its PAGE / OLD / RUN commands."
+    },
+    {
+      "addr": 768,
+      "name": "kbd_buffer",
+      "group": "os_workspace",
+      "access": [
+        "w",
+        "b"
+      ],
+      "description": "Base of the &0300 page holding the MOS keyboard buffer, written directly on the fast hand-off path."
+    },
+    {
+      "addr": 59562,
+      "name": "os_signature",
+      "length": 3,
+      "group": "os_rom",
+      "access": [
+        "r"
+      ],
+      "description": "Three OS ROM bytes read as the \"OS \" tag to distinguish OS versions and choose the command hand-off path."
+    },
+    {
+      "addr": 65524,
+      "name": "osbyte",
+      "group": "os_entry_points",
+      "description": "OSBYTE: used to read/set vectors and enable ADC input while the loader hands off to the BASIC."
+    }
+  ],
   "regions": [],
   "items": [
     {

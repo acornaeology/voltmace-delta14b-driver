@@ -1,41 +1,41 @@
 ; Memory locations
-copy_dst         = &70
+copy_dst         = &70  ; Block-copy destination pointer used by the relocator.
 ; &70 referenced 3 times by &39bc, &39d8, &39ea
 copy_dst_hi      = &71
 ; &71 referenced 3 times by &39c0, &39d0, &39df
-copy_src         = &72
+copy_src         = &72  ; Block-copy source pointer used by the relocator.
 ; &72 referenced 3 times by &39c4, &39d6, &39e8
 copy_src_hi      = &73
 ; &73 referenced 2 times by &39c8, &39dd
-copy_rem         = &74
+copy_rem         = &74  ; Leftover (part-page) byte count for the relocator.
 ; &74 referenced 2 times by &39b4, &39e4
-copy_pages       = &75
+copy_pages       = &75  ; Whole-page count for the relocator.
 ; &75 referenced 2 times by &39b8, &39cc
-decode_ptr       = &80
+decode_ptr       = &80  ; ROL-decode cursor sweeping the encrypted BASIC in place.
 ; &80 referenced 5 times by &391d, &3929, &3931, &3937, &3946
 decode_ptr_hi    = &81
 ; &81 referenced 4 times by &3922, &392f, &393c, &394b
-evntv            = &0220
+evntv            = &0220  ; EVNTV, the event vector: the driver saves the old value and points it at its vsync-event handler.
 ; &0220 referenced 2 times by &1913, &1921
 evntv_hi         = &0221
 ; &0221 referenced 2 times by &1919, &1926
-autorun_index    = &023c
+autorun_index    = &023c  ; Running fill index into the keyboard buffer as the loader queues its PAGE / OLD / RUN commands.
 ; &023c referenced 4 times by &3969, &3974, &3977, &397e
-kbd_buffer       = &0300
+kbd_buffer       = &0300  ; Base of the &0300 page holding the MOS keyboard buffer (&03E0-&03FF), written directly on the fast hand-off path.
 ; &0300 used as index base 1 time by &3971
-basic_line10_len = &0c03
+basic_line10_len = &0c03  ; Length byte of the relocated BASIC's line 10, patched from 0 back to &16 so the protected program lists and runs.
 ; &0c03 referenced 1 time by &3963
-os_signature     = &e8aa
+os_signature     = &e8aa  ; OS ROM byte read (for 'O') to distinguish OS versions and choose the command hand-off path.
 ; &e8aa referenced 1 time by &3950
-user_via_orb     = &fe60
+user_via_orb     = &fe60  ; User VIA port B: writes column strobes and the 74LS157 handset-select bit (bit 7); reads the four matrix rows.
 ; &fe60 referenced 8 times by &1939, &193c, &1945, &1948, &195c, &195f, &197f, &1982
-user_via_ddrb    = &fe62
+user_via_ddrb    = &fe62  ; User VIA data-direction register B: set to &F0 so the four strobe/select lines are outputs, the four rows inputs.
 ; &fe62 referenced 1 time by &190f
-osword           = &fff1
+osword           = &fff1  ; OSWORD: the driver calls OSWORD 7 to sound the key-click.
 ; &fff1 referenced 1 time by &19a8
-osbyte           = &fff4
+osbyte           = &fff4  ; OSBYTE: used with A=&99 to insert a key into the buffer, A=&0E to enable the vsync event, and to read/set vectors.
 ; &fff4 referenced 4 times by &190a, &19bc, &398a, &399d
-oscli            = &fff7
+oscli            = &fff7  ; OSCLI: issues the *KEY / *FX-style commands the loader queues.
 ; &fff7 referenced 1 time by &39ae
 
 

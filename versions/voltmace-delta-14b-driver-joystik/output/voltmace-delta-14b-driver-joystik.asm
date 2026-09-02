@@ -1,19 +1,19 @@
 ; Memory locations
-decode_ptr     = &80
+decode_ptr     = &80  ; ROL-decode cursor sweeping the encrypted drivers and BASIC in place.
 ; &80 referenced 5 times by &191d, &1929, &1931, &1937, &1946
 decode_ptr_hi  = &81
 ; &81 referenced 4 times by &1922, &192f, &193c, &194b
-autorun_index  = &023c
+autorun_index  = &023c  ; Running fill index into the keyboard buffer as the loader queues its PAGE / OLD / RUN commands.
 ; &023c referenced 4 times by &197e, &1989, &198c, &1993
-kbd_buffer     = &0300
+kbd_buffer     = &0300  ; Base of the &0300 page holding the MOS keyboard buffer, written directly on the fast hand-off path.
 ; &0300 used as index base 1 time by &1986
-os_signature   = &e8aa
+os_signature   = &e8aa  ; Three OS ROM bytes read as the "OS " tag to distinguish OS versions and choose the command hand-off path.
 ; &e8aa referenced 1 time by &1950
 os_signature_1 = &e8ab
 ; &e8ab referenced 1 time by &1958
 os_signature_2 = &e8ac
 ; &e8ac referenced 1 time by &1960
-osbyte         = &fff4
+osbyte         = &fff4  ; OSBYTE: used to read/set vectors and enable ADC input while the loader hands off to the BASIC.
 ; &fff4 referenced 2 times by &199f, &19b2
 
 

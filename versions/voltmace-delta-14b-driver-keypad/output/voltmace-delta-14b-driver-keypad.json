@@ -95,7 +95,147 @@
     "osbyte": 65524,
     "oscli": 65527
   },
-  "memory_map": [],
+  "memory_map": [
+    {
+      "addr": 112,
+      "name": "copy_dst",
+      "length": 2,
+      "group": "zero_page",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "Block-copy destination pointer used by the relocator."
+    },
+    {
+      "addr": 114,
+      "name": "copy_src",
+      "length": 2,
+      "group": "zero_page",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "Block-copy source pointer used by the relocator."
+    },
+    {
+      "addr": 116,
+      "name": "copy_rem",
+      "group": "zero_page",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "Leftover (part-page) byte count for the relocator."
+    },
+    {
+      "addr": 117,
+      "name": "copy_pages",
+      "group": "zero_page",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "Whole-page count for the relocator."
+    },
+    {
+      "addr": 128,
+      "name": "decode_ptr",
+      "length": 2,
+      "group": "zero_page",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "ROL-decode cursor sweeping the encrypted BASIC in place."
+    },
+    {
+      "addr": 544,
+      "name": "evntv",
+      "length": 2,
+      "group": "os_vectors",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "EVNTV, the event vector: the driver saves the old value and points it at its vsync-event handler."
+    },
+    {
+      "addr": 572,
+      "name": "autorun_index",
+      "group": "os_workspace",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "Running fill index into the keyboard buffer as the loader queues its PAGE / OLD / RUN commands."
+    },
+    {
+      "addr": 768,
+      "name": "kbd_buffer",
+      "group": "os_workspace",
+      "access": [
+        "w",
+        "b"
+      ],
+      "description": "Base of the &0300 page holding the MOS keyboard buffer (&03E0-&03FF), written directly on the fast hand-off path."
+    },
+    {
+      "addr": 3075,
+      "name": "basic_line10_len",
+      "group": "basic_workspace",
+      "access": [
+        "w"
+      ],
+      "description": "Length byte of the relocated BASIC's line 10, patched from 0 back to &16 so the protected program lists and runs."
+    },
+    {
+      "addr": 59562,
+      "name": "os_signature",
+      "group": "os_rom",
+      "access": [
+        "r"
+      ],
+      "description": "OS ROM byte read (for 'O') to distinguish OS versions and choose the command hand-off path."
+    },
+    {
+      "addr": 65120,
+      "name": "user_via_orb",
+      "group": "hardware",
+      "access": [
+        "r",
+        "w"
+      ],
+      "description": "User VIA port B: writes column strobes and the 74LS157 handset-select bit (bit 7); reads the four matrix rows."
+    },
+    {
+      "addr": 65122,
+      "name": "user_via_ddrb",
+      "group": "hardware",
+      "access": [
+        "w"
+      ],
+      "description": "User VIA data-direction register B: set to &F0 so the four strobe/select lines are outputs, the four rows inputs."
+    },
+    {
+      "addr": 65521,
+      "name": "osword",
+      "group": "os_entry_points",
+      "description": "OSWORD: the driver calls OSWORD 7 to sound the key-click."
+    },
+    {
+      "addr": 65524,
+      "name": "osbyte",
+      "group": "os_entry_points",
+      "description": "OSBYTE: used with A=&99 to insert a key into the buffer, A=&0E to enable the vsync event, and to read/set vectors."
+    },
+    {
+      "addr": 65527,
+      "name": "oscli",
+      "group": "os_entry_points",
+      "description": "OSCLI: issues the *KEY / *FX-style commands the loader queues."
+    }
+  ],
   "regions": [],
   "items": [
     {
