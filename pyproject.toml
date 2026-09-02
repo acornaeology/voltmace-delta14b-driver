@@ -1,0 +1,33 @@
+[project]
+name = "voltmace-delta-14b-driver"
+version = "0.1.0"
+description = "Annotated disassemblies of the Voltmace Delta 14B/1 joystick & keypad drivers for the BBC Microcomputer"
+license = "MIT"
+authors = [
+    { name = "Robert Smallshire" },
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fantasm>=0.19.0",
+    "dasmos>=4.2.0",
+    "oaknut-basic[cli]>=12.16.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=3.0",
+]
+
+[tool.uv]
+index-url = "https://pypi.org/simple"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+# This repo is annotated-disassembly content, not a published library.
+only-include = ["versions"]

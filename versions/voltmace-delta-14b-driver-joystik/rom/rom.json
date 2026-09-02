@@ -1,0 +1,11 @@
+{
+    "title": "Voltmace Delta 14B/1 JOYSTIK driver (© 1983 Custom Video Productions)",
+    "size": 13312,
+    "load_address": "0x1900",
+    "exec_address": "0x1909",
+    "dfs_attributes": "03",
+    "md5": "fc1cc382691e338e176537d4d3b68157",
+    "sha256": "325c63c5c6eeead35e01a60dbee41c698bebc67adc86ad2cc35fdd06a0c76544",
+    "notes": "Extracted from the Voltmace Delta 14B driver disc (release 1) with oaknut-disc. A *RUN program that loads at &1900 and executes at &1909. Comprises a 6502 joystick driver plus a configuration/demo program written in BBC BASIC. Only a byte-PREFIX of the BASIC is ROL-encoded (rotate-left one bit); the remainder is stored raw ('partly protected').",
+    "links": []
+}

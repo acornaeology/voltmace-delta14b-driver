@@ -1,0 +1,16 @@
+{
+    "slug": "voltmace-delta14b-driver",
+    "name": "Voltmace Delta 14B Driver",
+    "description": "Annotated disassemblies of the driver software for the Voltmace Delta 14B joystick/keypad handset system on the BBC Microcomputer. The Delta 14B/1 interface unit connects up to two handsets (each a 3x4 keypad plus a two-axis analogue joystick) to the BBC Micro's analogue and user ports, multiplexed by a 74LS157. The disc ships two programs — JOYSTIK and KEYPAD — each pairing a 6502 driver with a BBC BASIC front-end held under a rudimentary bit-rotation protection.",
+    "glossary": "GLOSSARY.md",
+    "versions": ["keypad", "joystik"],
+    "references": [
+        {
+            "label": "Voltmace 14B Handset System documentation",
+            "url": "",
+            "category": "related",
+            "icon": "doc",
+            "note": "Manufacturer documentation for the Delta 14B handset system."
+        }
+    ]
+}
