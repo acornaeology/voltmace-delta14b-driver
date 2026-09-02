@@ -10,17 +10,54 @@
   },
   "constants": [],
   "macros": [],
-  "subroutines": [],
+  "subroutines": [
+    {
+      "addr": 6409,
+      "name": "main",
+      "title": "*RUN entry: decrypt and auto-run",
+      "description": "The DFS execution address. Decrypts the drivers and BASIC in\nplace, repairs the BASIC's first line, then queues PAGE=&1C00 / OLD / RUN so the\nnow-plain BASIC configuration program starts."
+    },
+    {
+      "addr": 6429,
+      "name": "decode_basic",
+      "title": "Decrypt the drivers and BASIC",
+      "description": "Rotate every byte of &1A00-&4AFF left one bit (the inverse of\nthe ROL-1 storage protection), in place. That covers both driver variants\n(&1A00, &1B00) and the tokenised BASIC from PAGE=&1C00; the loop stops at page\n&4B, leaving the BASIC's raw tail untouched."
+    },
+    {
+      "addr": 6478,
+      "name": "os_dependent_setup",
+      "title": "OS-version-dependent setup",
+      "description": "Reads the three-byte \"OS \" ROM signature to pick how the auto-run commands are queued."
+    },
+    {
+      "addr": 6518,
+      "name": "patch_header",
+      "title": "Repair the BASIC program's first line",
+      "description": "Write &17 (23) into basic_line10_len, the length byte of the\nline-10 REM at PAGE=&1C00, which is stored as 0 by the protection."
+    },
+    {
+      "addr": 6524,
+      "name": "queue_autorun",
+      "title": "Queue the auto-run commands (direct poke)",
+      "description": "Copy autorun_commands into the MOS keyboard buffer so the OS\nreads them as typed. autorun_index wraps into the 32-byte buffer at\n&03E0-&03FF."
+    },
+    {
+      "addr": 6555,
+      "name": "setup_keys",
+      "title": "Queue the auto-run commands (OSBYTE path)",
+      "description": "The non-\"OS \"-signature variant of queue_autorun: set the\nBREAK/ESCAPE behaviour, then insert each autorun_commands byte with OSBYTE &8A."
+    }
+  ],
   "banners": [],
   "external_labels": {
-    "l0080": 128,
-    "l0081": 129,
-    "l023c": 572,
-    "l0300": 768,
-    "le8aa": 59562,
-    "le8ab": 59563,
-    "le8ac": 59564,
-    "lfff4": 65524
+    "decode_ptr": 128,
+    "decode_ptr_hi": 129,
+    "autorun_index": 572,
+    "kbd_buffer": 768,
+    "os_signature": 59562,
+    "os_signature_1": 59563,
+    "os_signature_2": 59564,
+    "osbyte": 65524
   },
   "memory_map": [],
   "regions": [],
@@ -41,6 +78,9 @@
       "labels": [
         "decoy"
       ],
+      "comments_before_label": [
+        "Decoy stub BASIC line (&0D, line 13, RTS bytes) so a naive *LOAD/LIST at PAGE sees junk, not the loader"
+      ],
       "type": "byte",
       "values": [
         13,
@@ -59,6 +99,10 @@
       "bytes": [
         72
       ],
+      "labels": [
+        "main"
+      ],
+      "comment_inline": "Preserve A",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -67,6 +111,7 @@
       "bytes": [
         138
       ],
+      "comment_inline": "Preserve X...",
       "type": "code",
       "mnemonic": "txa"
     },
@@ -75,6 +120,7 @@
       "bytes": [
         72
       ],
+      "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -83,6 +129,7 @@
       "bytes": [
         152
       ],
+      "comment_inline": "Preserve Y...",
       "type": "code",
       "mnemonic": "tya"
     },
@@ -91,6 +138,7 @@
       "bytes": [
         72
       ],
+      "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -101,11 +149,12 @@
         29,
         25
       ],
+      "comment_inline": "Decrypt the drivers and BASIC in place",
       "type": "code",
       "mnemonic": "jsr",
-      "operand": "sub_c191d",
+      "operand": "decode_basic",
       "target": 6429,
-      "target_label": "sub_c191d"
+      "target_label": "decode_basic"
     },
     {
       "addr": 6417,
@@ -114,11 +163,12 @@
         118,
         25
       ],
+      "comment_inline": "Repair the BASIC's first-line length byte",
       "type": "code",
       "mnemonic": "jsr",
-      "operand": "sub_c1976",
+      "operand": "patch_header",
       "target": 6518,
-      "target_label": "sub_c1976"
+      "target_label": "patch_header"
     },
     {
       "addr": 6420,
@@ -127,17 +177,19 @@
         78,
         25
       ],
+      "comment_inline": "Queue the auto-run commands (OS-dependent)",
       "type": "code",
       "mnemonic": "jsr",
-      "operand": "sub_c194e",
+      "operand": "os_dependent_setup",
       "target": 6478,
-      "target_label": "sub_c194e"
+      "target_label": "os_dependent_setup"
     },
     {
       "addr": 6423,
       "bytes": [
         104
       ],
+      "comment_inline": "Restore Y...",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -146,6 +198,7 @@
       "bytes": [
         168
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "tay"
     },
@@ -154,6 +207,7 @@
       "bytes": [
         104
       ],
+      "comment_inline": "Restore X...",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -162,6 +216,7 @@
       "bytes": [
         170
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "tax"
     },
@@ -170,6 +225,7 @@
       "bytes": [
         104
       ],
+      "comment_inline": "Restore A",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -178,6 +234,7 @@
       "bytes": [
         96
       ],
+      "comment_inline": "Return to the MOS; the queued commands then run the BASIC",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -188,8 +245,9 @@
         128
       ],
       "labels": [
-        "sub_c191d"
+        "decode_basic"
       ],
+      "comment_inline": "Save the caller decode_ptr low byte...",
       "xref_summaries": [
         "&191d referenced 1 time by &190e"
       ],
@@ -201,9 +259,9 @@
       ],
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l0080",
+      "operand": "decode_ptr",
       "target": 128,
-      "target_label": "l0080"
+      "target_label": "decode_ptr"
     },
     {
       "addr": 6431,
@@ -212,11 +270,12 @@
         116,
         25
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l1974",
+      "operand": "decode_ptr_save",
       "target": 6516,
-      "target_label": "l1974"
+      "target_label": "decode_ptr_save"
     },
     {
       "addr": 6434,
@@ -224,11 +283,12 @@
         165,
         129
       ],
+      "comment_inline": "...and high byte...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l0081",
+      "operand": "decode_ptr_hi",
       "target": 129,
-      "target_label": "l0081"
+      "target_label": "decode_ptr_hi"
     },
     {
       "addr": 6436,
@@ -237,11 +297,12 @@
         117,
         25
       ],
+      "comment_inline": "...at decode_ptr_save",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l1975",
+      "operand": "decode_ptr_save_hi",
       "target": 6517,
-      "target_label": "l1975"
+      "target_label": "decode_ptr_save_hi"
     },
     {
       "addr": 6439,
@@ -249,6 +310,7 @@
         162,
         0
       ],
+      "comment_inline": "Point decode_ptr at &1A00: low byte 0...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#0"
@@ -259,11 +321,12 @@
         134,
         128
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "stx",
-      "operand": "l0080",
+      "operand": "decode_ptr",
       "target": 128,
-      "target_label": "l0080"
+      "target_label": "decode_ptr"
     },
     {
       "addr": 6443,
@@ -271,6 +334,7 @@
         162,
         26
       ],
+      "comment_inline": "...high byte &1A...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#&1a"
@@ -281,6 +345,7 @@
         160,
         0
       ],
+      "comment_inline": "byte index 0",
       "type": "code",
       "mnemonic": "ldy",
       "operand": "#0"
@@ -292,8 +357,9 @@
         129
       ],
       "labels": [
-        "loop_c192f"
+        "decode_next_page"
       ],
+      "comment_inline": "Set the page being decrypted",
       "xref_summaries": [
         "&192f referenced 1 time by &1941"
       ],
@@ -305,9 +371,9 @@
       ],
       "type": "code",
       "mnemonic": "stx",
-      "operand": "l0081",
+      "operand": "decode_ptr_hi",
       "target": 129,
-      "target_label": "l0081"
+      "target_label": "decode_ptr_hi"
     },
     {
       "addr": 6449,
@@ -316,8 +382,9 @@
         128
       ],
       "labels": [
-        "loop_c1931"
+        "decode_next_byte"
       ],
+      "comment_inline": "Read an encrypted byte...",
       "xref_summaries": [
         "&1931 referenced 1 time by &193a"
       ],
@@ -329,15 +396,16 @@
       ],
       "type": "code",
       "mnemonic": "lda",
-      "operand": "(l0080),y",
+      "operand": "(decode_ptr),y",
       "target": 128,
-      "target_label": "l0080"
+      "target_label": "decode_ptr"
     },
     {
       "addr": 6451,
       "bytes": [
         24
       ],
+      "comment_inline": "clear carry for the rotate",
       "type": "code",
       "mnemonic": "clc"
     },
@@ -346,6 +414,7 @@
       "bytes": [
         10
       ],
+      "comment_inline": "...rotate it left one bit (undo the ROL-1 protection)...",
       "type": "code",
       "mnemonic": "asl"
     },
@@ -355,6 +424,7 @@
         105,
         0
       ],
+      "comment_inline": "...carrying bit 7 into bit 0...",
       "type": "code",
       "mnemonic": "adc",
       "operand": "#0"
@@ -365,17 +435,19 @@
         145,
         128
       ],
+      "comment_inline": "...and store it back",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "(l0080),y",
+      "operand": "(decode_ptr),y",
       "target": 128,
-      "target_label": "l0080"
+      "target_label": "decode_ptr"
     },
     {
       "addr": 6457,
       "bytes": [
         200
       ],
+      "comment_inline": "Next byte...",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -385,11 +457,12 @@
         208,
         245
       ],
+      "comment_inline": "...to the end of the page",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "loop_c1931",
+      "operand": "decode_next_byte",
       "target": 6449,
-      "target_label": "loop_c1931"
+      "target_label": "decode_next_byte"
     },
     {
       "addr": 6460,
@@ -397,17 +470,19 @@
         166,
         129
       ],
+      "comment_inline": "Next page...",
       "type": "code",
       "mnemonic": "ldx",
-      "operand": "l0081",
+      "operand": "decode_ptr_hi",
       "target": 129,
-      "target_label": "l0081"
+      "target_label": "decode_ptr_hi"
     },
     {
       "addr": 6462,
       "bytes": [
         232
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "inx"
     },
@@ -417,6 +492,7 @@
         224,
         75
       ],
+      "comment_inline": "...until page &4B (the BASIC raw tail is left alone)",
       "type": "code",
       "mnemonic": "cpx",
       "operand": "#&4b"
@@ -427,11 +503,12 @@
         208,
         236
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "loop_c192f",
+      "operand": "decode_next_page",
       "target": 6447,
-      "target_label": "loop_c192f"
+      "target_label": "decode_next_page"
     },
     {
       "addr": 6467,
@@ -440,11 +517,12 @@
         116,
         25
       ],
+      "comment_inline": "Restore the caller decode_ptr...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l1974",
+      "operand": "decode_ptr_save",
       "target": 6516,
-      "target_label": "l1974"
+      "target_label": "decode_ptr_save"
     },
     {
       "addr": 6470,
@@ -452,11 +530,12 @@
         133,
         128
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l0080",
+      "operand": "decode_ptr",
       "target": 128,
-      "target_label": "l0080"
+      "target_label": "decode_ptr"
     },
     {
       "addr": 6472,
@@ -465,11 +544,12 @@
         117,
         25
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l1975",
+      "operand": "decode_ptr_save_hi",
       "target": 6517,
-      "target_label": "l1975"
+      "target_label": "decode_ptr_save_hi"
     },
     {
       "addr": 6475,
@@ -477,17 +557,19 @@
         133,
         129
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l0081",
+      "operand": "decode_ptr_hi",
       "target": 129,
-      "target_label": "l0081"
+      "target_label": "decode_ptr_hi"
     },
     {
       "addr": 6477,
       "bytes": [
         96
       ],
+      "comment_inline": "Done",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -498,8 +580,9 @@
         0
       ],
       "labels": [
-        "sub_c194e"
+        "os_dependent_setup"
       ],
+      "comment_inline": "Count matching signature bytes in Y",
       "xref_summaries": [
         "&194e referenced 1 time by &1914"
       ],
@@ -520,11 +603,12 @@
         170,
         232
       ],
+      "comment_inline": "First OS ROM byte...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "le8aa",
+      "operand": "os_signature",
       "target": 59562,
-      "target_label": "le8aa"
+      "target_label": "os_signature"
     },
     {
       "addr": 6483,
@@ -532,6 +616,7 @@
         201,
         79
       ],
+      "comment_inline": "...'O'?",
       "type": "code",
       "mnemonic": "cmp",
       "operand": "#&4f"
@@ -542,17 +627,19 @@
         208,
         1
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c1958",
+      "operand": "os_check_1",
       "target": 6488,
-      "target_label": "c1958"
+      "target_label": "os_check_1"
     },
     {
       "addr": 6487,
       "bytes": [
         200
       ],
+      "comment_inline": "match: bump the count",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -564,8 +651,9 @@
         232
       ],
       "labels": [
-        "c1958"
+        "os_check_1"
       ],
+      "comment_inline": "Second OS ROM byte...",
       "xref_summaries": [
         "&1958 referenced 1 time by &1955"
       ],
@@ -577,9 +665,9 @@
       ],
       "type": "code",
       "mnemonic": "lda",
-      "operand": "le8ab",
+      "operand": "os_signature_1",
       "target": 59563,
-      "target_label": "le8ab"
+      "target_label": "os_signature_1"
     },
     {
       "addr": 6491,
@@ -587,6 +675,7 @@
         201,
         83
       ],
+      "comment_inline": "...'S'?",
       "type": "code",
       "mnemonic": "cmp",
       "operand": "#&53"
@@ -597,17 +686,19 @@
         208,
         1
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c1960",
+      "operand": "os_check_2",
       "target": 6496,
-      "target_label": "c1960"
+      "target_label": "os_check_2"
     },
     {
       "addr": 6495,
       "bytes": [
         200
       ],
+      "comment_inline": "match: bump the count",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -619,8 +710,9 @@
         232
       ],
       "labels": [
-        "c1960"
+        "os_check_2"
       ],
+      "comment_inline": "Third OS ROM byte...",
       "xref_summaries": [
         "&1960 referenced 1 time by &195d"
       ],
@@ -632,9 +724,9 @@
       ],
       "type": "code",
       "mnemonic": "lda",
-      "operand": "le8ac",
+      "operand": "os_signature_2",
       "target": 59564,
-      "target_label": "le8ac"
+      "target_label": "os_signature_2"
     },
     {
       "addr": 6499,
@@ -642,6 +734,7 @@
         201,
         32
       ],
+      "comment_inline": "...' '?",
       "type": "code",
       "mnemonic": "cmp",
       "operand": "#&20"
@@ -652,17 +745,19 @@
         208,
         1
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c1968",
+      "operand": "os_check_done",
       "target": 6504,
-      "target_label": "c1968"
+      "target_label": "os_check_done"
     },
     {
       "addr": 6503,
       "bytes": [
         200
       ],
+      "comment_inline": "match: bump the count",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -673,8 +768,9 @@
         3
       ],
       "labels": [
-        "c1968"
+        "os_check_done"
       ],
+      "comment_inline": "All three bytes matched \"OS \"?",
       "xref_summaries": [
         "&1968 referenced 1 time by &1965"
       ],
@@ -694,11 +790,12 @@
         240,
         4
       ],
+      "comment_inline": "yes -> poke the buffer directly",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "c1970",
+      "operand": "use_direct_poke",
       "target": 6512,
-      "target_label": "c1970"
+      "target_label": "use_direct_poke"
     },
     {
       "addr": 6508,
@@ -707,17 +804,19 @@
         155,
         25
       ],
+      "comment_inline": "no -> insert via OSBYTE",
       "type": "code",
       "mnemonic": "jsr",
-      "operand": "sub_c199b",
+      "operand": "setup_keys",
       "target": 6555,
-      "target_label": "sub_c199b"
+      "target_label": "setup_keys"
     },
     {
       "addr": 6511,
       "bytes": [
         96
       ],
+      "comment_inline": "Done",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -729,8 +828,9 @@
         25
       ],
       "labels": [
-        "c1970"
+        "use_direct_poke"
       ],
+      "comment_inline": "Queue by poking the keyboard buffer",
       "xref_summaries": [
         "&1970 referenced 1 time by &196a"
       ],
@@ -742,15 +842,16 @@
       ],
       "type": "code",
       "mnemonic": "jsr",
-      "operand": "sub_c197c",
+      "operand": "queue_autorun",
       "target": 6524,
-      "target_label": "sub_c197c"
+      "target_label": "queue_autorun"
     },
     {
       "addr": 6515,
       "bytes": [
         96
       ],
+      "comment_inline": "Done",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -761,13 +862,14 @@
         0
       ],
       "labels": [
-        "l1974"
+        "decode_ptr_save"
       ],
       "sub_labels": {
         "6517": [
-          "l1975"
+          "decode_ptr_save_hi"
         ]
       },
+      "comment_inline": "Scratch: caller's decode_ptr saved across decode_basic",
       "xref_summaries": [
         "&1974 referenced 2 times by &191f, &1943",
         "&1975 referenced 2 times by &1924, &1948"
@@ -782,9 +884,8 @@
           "kind": "direct"
         }
       ],
-      "type": "byte",
+      "type": "word",
       "values": [
-        0,
         0
       ]
     },
@@ -795,8 +896,9 @@
         23
       ],
       "labels": [
-        "sub_c1976"
+        "patch_header"
       ],
+      "comment_inline": "The first BASIC line is 23 bytes long...",
       "xref_summaries": [
         "&1976 referenced 1 time by &1911"
       ],
@@ -817,17 +919,19 @@
         3,
         28
       ],
+      "comment_inline": "...restore its length byte (stored as 0 by the protection)",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l1c03",
+      "operand": "basic_line10_len",
       "target": 7171,
-      "target_label": "l1c03"
+      "target_label": "basic_line10_len"
     },
     {
       "addr": 6523,
       "bytes": [
         96
       ],
+      "comment_inline": "Done",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -838,8 +942,9 @@
         0
       ],
       "labels": [
-        "sub_c197c"
+        "queue_autorun"
       ],
+      "comment_inline": "Start at the first command byte",
       "xref_summaries": [
         "&197c referenced 1 time by &1970"
       ],
@@ -861,8 +966,9 @@
         2
       ],
       "labels": [
-        "c197e"
+        "queue_next_byte"
       ],
+      "comment_inline": "Current buffer fill position...",
       "xref_summaries": [
         "&197e referenced 1 time by &1997"
       ],
@@ -874,9 +980,9 @@
       ],
       "type": "code",
       "mnemonic": "ldx",
-      "operand": "l023c",
+      "operand": "autorun_index",
       "target": 572,
-      "target_label": "l023c"
+      "target_label": "autorun_index"
     },
     {
       "addr": 6529,
@@ -885,11 +991,12 @@
         191,
         25
       ],
+      "comment_inline": "read a command byte...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l19bf,y",
+      "operand": "autorun_commands,y",
       "target": 6591,
-      "target_label": "l19bf"
+      "target_label": "autorun_commands"
     },
     {
       "addr": 6532,
@@ -897,11 +1004,12 @@
         240,
         20
       ],
+      "comment_inline": "...&00 terminates",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "return_1",
+      "operand": "queue_done",
       "target": 6554,
-      "target_label": "return_1"
+      "target_label": "queue_done"
     },
     {
       "addr": 6534,
@@ -910,11 +1018,12 @@
         0,
         3
       ],
+      "comment_inline": "Poke it into the keyboard buffer",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l0300,x",
+      "operand": "kbd_buffer,x",
       "target": 768,
-      "target_label": "l0300"
+      "target_label": "kbd_buffer"
     },
     {
       "addr": 6537,
@@ -923,11 +1032,12 @@
         60,
         2
       ],
+      "comment_inline": "Advance the fill position...",
       "type": "code",
       "mnemonic": "inc",
-      "operand": "l023c",
+      "operand": "autorun_index",
       "target": 572,
-      "target_label": "l023c"
+      "target_label": "autorun_index"
     },
     {
       "addr": 6540,
@@ -936,11 +1046,12 @@
         60,
         2
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l023c",
+      "operand": "autorun_index",
       "target": 572,
-      "target_label": "l023c"
+      "target_label": "autorun_index"
     },
     {
       "addr": 6543,
@@ -948,11 +1059,12 @@
         208,
         5
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c1996",
+      "operand": "queue_advance",
       "target": 6550,
-      "target_label": "c1996"
+      "target_label": "queue_advance"
     },
     {
       "addr": 6545,
@@ -960,6 +1072,7 @@
         169,
         224
       ],
+      "comment_inline": "...wrapping back to &E0 (buffer at &03E0)...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&e0"
@@ -971,11 +1084,12 @@
         60,
         2
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l023c",
+      "operand": "autorun_index",
       "target": 572,
-      "target_label": "l023c"
+      "target_label": "autorun_index"
     },
     {
       "addr": 6550,
@@ -983,8 +1097,9 @@
         200
       ],
       "labels": [
-        "c1996"
+        "queue_advance"
       ],
+      "comment_inline": "Next command byte",
       "xref_summaries": [
         "&1996 referenced 1 time by &198f"
       ],
@@ -1004,11 +1119,12 @@
         126,
         25
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "jmp",
-      "operand": "c197e",
+      "operand": "queue_next_byte",
       "target": 6526,
-      "target_label": "c197e"
+      "target_label": "queue_next_byte"
     },
     {
       "addr": 6554,
@@ -1016,8 +1132,9 @@
         96
       ],
       "labels": [
-        "return_1"
+        "queue_done"
       ],
+      "comment_inline": "Done",
       "xref_summaries": [
         "&199a referenced 1 time by &1984"
       ],
@@ -1037,8 +1154,9 @@
         200
       ],
       "labels": [
-        "sub_c199b"
+        "setup_keys"
       ],
+      "comment_inline": "OSBYTE 200: set the BREAK/ESCAPE behaviour...",
       "xref_summaries": [
         "&199b referenced 1 time by &196c"
       ],
@@ -1058,6 +1176,7 @@
         162,
         3
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#3"
@@ -1069,11 +1188,12 @@
         244,
         255
       ],
+      "comment_inline": "call OSBYTE",
       "type": "code",
       "mnemonic": "jsr",
-      "operand": "lfff4",
+      "operand": "osbyte",
       "target": 65524,
-      "target_label": "lfff4"
+      "target_label": "osbyte"
     },
     {
       "addr": 6562,
@@ -1081,6 +1201,7 @@
         162,
         0
       ],
+      "comment_inline": "Start at the first command byte",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#0"
@@ -1093,8 +1214,9 @@
         25
       ],
       "labels": [
-        "c19a4"
+        "insert_next_key"
       ],
+      "comment_inline": "Read a command byte...",
       "xref_summaries": [
         "&19a4 referenced 1 time by &19ba"
       ],
@@ -1106,9 +1228,9 @@
       ],
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l19bf,x",
+      "operand": "autorun_commands,x",
       "target": 6591,
-      "target_label": "l19bf"
+      "target_label": "autorun_commands"
     },
     {
       "addr": 6567,
@@ -1116,17 +1238,19 @@
         240,
         20
       ],
+      "comment_inline": "...&00 terminates",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "return_2",
+      "operand": "setup_keys_done",
       "target": 6589,
-      "target_label": "return_2"
+      "target_label": "setup_keys_done"
     },
     {
       "addr": 6569,
       "bytes": [
         168
       ],
+      "comment_inline": "The character to insert",
       "type": "code",
       "mnemonic": "tay"
     },
@@ -1135,6 +1259,7 @@
       "bytes": [
         138
       ],
+      "comment_inline": "Save the loop index...",
       "type": "code",
       "mnemonic": "txa"
     },
@@ -1145,11 +1270,12 @@
         190,
         25
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l19be",
+      "operand": "setup_key_index",
       "target": 6590,
-      "target_label": "l19be"
+      "target_label": "setup_key_index"
     },
     {
       "addr": 6574,
@@ -1157,6 +1283,7 @@
         162,
         0
       ],
+      "comment_inline": "OSBYTE &8A: insert Y into buffer 0 (keyboard)...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#0"
@@ -1167,6 +1294,7 @@
         169,
         138
       ],
+      "comment_inline": "A = &8A",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&8a"
@@ -1178,11 +1306,12 @@
         244,
         255
       ],
+      "comment_inline": "call OSBYTE",
       "type": "code",
       "mnemonic": "jsr",
-      "operand": "lfff4",
+      "operand": "osbyte",
       "target": 65524,
-      "target_label": "lfff4"
+      "target_label": "osbyte"
     },
     {
       "addr": 6581,
@@ -1191,17 +1320,19 @@
         190,
         25
       ],
+      "comment_inline": "Restore the loop index...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l19be",
+      "operand": "setup_key_index",
       "target": 6590,
-      "target_label": "l19be"
+      "target_label": "setup_key_index"
     },
     {
       "addr": 6584,
       "bytes": [
         170
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "tax"
     },
@@ -1210,6 +1341,7 @@
       "bytes": [
         232
       ],
+      "comment_inline": "Next command byte",
       "type": "code",
       "mnemonic": "inx"
     },
@@ -1220,11 +1352,12 @@
         164,
         25
       ],
+      "comment_inline": "...",
       "type": "code",
       "mnemonic": "jmp",
-      "operand": "c19a4",
+      "operand": "insert_next_key",
       "target": 6564,
-      "target_label": "c19a4"
+      "target_label": "insert_next_key"
     },
     {
       "addr": 6589,
@@ -1232,8 +1365,9 @@
         96
       ],
       "labels": [
-        "return_2"
+        "setup_keys_done"
       ],
+      "comment_inline": "Done",
       "xref_summaries": [
         "&19bd referenced 1 time by &19a7"
       ],
@@ -1249,21 +1383,14 @@
     {
       "addr": 6590,
       "bytes": [
-        234,
-        21,
-        13
+        234
       ],
       "labels": [
-        "l19be"
+        "setup_key_index"
       ],
-      "sub_labels": {
-        "6591": [
-          "l19bf"
-        ]
-      },
+      "comment_inline": "Scratch: saved loop index (NOP at rest)",
       "xref_summaries": [
-        "&19be referenced 2 times by &19ab, &19b5",
-        "&19bf used as index base 2 times by &1981, &19a4"
+        "&19be referenced 2 times by &19ab, &19b5"
       ],
       "references": [
         {
@@ -1277,7 +1404,34 @@
       ],
       "type": "byte",
       "values": [
-        234,
+        234
+      ]
+    },
+    {
+      "addr": 6591,
+      "bytes": [
+        21,
+        13
+      ],
+      "labels": [
+        "autorun_commands"
+      ],
+      "comment_inline": "CTRL-U + CR: clear the input line",
+      "xref_summaries": [
+        "&19bf used as index base 2 times by &1981, &19a4"
+      ],
+      "references": [
+        {
+          "addr": 6529,
+          "kind": "indexed"
+        },
+        {
+          "addr": 6564,
+          "kind": "indexed"
+        }
+      ],
+      "type": "byte",
+      "values": [
         21,
         13
       ]
@@ -1295,6 +1449,7 @@
         48,
         48
       ],
+      "comment_inline": "set PAGE to &1C00, where the BASIC lives",
       "type": "string",
       "string": "PA.=&1C00"
     },
@@ -1303,6 +1458,7 @@
       "bytes": [
         13
       ],
+      "comment_inline": "submit",
       "type": "byte",
       "values": [
         13
@@ -1315,6 +1471,7 @@
         76,
         68
       ],
+      "comment_inline": "reinstate the decoded program (OLD)",
       "type": "string",
       "string": "OLD"
     },
@@ -1323,6 +1480,7 @@
       "bytes": [
         13
       ],
+      "comment_inline": "submit",
       "type": "byte",
       "values": [
         13
@@ -1335,6 +1493,7 @@
         85,
         78
       ],
+      "comment_inline": "run it (RUN)",
       "type": "string",
       "string": "RUN"
     },
@@ -1342,59 +1501,31 @@
       "addr": 6610,
       "bytes": [
         13,
-        0,
-        13
+        0
       ],
+      "comment_inline": "submit; the &00 then stops the queue copy",
       "type": "byte",
       "values": [
         13,
-        0,
-        13
+        0
       ]
     },
     {
-      "addr": 6613,
+      "addr": 6612,
       "bytes": [
+        13,
         84,
         103,
-        66
-      ],
-      "type": "string",
-      "string": "TgB"
-    },
-    {
-      "addr": 6616,
-      "bytes": [
+        66,
         204,
         109,
         246,
         176,
         192,
-        255
-      ],
-      "type": "byte",
-      "values": [
-        204,
-        109,
-        246,
-        176,
-        192,
-        255
-      ]
-    },
-    {
-      "addr": 6622,
-      "bytes": [
+        255,
         56,
         37,
-        77
-      ],
-      "type": "string",
-      "string": "8%M"
-    },
-    {
-      "addr": 6625,
-      "bytes": [
+        77,
         5,
         85,
         6,
@@ -1418,56 +1549,65 @@
         76,
         1,
         99,
-        246
-      ],
-      "type": "byte",
-      "values": [
-        5,
-        85,
-        6,
-        183,
-        132,
-        32,
-        214,
-        136,
-        176,
-        64,
-        189,
-        211,
-        250,
-        200,
-        16,
-        248,
-        241,
-        235,
-        68,
-        27,
-        76,
-        1,
-        99,
-        246
-      ]
-    },
-    {
-      "addr": 6649,
-      "bytes": [
+        246,
         80,
         116,
         33,
         57,
-        113
-      ],
-      "type": "string",
-      "string": "Pt!9q"
-    },
-    {
-      "addr": 6654,
-      "bytes": [
+        113,
         192,
         134
       ],
+      "labels": [
+        "loader_tail"
+      ],
+      "comments_before_label": [
+        "Unused bytes after the command list, up to the driver at &1A00; referenced by nothing and inert."
+      ],
       "type": "byte",
       "values": [
+        13,
+        84,
+        103,
+        66,
+        204,
+        109,
+        246,
+        176,
+        192,
+        255,
+        56,
+        37,
+        77,
+        5,
+        85,
+        6,
+        183,
+        132,
+        32,
+        214,
+        136,
+        176,
+        64,
+        189,
+        211,
+        250,
+        200,
+        16,
+        248,
+        241,
+        235,
+        68,
+        27,
+        76,
+        1,
+        99,
+        246,
+        80,
+        116,
+        33,
+        57,
+        113,
         192,
         134
       ]
@@ -14424,13 +14564,16 @@
         255
       ],
       "labels": [
-        "sub_c1a00"
+        "encoded_region"
       ],
       "sub_labels": {
         "7171": [
-          "l1c03"
+          "basic_line10_len"
         ]
       },
+      "comments_before_label": [
+        "ROL-encoded: driver variant A (&1A00), driver variant B (&1B00), then the tokenised BASIC from PAGE=&1C00 (raw past &4B00). Drivers: see driver_a.asm/driver_b.asm; BASIC: basic/voltmace-delta-14b-driver-joystik.bas."
+      ],
       "xref_summaries": [
         "&1c03 referenced 1 time by &1978"
       ],
@@ -14552,7 +14695,10 @@
         0
       ],
       "labels": [
-        "tail"
+        "basic_variables"
+      ],
+      "comments_before_label": [
+        "BBC BASIC's variable heap as it stood when the author saved the &1900-&4D00 image: variable-name/value records for the program globals (e.g. REV$=\"Rev 2.0\", and LR%, R1%, EV$, LVL%, LVH%, S% ...). Not used by the loader; PAGE=&1C00 sits below it, so BASIC rebuilds its own variables on RUN."
       ],
       "type": "byte",
       "values": [
