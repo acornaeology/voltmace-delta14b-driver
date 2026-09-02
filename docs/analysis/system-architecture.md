@@ -28,7 +28,7 @@ user 6522 VIA (`&FE60`/`&FE62`), reads the joystick pots through the analogue
 port (via OSBYTE `&80` / ADVAL), and picks the active handset with the top bit
 of the port-B value.
 
-## 2. Two programs, one shape
+## 2. Two programs with a common design
 
 The disc ships two `*RUN` programs — [`KEYPAD`](../../versions/voltmace-delta-14b-driver-keypad/binary/KEYPAD)
 and [`JOYSTIK`](../../versions/voltmace-delta-14b-driver-joystik/binary/JOYSTIK)
@@ -40,7 +40,8 @@ and [`JOYSTIK`](../../versions/voltmace-delta-14b-driver-joystik/binary/JOYSTIK)
    configuration program, both stored **bit-rotated** as protection;
 3. a **decoy** and some leftover bytes.
 
-The loader decrypts the protected region, repairs the BASIC, and hands control
+The loader decrypts the protected region, writes the correct length byte back
+into the BASIC's first line (the protection stores it as zero), and hands control
 to it; the BASIC lets the user configure a resident driver and then installs it;
 the resident driver stays in memory and makes the handset look like the keyboard
 to ordinary games. They differ in *which* MOS mechanism the resident driver hooks — and
@@ -54,7 +55,7 @@ handset look like the keyboard).
 
 ## 3. The protection
 
-The protection is deliberately light — enough to stop casual `*LOAD`/`LIST`
+The protection is light — enough to stop casual `*LOAD`/`LIST`
 snooping, not a serious barrier. It has four parts:
 
 - **A decoy.** The first bytes at `&1900` are `0D 00 0D 60 60 60…` — a stub that
@@ -73,7 +74,7 @@ snooping, not a serious barrier. It has four parts:
   own program text (a `FOR … !A%=0` sweep) and detaches, leaving only the
   resident driver in memory.
 
-The BASIC is aware of all this: a `Z%` flag distinguishes the protected first run
+The BASIC configuration program is aware of all this: a `Z%` flag distinguishes the protected first run
 from an unprotected re-save, and lines print `PROGRAM PROTECTED` / `UNPROTECTED`
 accordingly.
 
@@ -123,22 +124,24 @@ The **BASIC front-end** ([`keypad-editor.md`](keypad-editor.md))
 is an interactive editor: you press a key *on the handset* to select it, then a
 key *on the BBC keyboard* to assign its character, for two handsets. On finishing
 it pokes the 24-entry `key_codes` table inside the resident driver (at `&ADD`),
-patches the sound and auto-repeat options, and `CALL &A00` installs it.
+sets the driver's two behaviour options — whether a keypress sounds the
+key-click (the OSWORD 7 call above) and the auto-repeat rate — and `CALL &A00`
+installs it.
 
 ## 6. JOYSTIK: an INKEY the MOS asks
 
-JOYSTIK is richer. Here the resident drivers are themselves **inside the
+JOYSTIK is more elaborate. Here the resident drivers are themselves **inside the
 encrypted region** — two 256-byte variants at `&1A00` and `&1B00`, both
 ROL-encoded and both written to run at `&0A00`. See
 [`driver-a.asm`](../../versions/voltmace-delta-14b-driver-joystik/output/voltmace-delta-14b-driver-joystik-driver-a.asm)
 and [`driver-b.asm`](../../versions/voltmace-delta-14b-driver-joystik/output/voltmace-delta-14b-driver-joystik-driver-b.asm).
 
-Rather than *push* keys into the buffer, the JOYSTIK resident driver **answers a question
-the game asks**. It hooks **BYTEV** (`&020A`, the OSBYTE vector) and intercepts
-**OSBYTE `&81` (INKEY)**. Games that read the keyboard with `INKEY(-key)` — the
-Acornsoft convention the BASIC's help screens describe — call OSBYTE `&81` with a
-negative key number; the resident driver checks that key against its `joystick_map` and,
-if it matches, reads the corresponding input and returns "pressed" (`X=Y=&FF`).
+Rather than *push* keys into the buffer, the JOYSTIK resident driver is **called
+when the game reads the keyboard**. It hooks **BYTEV** (`&020A`, the OSBYTE
+vector) and intercepts **OSBYTE `&81` (INKEY)**. A game that reads the keyboard
+with `INKEY(-key)` calls OSBYTE `&81` with a negative key number; the resident
+driver checks that number against its `joystick_map` and, if it matches, reads
+the corresponding input and returns a "pressed" result (`X=Y=&FF`).
 Every other OSBYTE is passed on to the previous handler through a chain slot
 (`&AFA`) that the BASIC patches to `JMP <old BYTEV>`.
 
@@ -182,13 +185,14 @@ game, which can then be `*SAVE`d and re-installed with `*KEY10 CALL &A00`.
 Putting it together, a run of either program goes:
 
 1. `*RUN` loads the file at `&1900` and jumps to its exec address.
-2. The **loader** decrypts the protected region, repairs the BASIC's first line,
-   and queues `PAGE=…`/`OLD`/`RUN`.
+2. The **loader** decrypts the protected region, restores the length byte in the
+   BASIC's first line, and queues `PAGE=…`/`OLD`/`RUN`.
 3. The OS reads those queued commands and the **BASIC configuration program**
    starts.
 4. The user configures the resident driver; the BASIC **pokes and installs** it
    at `&0A00` (hooking EVNTV or BYTEV).
-5. On finishing, the BASIC prints how to `*SAVE` the resident driver, **erases
-   its own program text**, and ends — leaving the resident driver in place.
-6. The user loads their game; the resident driver quietly translates handset
-   input into the key presses the game expects.
+5. On finishing, the BASIC program prints instructions telling the user how to
+   `*SAVE` the now-configured resident driver to disc, **erases its own program
+   text**, and ends — leaving the resident driver in place.
+6. The user loads their game; the resident driver translates handset input into
+   the key presses the game expects.
