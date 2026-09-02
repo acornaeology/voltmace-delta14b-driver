@@ -35,9 +35,10 @@ import dasmos
 
 _script_dirpath = Path(__file__).resolve().parent
 _version_dirpath = _script_dirpath.parent
-_rom_filepath = os.environ.get(
-    'FANTASM_ROM',
-    str(_version_dirpath / 'rom' / 'voltmace-delta-14b-driver-keypad.rom'),
+_binary_filepath = (
+    os.environ.get('FANTASM_BINARY')
+    or os.environ.get('FANTASM_ROM')
+    or str(_version_dirpath / 'binary' / 'voltmace-delta-14b-driver-keypad')
 )
 _output_dirpath = Path(
     os.environ.get('FANTASM_OUTPUT_DIR', str(_version_dirpath / 'output'))
@@ -85,7 +86,7 @@ d = dasmos.Disassembler.create(
     auto_label_subroutine_prefix='sub_c',
     auto_label_loop_prefix='loop_c',
 )
-d.load(_rom_filepath, LOAD_ADDR)
+d.load(_binary_filepath, LOAD_ADDR)
 
 # Load-and-run metadata for a *RUN-able SAVE (DFS load &1900, exec &3906).
 d.program(exec_addr=EXEC_ADDR, reload_addr=LOAD_ADDR)

@@ -1,0 +1,72 @@
+name: Verify disassembly
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  check-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Check README.md is up to date
+        run: uv run generate_readme.py --check
+
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Add "joystik" once its disassembly driver is in place.
+        version: ["keypad"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Build beebasm
+        uses: actions/cache@v4
+        id: beebasm-cache
+        with:
+          path: /usr/local/bin/beebasm
+          key: beebasm-v1.11-rebuild
+
+      - name: Build beebasm from source
+        if: steps.beebasm-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch v1.11 https://github.com/stardot/beebasm.git /tmp/beebasm
+          cmake -S /tmp/beebasm -B /tmp/beebasm/build
+          make -C /tmp/beebasm/build -j$(nproc)
+          sudo cp /tmp/beebasm/build/beebasm /usr/local/bin/
+
+      # The version ids ("keypad"/"joystik") carry no dots, so the driver
+      # filename is simply disasm_voltmace_delta_14b_driver_<version>.py.
+      - name: Compute driver path
+        id: driver
+        run: |
+          ver="${{ matrix.version }}"
+          ver_no_dots="${ver//./}"
+          echo "path=versions/voltmace-delta-14b-driver-${ver}/disassemble/disasm_voltmace_delta_14b_driver_${ver_no_dots}.py" >> "$GITHUB_OUTPUT"
+
+      # disassemble also regenerates the incbin BASIC payload (.dat) from the
+      # editable source via oaknut-basic's greedy crunch.
+      - name: Disassemble Voltmace Delta 14B ${{ matrix.version }}
+        run: uv run fantasm disassemble ${{ matrix.version }}
+
+      - name: Lint Voltmace Delta 14B ${{ matrix.version }}
+        run: uv run fantasm lint ${{ matrix.version }} ${{ steps.driver.outputs.path }}
+
+      # These are load-and-run programs, not sliced ROMs: verify compares the
+      # whole reassembled file byte-for-byte against the original.
+      - name: Verify Voltmace Delta 14B ${{ matrix.version }}
+        run: uv run fantasm verify ${{ matrix.version }}

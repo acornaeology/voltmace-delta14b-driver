@@ -6,11 +6,11 @@
     "versions": ["keypad", "joystik"],
     "references": [
         {
-            "label": "Voltmace 14B Handset System documentation",
-            "url": "",
+            "label": "SN74LS157 quad 2-line to 1-line data selector/multiplexer datasheet",
+            "url": "docs/sn74ls157.pdf",
             "category": "related",
-            "icon": "doc",
-            "note": "Manufacturer documentation for the Delta 14B handset system."
+            "icon": "chip",
+            "note": "The multiplexer in the Delta 14B/1 interface that strobes the two handsets under software control."
         }
     ]
 }

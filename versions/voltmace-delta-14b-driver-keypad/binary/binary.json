@@ -7,5 +7,11 @@
     "md5": "cd55edf4f74bae0137305d8257f433eb",
     "sha256": "f568fbae851c7d7ffd8a2ebd198de3cb1fba23dfc7180828a182338982bbf78f",
     "notes": "Extracted from the Voltmace Delta 14B driver disc (release 1) with oaknut-disc. A *RUN program that loads at &1900 and executes at &3906. Comprises a 6502 keypad-scanning driver (written to run relocated at &0A00) plus a keypad-definition editor written in BBC BASIC, stored ROL-encoded (rotate-left one bit) as rudimentary protection.",
-    "links": []
+    "links": [],
+    "docs": [
+        {
+            "label": "How the KEYPAD editor (BASIC front-end) works",
+            "path": "basic/keypad-editor.md"
+        }
+    ]
 }

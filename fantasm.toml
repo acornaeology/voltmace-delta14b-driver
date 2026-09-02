@@ -3,12 +3,18 @@
 [project]
 name = "voltmace-delta-14b-driver"
 
-[rom]
-# These binaries are not ROMs but *RUN programs loaded into main memory at
-# &1900. NMOS 6502 (BBC Model B, early-1980s software), so cpu = "6502".
+[binary]
+# These are not ROMs but *RUN programs loaded into main memory at &1900.
+# NMOS 6502 (BBC Model B, early-1980s software), so cpu = "6502".
 # base_address is documentary here; the driver's d.load() sets the real org.
 cpu = "6502"
 base_address = 0x1900
+# The artefacts are plain program binaries, not ROM images: keep them in a
+# neutrally-named binary/ directory with no file extension (matching the
+# original DFS names, e.g. KEYPAD) and a binary.json metadata file.
+dir = "binary"
+extension = ""
+metadata = "binary.json"
 
 [versions]
 prefixes = ["voltmace-delta-14b-driver"]
