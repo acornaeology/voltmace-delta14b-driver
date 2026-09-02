@@ -72,9 +72,12 @@ snooping, not a serious barrier. It has four parts:
   The `REM` text is literally `PROTECTION 3=&16` / `=&17`.
 - **Self-erasure.** When the user finishes configuring, the BASIC blanks its own
   program text (a `FOR … !A%=0` sweep) and detaches, leaving only the resident
-  driver in memory. Both programs also arm soft key 10 (`*KEY10`) as a
-  self-destruct so an interrupted session erases rather than exposes the program
-  (hence their "DO NOT PRESS BREAK" warnings).
+  driver in memory. Both programs also booby-trap the **BREAK key** — a BBC Micro
+  has no f10, so soft key 10 (`*KEY10`) is the "break string" a soft BREAK types,
+  and it is set to a self-destruct — and issue `*FX200,2` so a BREAK also clears
+  user memory. So an interrupted session erases rather than exposes the program
+  (hence the "DO NOT PRESS BREAK" warnings), while ESCAPE is deliberately left
+  live as the handled "restart" path.
 
 Each BASIC configuration program carries a `Z%` flag that would select an
 unprotected/developer mode — leaving the editor listable, and (in JOYSTIK)

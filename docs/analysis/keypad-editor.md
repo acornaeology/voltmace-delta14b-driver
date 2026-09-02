@@ -57,18 +57,23 @@ neither the loader nor the resident driver touches page `&4`. So `Z%` is `0`
 throughout, the `Z%=1` branches are never taken, and the program always runs
 protected.
 
-Line 60, when `Z%=0`, defines soft key 10 (`*KEY10`) as a self-destruct
-sequence — `CLS`, then a loop zeroing `&C00`–`&3A80`, the region where the
-just-relocated BASIC program sits. It only *arms* this trap (hence the "DO NOT
-PRESS BREAK" warning later); it does not run the wipe now, which would erase the
-running editor.
+Line 60, when `Z%=0`, reprograms the **BREAK key**. A BBC Micro has no f10 key;
+soft key 10 (`*KEY10`) is the "break string" that a *soft* (single) BREAK types
+into the input as part of reset. Line 60 sets that string to a self-destruct —
+`CLS`, then a loop zeroing `&C00`–`&3A80`, the region holding the just-relocated
+BASIC program. It only *arms* the trap (hence the "DO NOT PRESS BREAK" warning
+later); it does not run the wipe now, which would erase the running editor.
 
 Lines 70–120 guard against an incompatible operating system: `?&E8AA` is read
 as an OS signature (the expected value is `&4F`); on a mismatch the program
 displays "KEYPAD DRIVER WILL NOT WORK WITH OPERATING SYSTEM OS 0.1" (line 90)
-and stops. Line 130 issues `*FX200,2` (BREAK clears memory, part of the
-protection), line 150 dimensions the arrays, and line 170 shows the intro
-(`PROCINTRO`) before switching to MODE 1 for the editor.
+and stops. Line 130 issues `*FX200,2` — OSBYTE 200 bit 1, "clear user memory on
+the next BREAK" — so a BREAK now wipes the program to the power-on state. It
+sets *only* bit 1, so ESCAPE (bit 0) stays enabled: the two exits are
+deliberately different, and the warnings say so — **BREAK** destroys the
+program, while **ESCAPE** raises the normal escape error (17), which the
+`ONERROR` handler catches to restart. Line 150 dimensions the arrays, and line
+170 shows the intro (`PROCINTRO`) before switching to MODE 1 for the editor.
 
 ## Main loop (180–280)
 
@@ -200,7 +205,9 @@ it to the main loop.
 
 Reached on finish whenever `Z%=0` — which is always, in the shipped program.
 Line 1350 wipes the BASIC program (`FOR N%=PAGE TO PAGE+&1C00 STEP4:!N%=0`),
-leaves an empty program (`!PAGE=&FF0D`), re-arms `*KEY10 CALL&A00`, and prints
-"KEYPAD OPERATIONAL". Line
-1370 resets `PAGE` and `END`s, leaving only the now-configured resident driver
-in memory.
+leaves an empty program (`!PAGE=&FF0D`), and redefines the **BREAK key** from its
+self-destruct to `*KEY10 CALL&A00` — so a subsequent soft BREAK now *re-installs*
+the driver instead of wiping — then prints "KEYPAD OPERATIONAL". Line 1360
+restores `*FX200,0` (memory preserved across BREAK) on OS versions whose
+signature isn't `&4F`; line 1370 resets `PAGE` and `END`s, leaving only the
+now-configured resident driver in memory.

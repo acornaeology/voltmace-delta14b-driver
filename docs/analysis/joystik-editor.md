@@ -51,11 +51,15 @@ the current BYTEV (`OVL%=?&20A:OVH%=?&20B`) — the previous OSBYTE vector, whic
 the resident driver will chain to. As in the KEYPAD editor, `Z%` is a resident
 integer (at `&468`) that selects protected behaviour (`Z%=0`) over an
 unprotected/developer mode (`Z%=1`); it is `0` here and nothing changes it, so
-the protected path always runs. Lines 60–80 accordingly define soft key 10
-(`*KEY10`) as a self-destruct — set an empty program at `PAGE`, zero
-`&1902`–`&5000`, and print "PROGRAM PROTECTED" — *arming* that trap rather than
-firing it now. Line 90 reads the OS version (`?&F0C7`/`?&F0C8`), and lines
-140–150 dimension the working arrays.
+the protected path always runs. Lines 60–80 accordingly reprogram the **BREAK
+key**: a BBC Micro has no f10 key, so soft key 10 (`*KEY10`) is the "break
+string" a *soft* (single) BREAK types into the input. They set it to a
+self-destruct — empty the program at `PAGE`, zero `&1902`–`&5000`, and print
+"PROGRAM PROTECTED" — *arming* the trap rather than firing it now. Line 90 reads
+the OS version (`?&F0C7`/`?&F0C8`); line 130's `*FX200,2` additionally clears
+user memory on the next BREAK (OSBYTE 200 bit 1) while leaving ESCAPE (bit 0)
+working as the handled "restart" path; and lines 140–150 dimension the working
+arrays.
 
 ## Intro and joystick configuration (280–520)
 
