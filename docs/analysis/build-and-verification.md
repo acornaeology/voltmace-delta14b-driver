@@ -113,8 +113,8 @@ BASIC line's length byte at run time, because the file stores it as `0` as part
 of the protection. So the *build* must do the opposite: after tokenising the
 `.bas` (which yields the correct length), it forces byte 3 back to `0` before
 rotating and encrypting. The `.bas` in the repository is therefore the *true*
-program (it lists and runs); only the on-disc image carries the deliberately
-broken length.
+program (it lists and runs); only the stored program image carries the
+deliberately broken length.
 
 ## 7. Verification
 

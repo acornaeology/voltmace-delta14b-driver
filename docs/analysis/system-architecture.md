@@ -1,7 +1,7 @@
 # The Voltmace Delta 14B driver system: architecture and runtime
 
 > **Scope.** This article describes how the original Voltmace Delta 14B/1
-> software fits together — the hardware it drives, the two programs on the disc
+> software fits together — the hardware it drives, the two programs
 > (`KEYPAD` and `JOYSTIK`), the rudimentary protection wrapping them, the BBC
 > BASIC front-ends that configure the drivers, and the resident 6502 drivers
 > that hook into the Acorn MOS. Every address and behaviour below was read from
@@ -30,7 +30,7 @@ of the port-B value.
 
 ## 2. Two programs with a common design
 
-The disc ships two `*RUN` programs — [`KEYPAD`](../../versions/voltmace-delta-14b-driver-keypad/binary/KEYPAD)
+The software ships two `*RUN` programs — [`KEYPAD`](../../versions/voltmace-delta-14b-driver-keypad/binary/KEYPAD)
 and [`JOYSTIK`](../../versions/voltmace-delta-14b-driver-joystik/binary/JOYSTIK)
 — that share a design. Each is a single file that loads into main memory at
 `&1900` and contains three kinds of thing:
@@ -196,7 +196,7 @@ Putting it together, a run of either program goes:
 4. The user configures the resident driver; the BASIC **pokes and installs** it
    at `&0A00` (hooking EVNTV or BYTEV).
 5. On finishing, the BASIC program prints instructions telling the user how to
-   `*SAVE` the now-configured resident driver to disc, **erases its own program
-   text**, and ends — leaving the resident driver in place.
+   `*SAVE` the now-configured resident driver (to tape or disc), **erases its own
+   program text**, and ends — leaving the resident driver in place.
 6. The user loads their game; the resident driver translates handset input into
    the key presses the game expects.
