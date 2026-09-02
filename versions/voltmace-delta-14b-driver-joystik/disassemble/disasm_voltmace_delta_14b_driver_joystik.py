@@ -132,6 +132,44 @@ def build_encoded_dat(driver_a_bytes, driver_b_bytes, bas_filepath):
     return bytes(_ror(b) for b in plain_encoded) + basic[split:]
 
 
+def _emit_joystick_map(dd, driver_bytes, comment_fn):
+    """Render joystick_map as one 2-byte entry per line, each with its own comment."""
+    base = 0x0AB0
+    for addr in range(base, 0x0AFA, 2):
+        i = (addr - base) // 2
+        key = driver_bytes[addr - DRIVER_RUNTIME]
+        param = driver_bytes[addr - DRIVER_RUNTIME + 1]
+        dd.byte(addr, 2, override=True)
+        dd.comment(addr, comment_fn(i, key, param), align=dasmos.Align.INLINE)
+    dd.label(base, 'joystick_map')
+    dd.comment(base, '2-byte entries <INKEY key, input descriptor>. The key byte '
+                     'is 0 here; the BASIC (PROCASSEM, lines 1780-1830) pokes each '
+                     "with the user's chosen INKEY value. The fixed descriptor "
+                     'decodes as:')
+
+
+def _map_comment_a(i, key, param):
+    hi, lo = param >> 4, param & 0xF
+    if i < 8:
+        return (f'joystick axis: ADC channel {hi}, '
+                f"{'high' if lo & 1 == 0 else 'low'} threshold")
+    if param == 0:
+        return 'end-of-map marker'
+    if hi == 0:
+        return f'fire button: ADVAL(0), bit mask &{lo:X}'
+    return f'keypad cell &{param:02X} (inert in this analogue-only variant)'
+
+
+def _map_comment_b(i, key, param):
+    hi, lo = param >> 4, param & 0xF
+    if i < 8:
+        return (f'joystick axis: ADC channel {hi}, '
+                f"{'high' if lo & 1 == 0 else 'low'} threshold")
+    if param == 0:
+        return 'end-of-map marker'
+    return f'keypad: strobe column &{param & 0xF0:02X}, test row bit &{lo:X}'
+
+
 def _annotate_driver_common(dd):
     """Labels, install routine, and BYTEV-handler frame shared by both variants."""
     dd.label(0x020A, 'bytev')            # BYTEV: the OSBYTE indirection vector
@@ -160,7 +198,7 @@ patched the chain slot (line 1840) and sensitivity thresholds (line 1850).""",
     return ci
 
 
-def annotate_driver_a(dd):
+def annotate_driver_a(dd, driver_bytes):
     """Variant A: joystick only (analogue port via OSBYTE &80 / ADVAL)."""
     ci = _annotate_driver_common(dd)
     dd.subroutine(
@@ -274,12 +312,7 @@ OSBYTE &80 (ADVAL) and compare the value against the sensitivity thresholds
     dd.byte(0x0A99, 0x0AB0 - 0x0A99)
     dd.label(0x0A99, 'unused_a')
     dd.comment(0x0A99, 'Unused')
-    dd.byte(0x0AB0, 0x0AFA - 0x0AB0)
-    dd.label(0x0AB0, 'joystick_map')
-    dd.comment(0x0AB0, '2-byte entries (INKEY key number, parameter). The '
-                       "parameter's top nibble is the ADC channel; the low bits "
-                       'select the threshold / fire-button test. Buttons first, '
-                       'then the four directions.')
+    _emit_joystick_map(dd, driver_bytes, _map_comment_a)
     dd.byte(0x0AFA, 3)
     dd.label(0x0AFA, 'chain_to_old_bytev')
     dd.comment(0x0AFA, 'RTS placeholder; the BASIC (line 1840) patches this to '
@@ -295,7 +328,7 @@ OSBYTE &80 (ADVAL) and compare the value against the sensitivity thresholds
     ci(0x0AFF, 'Unused')
 
 
-def annotate_driver_b(dd):
+def annotate_driver_b(dd, driver_bytes):
     """Variant B: joystick (analogue) plus keypad matrix (User VIA)."""
     ci = _annotate_driver_common(dd)
     dd.label(0xFE60, 'user_via_orb')
@@ -412,12 +445,7 @@ result_flag.""",
     dd.byte(0x0A9E, 0x0AB0 - 0x0A9E)
     dd.label(0x0A9E, 'unused_b')
     dd.comment(0x0A9E, 'Unused')
-    dd.byte(0x0AB0, 0x0AFA - 0x0AB0)
-    dd.label(0x0AB0, 'joystick_map')
-    dd.comment(0x0AB0, '2-byte entries (INKEY key number, parameter). Entries '
-                       'below &10 test an analogue channel (top nibble) against '
-                       'the thresholds; entries >= &10 strobe a keypad column '
-                       '(top nibble) and test a row bit (low nibble).')
+    _emit_joystick_map(dd, driver_bytes, _map_comment_b)
     dd.byte(0x0AFA, 3)
     dd.label(0x0AFA, 'chain_to_old_bytev')
     dd.comment(0x0AFA, 'RTS placeholder; the BASIC (line 1840) patches this to '
@@ -697,8 +725,9 @@ for _name, _addr, _annotate in (
     ('a', DRIVER_A_ADDR, annotate_driver_a),
     ('b', DRIVER_B_ADDR, annotate_driver_b),
 ):
-    _dd = _make_driver_disassembler(_decoded(_image, _addr))
-    _annotate(_dd)
+    _bytes = _decoded(_image, _addr)
+    _dd = _make_driver_disassembler(_bytes)
+    _annotate(_dd, _bytes)
     _asm = _render_driver(_dd)
     _asm_filepath = _output_dirpath / f'voltmace-delta-14b-driver-joystik-driver-{_name}.asm'
     _asm_filepath.write_text(_asm, encoding='utf-8')

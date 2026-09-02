@@ -148,16 +148,46 @@ osbyte        = &fff4
 .unused_b
     equb &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00   ; 0a9e: 00 00 00... ......
     equb &00, &00, &00, &00, &00, &00                                 ; 0aaa: 00 00 00... ......
-; 2-byte entries (INKEY key number, parameter). Entries below &10 test an analogue channel (top nibble) against the thresholds; entries >= &10 strobe a keypad column (top nibble) and test a row bit (low nibble).
+; 2-byte entries <INKEY key, input descriptor>. The key byte is 0 here; the BASIC (PROCASSEM, lines 1780-1830) pokes each with the user's chosen INKEY value. The fixed descriptor decodes as:
 ; &0ab0 used as index base 5 times by &0a1b, &0a44, &0a4c, &0a6c, &0a74
 .joystick_map
-    equb &00, &10, &00, &11, &00, &20, &00, &21, &00, &30, &00, &31   ; 0ab0: 00 10 00... ......
-    equb &00, &40, &00, &41, &00, &51, &00, &51, &00, &51, &00, &31   ; 0abc: 00 40 00... .@....
-    equb &00, &61, &00, &32, &00, &52, &00, &62, &00, &34, &00, &54   ; 0ac8: 00 61 00... .a....
-    equb &00, &64, &00, &38, &00, &58, &00, &68, &00, &d1, &00, &d1   ; 0ad4: 00 64 00... .d....
-    equb &00, &d1, &00, &b1, &00, &e1, &00, &b2, &00, &d2, &00, &e2   ; 0ae0: 00 d1 00... ......
-    equb &00, &b4, &00, &d4, &00, &e4, &00, &b8, &00, &d8, &00, &e8   ; 0aec: 00 b4 00... ......
-    equb &00, &00                                                     ; 0af8: 00 00       ..    
+    equb &00, &10                                                     ; 0ab0: 00 10       ..       ; joystick axis: ADC channel 1, high threshold
+    equb &00, &11                                                     ; 0ab2: 00 11       ..       ; joystick axis: ADC channel 1, low threshold
+    equb &00, &20                                                     ; 0ab4: 00 20       .        ; joystick axis: ADC channel 2, high threshold
+    equb &00, &21                                                     ; 0ab6: 00 21       .!       ; joystick axis: ADC channel 2, low threshold
+    equb &00, &30                                                     ; 0ab8: 00 30       .0       ; joystick axis: ADC channel 3, high threshold
+    equb &00, &31                                                     ; 0aba: 00 31       .1       ; joystick axis: ADC channel 3, low threshold
+    equb &00, &40                                                     ; 0abc: 00 40       .@       ; joystick axis: ADC channel 4, high threshold
+    equb &00, &41                                                     ; 0abe: 00 41       .A       ; joystick axis: ADC channel 4, low threshold
+    equb &00, &51                                                     ; 0ac0: 00 51       .Q       ; keypad: strobe column &50, test row bit &1
+    equb &00, &51                                                     ; 0ac2: 00 51       .Q       ; keypad: strobe column &50, test row bit &1
+    equb &00, &51                                                     ; 0ac4: 00 51       .Q       ; keypad: strobe column &50, test row bit &1
+    equb &00, &31                                                     ; 0ac6: 00 31       .1       ; keypad: strobe column &30, test row bit &1
+    equb &00, &61                                                     ; 0ac8: 00 61       .a       ; keypad: strobe column &60, test row bit &1
+    equb &00, &32                                                     ; 0aca: 00 32       .2       ; keypad: strobe column &30, test row bit &2
+    equb &00, &52                                                     ; 0acc: 00 52       .R       ; keypad: strobe column &50, test row bit &2
+    equb &00, &62                                                     ; 0ace: 00 62       .b       ; keypad: strobe column &60, test row bit &2
+    equb &00, &34                                                     ; 0ad0: 00 34       .4       ; keypad: strobe column &30, test row bit &4
+    equb &00, &54                                                     ; 0ad2: 00 54       .T       ; keypad: strobe column &50, test row bit &4
+    equb &00, &64                                                     ; 0ad4: 00 64       .d       ; keypad: strobe column &60, test row bit &4
+    equb &00, &38                                                     ; 0ad6: 00 38       .8       ; keypad: strobe column &30, test row bit &8
+    equb &00, &58                                                     ; 0ad8: 00 58       .X       ; keypad: strobe column &50, test row bit &8
+    equb &00, &68                                                     ; 0ada: 00 68       .h       ; keypad: strobe column &60, test row bit &8
+    equb &00, &d1                                                     ; 0adc: 00 d1       ..       ; keypad: strobe column &D0, test row bit &1
+    equb &00, &d1                                                     ; 0ade: 00 d1       ..       ; keypad: strobe column &D0, test row bit &1
+    equb &00, &d1                                                     ; 0ae0: 00 d1       ..       ; keypad: strobe column &D0, test row bit &1
+    equb &00, &b1                                                     ; 0ae2: 00 b1       ..       ; keypad: strobe column &B0, test row bit &1
+    equb &00, &e1                                                     ; 0ae4: 00 e1       ..       ; keypad: strobe column &E0, test row bit &1
+    equb &00, &b2                                                     ; 0ae6: 00 b2       ..       ; keypad: strobe column &B0, test row bit &2
+    equb &00, &d2                                                     ; 0ae8: 00 d2       ..       ; keypad: strobe column &D0, test row bit &2
+    equb &00, &e2                                                     ; 0aea: 00 e2       ..       ; keypad: strobe column &E0, test row bit &2
+    equb &00, &b4                                                     ; 0aec: 00 b4       ..       ; keypad: strobe column &B0, test row bit &4
+    equb &00, &d4                                                     ; 0aee: 00 d4       ..       ; keypad: strobe column &D0, test row bit &4
+    equb &00, &e4                                                     ; 0af0: 00 e4       ..       ; keypad: strobe column &E0, test row bit &4
+    equb &00, &b8                                                     ; 0af2: 00 b8       ..       ; keypad: strobe column &B0, test row bit &8
+    equb &00, &d8                                                     ; 0af4: 00 d8       ..       ; keypad: strobe column &D0, test row bit &8
+    equb &00, &e8                                                     ; 0af6: 00 e8       ..       ; keypad: strobe column &E0, test row bit &8
+    equb &00, &00                                                     ; 0af8: 00 00       ..       ; end-of-map marker
 ; RTS placeholder; the BASIC (line 1840) patches this to JMP <previous BYTEV> so non-INKEY OSBYTEs are chained.
 ; &0afa referenced 1 time by &0a39
 .chain_to_old_bytev
