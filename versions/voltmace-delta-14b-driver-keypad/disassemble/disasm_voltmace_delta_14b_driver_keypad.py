@@ -21,9 +21,9 @@ The file loads at &1900 and executes at &3906. Its layout:
                down (driver to &0A00, BASIC to &0C00), decrypts the BASIC,
                and queues PAGE=&C00 / OLD / RUN to start it.
 
-This baseline classifies the ROL-encoded BASIC region as raw data so the
-whole file round-trips byte-identically; a later revision will carry that
-region as detokenised BASIC source (basic/*.bas) re-encoded at build time.
+The ROL-encoded BASIC region is carried as detokenised source (basic/*.bas)
+and re-encoded to an incbin payload at build time (build_basic_dat), so the
+whole file still reassembles byte-identically.
 """
 import os
 import shutil
@@ -109,6 +109,19 @@ d.comment(BASIC_START, 'ROL-encoded tokenised BASIC (the keypad-definition '
                        'editor); relocates to PAGE=&0C00 and is decrypted in '
                        'place. Source: basic/voltmace-delta-14b-driver-keypad.bas.')
 
+# Inline-comment helpers: cm() annotates the relocated driver (&0A00),
+# ct() annotates the in-place loader tail (&3900).
+INLINE = dasmos.Align.INLINE
+
+
+def cm(addr, text):
+    d.comment(addr, text, align=INLINE, move=driver)
+
+
+def ct(addr, text):
+    d.comment(addr, text, align=INLINE)
+
+
 # ---------------------------------------------------------------------------
 # MOS entry points, hardware registers, and OS locations
 # ---------------------------------------------------------------------------
@@ -120,20 +133,22 @@ d.label(0xFE62, 'user_via_ddrb')   # User 6522 VIA data-direction register B
 d.label(0x0220, 'evntv')           # EVNTV: the event vector
 d.label(0x0221, 'evntv_hi')
 d.label(0xE8AA, 'os_signature')    # OS ROM byte read to distinguish OS versions
+d.label(0x0300, 'kbd_buffer')      # &0300 page holding the MOS keyboard buffer (&03E0-&03FF)
+d.label(0x0C03, 'basic_line10_len')  # length byte of the relocated BASIC's line 10
 
 # Zero-page scratch used by the relocator/decoder in the tail.
 d.label(0x0070, 'copy_dst')        # &70/&71: block-copy destination pointer
 d.label(0x0071, 'copy_dst_hi')
 d.label(0x0072, 'copy_src')        # &72/&73: block-copy source pointer
 d.label(0x0073, 'copy_src_hi')
-d.label(0x0074, 'copy_rem')        # &74: remainder byte count
+d.label(0x0074, 'copy_rem')        # &74: leftover byte count
 d.label(0x0075, 'copy_pages')      # &75: whole-page count to copy
 d.label(0x0080, 'decode_ptr')      # &80/&81: ROL-decode cursor
 d.label(0x0081, 'decode_ptr_hi')
-d.label(0x023C, 'autorun_index')   # running index into the auto-run buffer
+d.label(0x023C, 'autorun_index')   # running fill index into the keyboard buffer
 
 # ---------------------------------------------------------------------------
-# The driver, at its &0A00 runtime address
+# install_driver -- the driver, at its &0A00 runtime address
 # ---------------------------------------------------------------------------
 d.subroutine(
     DRIVER_RUNTIME, 'install_driver', move=driver,
@@ -143,54 +158,171 @@ matrix scanner. Sets User VIA port B to strobe the keypad (DDRB = &F0: top
 nibble out, bottom nibble in) and hooks EVNTV to point at the event handler,
 saving the previous vector at saved_evntv. Called from the BASIC front-end
 via CALL &A00.""",
+    on_exit={'A': 'corrupted', 'X': 'corrupted', 'Y': 'corrupted'},
 )
-d.comment(0x0A06, 'Ask the MOS to fire an event on every 50 Hz vertical sync '
-                  '(OSBYTE 14, event 4)', move=driver)
-d.comment(0x0A0D, 'Drive the column strobes and 74LS157 handset-select as outputs '
-                  'and sense the four row lines as inputs', move=driver)
-d.comment(0x0A13, 'Remember whoever currently owns the event vector, to chain to',
-          move=driver)
-d.comment(0x0A1F, 'Take over EVNTV so each vsync enters the scanner', move=driver)
+cm(0x0A00, 'Preserve the caller flags')
+cm(0x0A01, 'Preserve A')
+cm(0x0A02, 'Preserve Y...')
+cm(0x0A03, '...on the stack')
+cm(0x0A04, 'Preserve X...')
+cm(0x0A05, '...on the stack')
+cm(0x0A06, 'OSBYTE 14: enable an event...')
+cm(0x0A08, '...event 4, the 50 Hz vertical sync')
+cm(0x0A0A, 'call OSBYTE')
+cm(0x0A0D, 'DDRB = &F0: bits 4-7 drive the column strobes + 74LS157 select...')
+cm(0x0A0F, '...bits 0-3 sense the four row lines')
+cm(0x0A12, 'Block IRQs while re-pointing the vector')
+cm(0x0A13, 'Save the current event vector low byte...')
+cm(0x0A16, '...at saved_evntv, to chain to on exit')
+cm(0x0A19, 'Save its high byte...')
+cm(0x0A1C, '...too')
+cm(0x0A1F, 'Point EVNTV at vsync_event_handler: low byte &31...')
+cm(0x0A21, '...store it')
+cm(0x0A24, '...high byte &0A...')
+cm(0x0A26, '...store it')
+cm(0x0A29, 'Re-enable IRQs')
+cm(0x0A2A, 'Restore X...')
+cm(0x0A2B, '...from the stack')
+cm(0x0A2C, 'Restore Y...')
+cm(0x0A2D, '...from the stack')
+cm(0x0A2E, 'Restore A')
+cm(0x0A2F, 'Restore the flags')
+cm(0x0A30, 'Return to the BASIC caller')
 
+# ---------------------------------------------------------------------------
+# vsync_event_handler -- runs off EVNTV every frame
+# ---------------------------------------------------------------------------
 d.subroutine(
     0x0A31, 'vsync_event_handler', move=driver,
     title='Vertical-sync event handler: scan the keypad',
     description="""Entered from the MOS every 50 Hz vsync event. Strobes the
 3x4 matrix through User VIA port B (bit 7 selects handset 0/1 via the 74LS157),
-debounces via debounce_counter, and on a newly-pressed key sounds a short beep
-(OSWORD 7) and inserts the mapped character into the keyboard buffer
-(OSBYTE &99). Chains to the previous event vector on exit.""",
+debounces and auto-repeats via debounce_counter, and on a pressed key sounds a
+short key-click (OSWORD 7) and inserts the mapped character into the keyboard
+buffer (OSBYTE &99). Chains to the previous event vector on exit.""",
 )
-d.comment(0x0A37, 'Probe for activity: strobe all columns low and read the rows back',
-          move=driver)
-d.comment(0x0AA2, 'Acknowledge the press with a short key-click (OSWORD 7)', move=driver)
-d.comment(0x0AB1, 'Look up the character for this matrix cell (col*4 + row)', move=driver)
-d.comment(0x0AB8, 'Deliver the keystroke into the keyboard buffer as if typed '
-                  '(OSBYTE &99)', move=driver)
-d.comment(0x0ACD, 'Hand the event on to the handler we displaced', move=driver)
-
-# Driver data tables (dasmos already classifies most of these as data).
-d.label(0x0AD0, 'debounce_counter', move=driver)
-d.label(0x0AD1, 'current_row', move=driver)
-d.label(0x0AD2, 'current_col', move=driver)
-d.label(0x0AD3, 'row_masks', move=driver)
-d.comment(0x0AD3, 'input-bit mask for each of the 4 matrix rows', move=driver)
-d.label(0x0AD7, 'col_strobes', move=driver)
-d.comment(0x0AD7, 'column strobes: the 3 columns for handset 0 (&60,&50,&30) '
-                  'then handset 1 (bit 7 set selects it via the 74LS157)',
-          move=driver)
-d.label(0x0ADD, 'key_codes', move=driver)
-d.comment(0x0ADD, 'default character for each of the 24 cells (col*4+row): '
-                  'handset 0 = digits/DELETE/RETURN, handset 1 = letters A-L',
-          move=driver)
-d.label(0x0AF6, 'sound_block', move=driver)
-d.comment(0x0AF6, 'OSWORD 7 parameter block: channel, amplitude, pitch, duration',
-          move=driver)
-d.label(0x0AFE, 'saved_evntv', move=driver)
-d.comment(0x0AFE, 'previous EVNTV, restored by the JMP (saved_evntv)', move=driver)
+cm(0x0A31, 'Preserve the interrupted flags')
+cm(0x0A32, 'Preserve A')
+cm(0x0A33, 'Preserve Y...')
+cm(0x0A34, '...on the stack')
+cm(0x0A35, 'Preserve X...')
+cm(0x0A36, '...on the stack')
+cm(0x0A37, 'Quick probe: drive every column low on handset 0...')
+cm(0x0A39, '...write it')
+cm(0x0A3C, '...and read the rows back')
+cm(0x0A3F, 'All four rows high (&0F) => nothing down on handset 0')
+cm(0x0A41, 'Something is down -> go locate it')
+cm(0x0A43, 'Probe handset 1 (bit 7 selects it)...')
+cm(0x0A45, '...write it')
+cm(0x0A48, '...read the rows')
+cm(0x0A4B, '&8F = handset-1 select set, all rows high = no key')
+cm(0x0A4D, 'Nothing on either handset -> idle')
+d.label(0x0A4F, 'check_held_key', move=driver)
+cm(0x0A4F, 'Is a key already being held? (current_row 5 = none)')
+cm(0x0A52, 'against the "none" marker (5)')
+cm(0x0A54, 'No held key -> full matrix scan')
+cm(0x0A56, 'Re-test the held key: fetch its column strobe...')
+cm(0x0A59, 'from the strobe table')
+cm(0x0A5C, '...drive it')
+cm(0x0A5F, '...read the rows...')
+cm(0x0A62, '...and mask its row bit')
+cm(0x0A65, 'Released (bit high now) -> rescan for a new key')
+cm(0x0A67, 'Still held: count down to the next auto-repeat '
+           '(patched to LDA by the editor to disable auto-repeat)')
+cm(0x0A6A, 'Not time to repeat yet -> exit')
+cm(0x0A6C, 'Reload the repeat interval (4 frames)...')
+cm(0x0A6E, 'store it')
+cm(0x0A71, 'clear carry for the branch')
+cm(0x0A72, 'Re-emit the held key')
+d.label(0x0A74, 'scan_matrix', move=driver)
+cm(0x0A74, 'Full scan: start at column 0')
+d.label(0x0A76, 'scan_next_column', move=driver)
+cm(0x0A76, 'Start at row 0 of this column')
+d.label(0x0A78, 'scan_next_row', move=driver)
+cm(0x0A78, 'Only (re)strobe the column when starting at row 0...')
+cm(0x0A7A, '...otherwise the strobe already stands')
+cm(0x0A7C, 'Drive column X (its handset bit included)...')
+cm(0x0A7F, 'write it')
+d.label(0x0A82, 'test_row', move=driver)
+cm(0x0A82, 'Read the rows...')
+cm(0x0A85, '...test this row bit')
+cm(0x0A88, 'Bit low -> key at (column X, row Y) is pressed')
+cm(0x0A8A, 'Next row...')
+cm(0x0A8B, 'all four rows done?')
+cm(0x0A8D, '...until all 4 rows tested')
+cm(0x0A8F, 'Next column...')
+cm(0x0A90, '...6 columns = 3 per handset')
+cm(0x0A92, 'loop back for the next column')
+cm(0x0A94, 'clear carry for the branch')
+cm(0x0A95, 'Nothing pressed -> exit')
+d.label(0x0A97, 'key_pressed', move=driver)
+cm(0x0A97, 'New press: set the initial auto-repeat delay (24 frames)...')
+cm(0x0A99, 'store it')
+cm(0x0A9C, 'Remember which key is now held: column...')
+cm(0x0A9F, '...and row')
+d.label(0x0AA2, 'emit_key', move=driver)
+cm(0x0AA2, 'OSWORD 7: play the key-click sound...')
+cm(0x0AA4, '...parameter block at sound_block (&0AF6)...')
+cm(0x0AA6, 'block high byte &0A')
+cm(0x0AA8, 'call OSWORD')
+cm(0x0AAB, 'Key-table index = col*4 + row:')
+cm(0x0AAC, 'take the column...')
+cm(0x0AAF, '...times 4...')
+cm(0x0AB0, 'shifted twice = x4')
+cm(0x0AB1, '...plus the row')
+cm(0x0AB4, '...as an index')
+cm(0x0AB5, 'Fetch that cell character into Y')
+cm(0x0AB8, 'OSBYTE &99: insert Y into buffer 0 (keyboard)...')
+cm(0x0ABA, 'X=0 selects the keyboard buffer')
+cm(0x0ABC, '...as if the key were typed')
+cm(0x0ABF, 'clear carry for the branch')
+cm(0x0AC0, 'Done')
+d.label(0x0AC2, 'no_key_down', move=driver)
+cm(0x0AC2, "Record 'no key held' (row 5)...")
+cm(0x0AC4, 'store it')
+d.label(0x0AC7, 'handler_exit', move=driver)
+cm(0x0AC7, 'Restore X...')
+cm(0x0AC8, 'into X')
+cm(0x0AC9, 'Restore Y...')
+cm(0x0ACA, 'into Y')
+cm(0x0ACB, 'Restore A')
+cm(0x0ACC, 'Restore the flags')
+cm(0x0ACD, 'Chain to the event handler we displaced')
 
 # ---------------------------------------------------------------------------
-# The *RUN entry and relocator/decoder, in place in the file (&3900 page)
+# Driver data tables (in the relocated &0A00 block)
+# ---------------------------------------------------------------------------
+d.label(0x0AD0, 'debounce_counter', move=driver)
+cm(0x0AD0, 'Frames until the next auto-repeat (0 = repeat this frame)')
+d.label(0x0AD1, 'current_row', move=driver)
+cm(0x0AD1, 'Row of the held key (5 = none)')
+d.label(0x0AD2, 'current_col', move=driver)
+cm(0x0AD2, 'Column of the held key')
+d.label(0x0AD3, 'row_masks', move=driver)
+cm(0x0AD3, 'Port-B input bit for matrix rows 0-3')
+d.byte(0x0AD7, 6, move=driver, override=True)
+d.label(0x0AD7, 'col_strobes', move=driver)
+cm(0x0AD7, 'Port-B strobe per column: cols 0-2 = handset 0 (&60,&50,&30), '
+           'cols 3-5 = handset 1 (bit 7 set for the 74LS157)')
+d.label(0x0ADD, 'key_codes', move=driver)
+cm(0x0ADD, 'Default character per cell, indexed col*4+row: cells 0-11 handset 0 '
+           '(digits/DELETE/RETURN), cells 12-23 handset 1 (letters). The editor '
+           'overwrites this table.')
+d.byte(0x0AF5, 1, move=driver)
+cm(0x0AF5, 'Spare byte')
+d.word(0x0AF6, 8, move=driver, override=True)
+d.label(0x0AF6, 'sound_block', move=driver)
+# The pitch value &0080 must stay a literal, not resolve to the decode_ptr ZP label.
+d.expr(0x0AFA, '&0080', move=driver)
+cm(0x0AF6, 'OSWORD 7 block: channel &0000, amplitude &FFF8 (patched by the '
+           'editor beep option), pitch &0080, duration &0001')
+d.word(0x0AFE, 2, move=driver, override=True)
+d.label(0x0AFE, 'saved_evntv', move=driver)
+d.label(0x0AFF, 'saved_evntv_hi', move=driver)
+cm(0x0AFE, 'Previous EVNTV, chained to on exit')
+
+# ---------------------------------------------------------------------------
+# main -- the *RUN entry and loader tail, in place in the file (&3900 page)
 # ---------------------------------------------------------------------------
 d.subroutine(
     EXEC_ADDR, 'main',
@@ -200,18 +332,75 @@ d.subroutine(
 &0C00), decrypts the BASIC in place, then queues 'PAGE=&C00 / OLD / RUN' so the
 now-plain BASIC front-end starts.""",
 )
+ct(0x3906, 'Preserve A')
+ct(0x3907, 'Preserve X...')
+ct(0x3908, '...on the stack')
+ct(0x3909, 'Preserve Y...')
+ct(0x390A, '...on the stack')
+ct(0x390B, 'Copy the image down (driver to &0A00, BASIC to PAGE &0C00)')
+ct(0x390E, 'Decrypt the relocated BASIC in place')
+ct(0x3911, "Repair the BASIC's first-line length byte")
+ct(0x3914, 'Queue the auto-run commands (OS-dependent)')
+ct(0x3917, 'Restore Y...')
+ct(0x3918, 'into Y')
+ct(0x3919, 'Restore X...')
+ct(0x391A, 'into X')
+ct(0x391B, 'Restore A')
+ct(0x391C, 'Return to the MOS; the queued commands then run the BASIC')
+
 d.subroutine(
     0x391D, 'decode_basic',
     title='Decrypt the relocated BASIC',
     description="""Rotate every byte of the relocated BASIC left one bit (the
 inverse of the ROL-1 storage protection), across pages &0C00-&2AFF, in place.""",
 )
+ct(0x391D, 'Save the caller decode_ptr low byte...')
+ct(0x391F, 'save it')
+ct(0x3922, '...and high byte...')
+ct(0x3924, '...at decode_ptr_save')
+ct(0x3927, 'Point decode_ptr at PAGE &0C00: low byte 0...')
+ct(0x3929, 'set it')
+ct(0x392B, '...high byte &0C...')
+ct(0x392D, 'byte index 0')
+d.label(0x392F, 'decode_next_page', move=None)
+ct(0x392F, 'Set the page being decrypted')
+d.label(0x3931, 'decode_next_byte', move=None)
+ct(0x3931, 'Read an encrypted byte...')
+ct(0x3933, 'clear carry for the rotate')
+ct(0x3934, '...rotate it left one bit (undo the ROL-1 protection)...')
+ct(0x3935, '...carrying bit 7 into bit 0...')
+ct(0x3937, '...and store it back')
+ct(0x3939, 'Next byte...')
+ct(0x393A, '...to the end of the page')
+ct(0x393C, 'Next page...')
+ct(0x393E, 'increment the page')
+ct(0x393F, '...until page &2B (end of the BASIC region)')
+ct(0x3941, 'keep decrypting pages')
+ct(0x3943, 'Restore the caller decode_ptr...')
+ct(0x3946, 'low byte')
+ct(0x3948, 'high byte')
+ct(0x394B, 'store it')
+ct(0x394D, 'Done')
+
 d.subroutine(
     0x394E, 'os_dependent_setup',
     title='OS-version-dependent setup',
-    description='Reads os_signature to choose between the two setup paths below.',
+    description='Reads os_signature to pick how the auto-run commands are queued.',
 )
-d.label(0x0C03, 'basic_line10_len')
+ct(0x394E, 'clear Y')
+ct(0x3950, 'Read the OS ROM signature byte...')
+ct(0x3953, "...'O' identifies the supported OS")
+ct(0x3955, 'Supported OS -> poke the buffer directly')
+ct(0x3957, 'Other OS -> insert via OSBYTE')
+ct(0x395A, 'Done')
+d.label(0x395B, 'use_direct_poke', move=None)
+ct(0x395B, 'Queue by poking the keyboard buffer')
+ct(0x395E, 'Done')
+d.word(0x395F, 2, override=True)
+d.label(0x395F, 'decode_ptr_save')
+d.label(0x3960, 'decode_ptr_save_hi')
+ct(0x395F, "Scratch: caller's decode_ptr saved across decode_basic (NOP NOP at rest)")
+
 d.subroutine(
     0x3961, 'patch_basic_header',
     title="Repair the BASIC program's first line",
@@ -219,46 +408,146 @@ d.subroutine(
 line-10 REM at PAGE=&0C00. That byte is stored as 0 (part of the protection),
 so without this repair the relocated program cannot be LISTed or RUN.""",
 )
+ct(0x3961, 'The first BASIC line is 22 bytes long...')
+ct(0x3963, '...restore its length byte (stored as 0 by the protection)')
+ct(0x3966, 'Done')
+
 d.subroutine(
     0x3967, 'queue_autorun',
-    title='Queue the auto-run command string',
-    description="""Copy autorun_commands ('PA.=&C00' / 'OLD' / 'RUN') into the
-input buffer so the MOS 'types' them and the decoded BASIC runs.""",
+    title='Queue the auto-run commands (direct poke)',
+    description="""Copy autorun_commands into the MOS keyboard buffer so the OS
+reads them as typed and runs the decoded BASIC. autorun_index wraps into the
+32-byte buffer at &03E0-&03FF.""",
 )
+ct(0x3967, 'Start at the first command byte')
+d.label(0x3969, 'queue_next_byte', move=None)
+ct(0x3969, 'Current buffer fill position...')
+ct(0x396C, 'read a command byte...')
+ct(0x396F, '...&00 terminates')
+ct(0x3971, 'Poke it into the keyboard buffer')
+ct(0x3974, 'Advance the fill position...')
+ct(0x3977, 'reload it')
+ct(0x397A, 'unless it wrapped to 0')
+ct(0x397C, '...wrapping back to &E0 (buffer at &03E0)...')
+ct(0x397E, 'store it')
+d.label(0x3981, 'queue_advance', move=None)
+ct(0x3981, 'Next command byte')
+ct(0x3982, 'loop')
+d.label(0x3985, 'queue_done', move=None)
+ct(0x3985, 'Done')
+
 d.subroutine(
     0x3986, 'setup_keys',
-    title='Alternate key setup (OSBYTE path)',
+    title='Queue the auto-run commands (OSBYTE path)',
+    description="""The non-&4F-OS variant of queue_autorun: set the BREAK/ESCAPE
+behaviour, then insert each autorun_commands byte with OSBYTE &8A.""",
 )
+ct(0x3986, 'OSBYTE 200: set the BREAK/ESCAPE behaviour...')
+ct(0x3988, 'value 3')
+ct(0x398A, 'call OSBYTE')
+ct(0x398D, 'Start at the first command byte')
+d.label(0x398F, 'insert_next_key', move=None)
+ct(0x398F, 'Read a command byte...')
+ct(0x3992, '...&00 terminates')
+ct(0x3994, 'The character to insert')
+ct(0x3995, 'Save the loop index...')
+ct(0x3996, 'save it')
+ct(0x3999, 'OSBYTE &8A: insert Y into buffer 0 (keyboard)...')
+ct(0x399B, 'A = &8A')
+ct(0x399D, 'call OSBYTE')
+ct(0x39A0, 'Restore the loop index...')
+ct(0x39A3, 'into X')
+ct(0x39A4, 'Next command byte')
+ct(0x39A5, 'loop')
+d.label(0x39A8, 'setup_keys_done', move=None)
+ct(0x39A8, 'Done')
+d.byte(0x39A9, 1)
+d.label(0x39A9, 'setup_key_index')
+ct(0x39A9, 'Scratch: saved loop index (NOP at rest)')
+
 d.subroutine(
     0x39AA, 'relocate_image',
     title='Relocate the program image to &0A00',
-    description="""OSCLI the command at oscli_command, then block-copy the image
-from &1900 down to &0A00 (copy_pages pages via copy_src -> copy_dst), skipping
+    description="""OSCLI the startup command, then block-copy the image from
+&1900 down to &0A00 (copy_pages pages via copy_src -> copy_dst), skipping
 destination page &0B so the soft-key buffer survives.""",
 )
-d.comment(0x39D2, 'Leave page &0B untouched so the user soft-key definitions survive '
-                  'the move', align=dasmos.Align.INLINE)
+ct(0x39AA, 'OSCLI the startup command at oscli_command (&39F1): low byte...')
+ct(0x39AC, '...high byte...')
+ct(0x39AE, '...call OSCLI')
+ct(0x39B1, '(carry set; not used by the copy below)')
+ct(0x39B2, 'Leftover byte count = 0 (whole pages only)...')
+ct(0x39B4, 'store it')
+ct(0x39B6, 'Copy &20 = 32 pages...')
+ct(0x39B8, 'store it')
+ct(0x39BA, 'Destination = &0A00: low byte...')
+ct(0x39BC, 'store it')
+ct(0x39BE, '...high byte...')
+ct(0x39C0, 'store it')
+ct(0x39C2, 'Source = &1900 (the loaded image): low byte...')
+ct(0x39C4, 'store it')
+ct(0x39C6, '...high byte...')
+ct(0x39C8, 'store it')
+ct(0x39CA, 'Byte index within the page')
+ct(0x39CC, 'Page count...')
+ct(0x39CE, '...none -> just the remainder')
+d.label(0x39D0, 'copy_page', move=None)
+ct(0x39D0, 'Which destination page are we about to write?')
+d.comment(0x39D2, 'Leave page &0B untouched so the user soft-key definitions '
+                  'survive the move', align=INLINE)
+ct(0x39D4, '...skip the store for that page')
+ct(0x39D6, 'Copy one byte...')
+ct(0x39D8, 'to the destination')
+d.label(0x39DA, 'copy_next_byte', move=None)
+ct(0x39DA, 'Next byte...')
+ct(0x39DB, '...to the end of the page')
+ct(0x39DD, 'Next source page...')
+ct(0x39DF, '...and destination page')
+ct(0x39E1, 'one fewer page')
+ct(0x39E2, '...until all pages copied')
+d.label(0x39E4, 'copy_remainder', move=None)
+ct(0x39E4, 'Any leftover bytes? (none here)')
+ct(0x39E6, 'none -> done')
+d.label(0x39E8, 'copy_remainder_byte', move=None)
+ct(0x39E8, 'Copy one byte...')
+ct(0x39EA, 'to the destination')
+ct(0x39EC, 'next byte')
+ct(0x39ED, 'one fewer')
+ct(0x39EE, 'loop')
+d.label(0x39F0, 'copy_done', move=None)
+ct(0x39F0, 'Done')
 
-# Padding, decoy, and trailing data around the loader.
+# ---------------------------------------------------------------------------
+# Data in the loader tail
+# ---------------------------------------------------------------------------
+d.string(0x39F1, 2)                  # "T."
+d.byte(0x39F3, 1)                    # &0D terminator
+d.label(0x39F1, 'oscli_command')
+ct(0x39F1, 'Startup *-command "T." (*TAPE): select the cassette filing system, '
+           'CR-terminated')
+d.byte(0x39F4, 2)                    # &15, &0D
+d.string(0x39F6, 8)                  # "PA.=&C00"
+d.byte(0x39FE, 1)
+d.string(0x39FF, 3)                  # "OLD"
+d.byte(0x3A02, 1)
+d.string(0x3A03, 3)                  # "RUN"
+d.byte(0x3A06, 2)                    # &0D, &00 terminator
+d.label(0x39F4, 'autorun_commands')
+ct(0x39F4, "CTRL-U + CR (clear the input line), then 'PAGE=&C00' / 'OLD' / 'RUN' "
+           "each CR-terminated, then a &00 stop byte")
+
+# Padding and decoy around the loader.
 d.comment(0x3869, 'Zero padding between the encrypted BASIC and the *RUN loader')
 d.byte(0x3900, 6)
 d.label(0x3900, 'loader_preamble')
 d.comment(0x3900, 'Filler ahead of the loader entry; reads as a stub BASIC line '
                   '(&0D, line 13, then RTS bytes)')
-d.byte(0x3A06, 0x3A80 - 0x3A06)
-d.label(0x3A06, 'trailing_data')
-d.comment(0x3A06, 'Trailing bytes the loader never references; the relocated '
-                  'copy is wiped by the BASIC memory-clear (FOR A%=&C00 TO &3A80) '
-                  'at startup')
-
-# Tail data.
-d.string(0x39F1, 3)                  # the OSCLI command string
-d.label(0x39F1, 'oscli_command')
-d.comment(0x39F1, 'startup command "*T." (*TAPE): select the cassette filing '
-                  'system before relocating', align=dasmos.Align.INLINE)
-d.label(0x39F4, 'autorun_commands')
-d.comment(0x39F4, "auto-run command lines: 'PA.=&C00' / 'OLD' / 'RUN', "
-                  "CR-separated, &00-terminated", align=dasmos.Align.INLINE)
+d.byte(0x3A08, 0x3A80 - 0x3A08)
+d.label(0x3A08, 'trailing_data')
+d.comment(0x3A08, 'Unused trailing bytes: single bytes with no discernible '
+                  'structure, referenced by nothing in the loader. The relocated '
+                  'copy of this region is wiped by the BASIC memory-clear '
+                  '(FOR A%=&C00 TO &3A80) at startup.')
 
 # Entry points.
 d.entry(EXEC_ADDR)                     # *RUN entry: relocator-installer
@@ -269,7 +558,6 @@ ir = d.disassemble()
 output = str(
     ir.render(
         'beebasm',
-        boundary_label_prefix='pydis_',
         byte_column=True,
         byte_column_format='py8dis',
         default_byte_cols=12,

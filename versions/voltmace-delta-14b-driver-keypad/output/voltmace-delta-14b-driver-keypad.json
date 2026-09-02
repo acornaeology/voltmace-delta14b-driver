@@ -16,14 +16,19 @@
       "binary_addr": 6400,
       "name": "install_driver",
       "title": "Install the keypad driver",
-      "description": "Enable the 50 Hz vertical-sync event and route it to the\nmatrix scanner. Sets User VIA port B to strobe the keypad (DDRB = &F0: top\nnibble out, bottom nibble in) and hooks EVNTV to point at the event handler,\nsaving the previous vector at saved_evntv. Called from the BASIC front-end\nvia CALL &A00."
+      "description": "Enable the 50 Hz vertical-sync event and route it to the\nmatrix scanner. Sets User VIA port B to strobe the keypad (DDRB = &F0: top\nnibble out, bottom nibble in) and hooks EVNTV to point at the event handler,\nsaving the previous vector at saved_evntv. Called from the BASIC front-end\nvia CALL &A00.",
+      "on_exit": {
+        "A": "corrupted",
+        "X": "corrupted",
+        "Y": "corrupted"
+      }
     },
     {
       "addr": 2609,
       "binary_addr": 6449,
       "name": "vsync_event_handler",
       "title": "Vertical-sync event handler: scan the keypad",
-      "description": "Entered from the MOS every 50 Hz vsync event. Strobes the\n3x4 matrix through User VIA port B (bit 7 selects handset 0/1 via the 74LS157),\ndebounces via debounce_counter, and on a newly-pressed key sounds a short beep\n(OSWORD 7) and inserts the mapped character into the keyboard buffer\n(OSBYTE &99). Chains to the previous event vector on exit."
+      "description": "Entered from the MOS every 50 Hz vsync event. Strobes the\n3x4 matrix through User VIA port B (bit 7 selects handset 0/1 via the 74LS157),\ndebounces and auto-repeats via debounce_counter, and on a pressed key sounds a\nshort key-click (OSWORD 7) and inserts the mapped character into the keyboard\nbuffer (OSBYTE &99). Chains to the previous event vector on exit."
     },
     {
       "addr": 14598,
@@ -41,7 +46,7 @@
       "addr": 14670,
       "name": "os_dependent_setup",
       "title": "OS-version-dependent setup",
-      "description": "Reads os_signature to choose between the two setup paths below."
+      "description": "Reads os_signature to pick how the auto-run commands are queued."
     },
     {
       "addr": 14689,
@@ -52,19 +57,20 @@
     {
       "addr": 14695,
       "name": "queue_autorun",
-      "title": "Queue the auto-run command string",
-      "description": "Copy autorun_commands ('PA.=&C00' / 'OLD' / 'RUN') into the\ninput buffer so the MOS 'types' them and the decoded BASIC runs."
+      "title": "Queue the auto-run commands (direct poke)",
+      "description": "Copy autorun_commands into the MOS keyboard buffer so the OS\nreads them as typed and runs the decoded BASIC. autorun_index wraps into the\n32-byte buffer at &03E0-&03FF."
     },
     {
       "addr": 14726,
       "name": "setup_keys",
-      "title": "Alternate key setup (OSBYTE path)"
+      "title": "Queue the auto-run commands (OSBYTE path)",
+      "description": "The non-&4F-OS variant of queue_autorun: set the BREAK/ESCAPE\nbehaviour, then insert each autorun_commands byte with OSBYTE &8A."
     },
     {
       "addr": 14762,
       "name": "relocate_image",
       "title": "Relocate the program image to &0A00",
-      "description": "OSCLI the command at oscli_command, then block-copy the image\nfrom &1900 down to &0A00 (copy_pages pages via copy_src -> copy_dst), skipping\ndestination page &0B so the soft-key buffer survives."
+      "description": "OSCLI the startup command, then block-copy the image from\n&1900 down to &0A00 (copy_pages pages via copy_src -> copy_dst), skipping\ndestination page &0B so the soft-key buffer survives."
     }
   ],
   "banners": [],
@@ -80,7 +86,7 @@
     "evntv": 544,
     "evntv_hi": 545,
     "autorun_index": 572,
-    "l0300": 768,
+    "kbd_buffer": 768,
     "basic_line10_len": 3075,
     "os_signature": 59562,
     "user_via_orb": 65120,
@@ -101,6 +107,7 @@
       "labels": [
         "install_driver"
       ],
+      "comment_inline": "Preserve the caller flags",
       "type": "code",
       "mnemonic": "php"
     },
@@ -110,6 +117,7 @@
         72
       ],
       "binary_addr": 6401,
+      "comment_inline": "Preserve A",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -119,6 +127,7 @@
         152
       ],
       "binary_addr": 6402,
+      "comment_inline": "Preserve Y...",
       "type": "code",
       "mnemonic": "tya"
     },
@@ -128,6 +137,7 @@
         72
       ],
       "binary_addr": 6403,
+      "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -137,6 +147,7 @@
         138
       ],
       "binary_addr": 6404,
+      "comment_inline": "Preserve X...",
       "type": "code",
       "mnemonic": "txa"
     },
@@ -146,6 +157,7 @@
         72
       ],
       "binary_addr": 6405,
+      "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -156,9 +168,7 @@
         14
       ],
       "binary_addr": 6406,
-      "comments_before_label": [
-        "Ask the MOS to fire an event on every 50 Hz vertical sync (OSBYTE 14, event 4)"
-      ],
+      "comment_inline": "OSBYTE 14: enable an event...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&0e"
@@ -170,6 +180,7 @@
         4
       ],
       "binary_addr": 6408,
+      "comment_inline": "...event 4, the 50 Hz vertical sync",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#4"
@@ -182,6 +193,7 @@
         255
       ],
       "binary_addr": 6410,
+      "comment_inline": "call OSBYTE",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "osbyte",
@@ -195,9 +207,7 @@
         240
       ],
       "binary_addr": 6413,
-      "comments_before_label": [
-        "Drive the column strobes and 74LS157 handset-select as outputs and sense the four row lines as inputs"
-      ],
+      "comment_inline": "DDRB = &F0: bits 4-7 drive the column strobes + 74LS157 select...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&f0"
@@ -210,6 +220,7 @@
         254
       ],
       "binary_addr": 6415,
+      "comment_inline": "...bits 0-3 sense the four row lines",
       "type": "code",
       "mnemonic": "sta",
       "operand": "user_via_ddrb",
@@ -222,6 +233,7 @@
         120
       ],
       "binary_addr": 6418,
+      "comment_inline": "Block IRQs while re-pointing the vector",
       "type": "code",
       "mnemonic": "sei"
     },
@@ -233,9 +245,7 @@
         2
       ],
       "binary_addr": 6419,
-      "comments_before_label": [
-        "Remember whoever currently owns the event vector, to chain to"
-      ],
+      "comment_inline": "Save the current event vector low byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "evntv",
@@ -250,6 +260,7 @@
         10
       ],
       "binary_addr": 6422,
+      "comment_inline": "...at saved_evntv, to chain to on exit",
       "type": "code",
       "mnemonic": "sta",
       "operand": "saved_evntv",
@@ -264,6 +275,7 @@
         2
       ],
       "binary_addr": 6425,
+      "comment_inline": "Save its high byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "evntv_hi",
@@ -278,11 +290,12 @@
         10
       ],
       "binary_addr": 6428,
+      "comment_inline": "...too",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l0aff",
+      "operand": "saved_evntv_hi",
       "target": 2815,
-      "target_label": "l0aff"
+      "target_label": "saved_evntv_hi"
     },
     {
       "addr": 2591,
@@ -291,9 +304,7 @@
         49
       ],
       "binary_addr": 6431,
-      "comments_before_label": [
-        "Take over EVNTV so each vsync enters the scanner"
-      ],
+      "comment_inline": "Point EVNTV at vsync_event_handler: low byte &31...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&31"
@@ -306,6 +317,7 @@
         2
       ],
       "binary_addr": 6433,
+      "comment_inline": "...store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "evntv",
@@ -319,6 +331,7 @@
         10
       ],
       "binary_addr": 6436,
+      "comment_inline": "...high byte &0A...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&0a"
@@ -331,6 +344,7 @@
         2
       ],
       "binary_addr": 6438,
+      "comment_inline": "...store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "evntv_hi",
@@ -343,6 +357,7 @@
         88
       ],
       "binary_addr": 6441,
+      "comment_inline": "Re-enable IRQs",
       "type": "code",
       "mnemonic": "cli"
     },
@@ -352,6 +367,7 @@
         104
       ],
       "binary_addr": 6442,
+      "comment_inline": "Restore X...",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -361,6 +377,7 @@
         170
       ],
       "binary_addr": 6443,
+      "comment_inline": "...from the stack",
       "type": "code",
       "mnemonic": "tax"
     },
@@ -370,6 +387,7 @@
         104
       ],
       "binary_addr": 6444,
+      "comment_inline": "Restore Y...",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -379,6 +397,7 @@
         168
       ],
       "binary_addr": 6445,
+      "comment_inline": "...from the stack",
       "type": "code",
       "mnemonic": "tay"
     },
@@ -388,6 +407,7 @@
         104
       ],
       "binary_addr": 6446,
+      "comment_inline": "Restore A",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -397,6 +417,7 @@
         40
       ],
       "binary_addr": 6447,
+      "comment_inline": "Restore the flags",
       "type": "code",
       "mnemonic": "plp"
     },
@@ -406,6 +427,7 @@
         96
       ],
       "binary_addr": 6448,
+      "comment_inline": "Return to the BASIC caller",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -418,6 +440,7 @@
       "labels": [
         "vsync_event_handler"
       ],
+      "comment_inline": "Preserve the interrupted flags",
       "type": "code",
       "mnemonic": "php"
     },
@@ -427,6 +450,7 @@
         72
       ],
       "binary_addr": 6450,
+      "comment_inline": "Preserve A",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -436,6 +460,7 @@
         152
       ],
       "binary_addr": 6451,
+      "comment_inline": "Preserve Y...",
       "type": "code",
       "mnemonic": "tya"
     },
@@ -445,6 +470,7 @@
         72
       ],
       "binary_addr": 6452,
+      "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -454,6 +480,7 @@
         138
       ],
       "binary_addr": 6453,
+      "comment_inline": "Preserve X...",
       "type": "code",
       "mnemonic": "txa"
     },
@@ -463,6 +490,7 @@
         72
       ],
       "binary_addr": 6454,
+      "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -473,9 +501,7 @@
         0
       ],
       "binary_addr": 6455,
-      "comments_before_label": [
-        "Probe for activity: strobe all columns low and read the rows back"
-      ],
+      "comment_inline": "Quick probe: drive every column low on handset 0...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#0"
@@ -488,6 +514,7 @@
         254
       ],
       "binary_addr": 6457,
+      "comment_inline": "...write it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "user_via_orb",
@@ -502,6 +529,7 @@
         254
       ],
       "binary_addr": 6460,
+      "comment_inline": "...and read the rows back",
       "type": "code",
       "mnemonic": "lda",
       "operand": "user_via_orb",
@@ -515,6 +543,7 @@
         15
       ],
       "binary_addr": 6463,
+      "comment_inline": "All four rows high (&0F) => nothing down on handset 0",
       "type": "code",
       "mnemonic": "cmp",
       "operand": "#&0f"
@@ -526,11 +555,12 @@
         12
       ],
       "binary_addr": 6465,
+      "comment_inline": "Something is down -> go locate it",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c0a4f",
+      "operand": "check_held_key",
       "target": 2639,
-      "target_label": "c0a4f"
+      "target_label": "check_held_key"
     },
     {
       "addr": 2627,
@@ -539,6 +569,7 @@
         128
       ],
       "binary_addr": 6467,
+      "comment_inline": "Probe handset 1 (bit 7 selects it)...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&80"
@@ -551,6 +582,7 @@
         254
       ],
       "binary_addr": 6469,
+      "comment_inline": "...write it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "user_via_orb",
@@ -565,6 +597,7 @@
         254
       ],
       "binary_addr": 6472,
+      "comment_inline": "...read the rows",
       "type": "code",
       "mnemonic": "lda",
       "operand": "user_via_orb",
@@ -578,6 +611,7 @@
         143
       ],
       "binary_addr": 6475,
+      "comment_inline": "&8F = handset-1 select set, all rows high = no key",
       "type": "code",
       "mnemonic": "cmp",
       "operand": "#&8f"
@@ -589,11 +623,12 @@
         115
       ],
       "binary_addr": 6477,
+      "comment_inline": "Nothing on either handset -> idle",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "c0ac2",
+      "operand": "no_key_down",
       "target": 2754,
-      "target_label": "c0ac2"
+      "target_label": "no_key_down"
     },
     {
       "addr": 2639,
@@ -604,15 +639,17 @@
       ],
       "binary_addr": 6479,
       "labels": [
-        "c0a4f"
+        "check_held_key"
       ],
+      "comment_inline": "Is a key already being held? (current_row 5 = none)",
       "xref_summaries": [
-        "&194f referenced 1 time by &1941"
+        "&194f referenced 1 time by &0a41[1]"
       ],
       "references": [
         {
-          "addr": 6465,
-          "kind": "direct"
+          "addr": 2625,
+          "kind": "direct",
+          "move_id": 1
         }
       ],
       "type": "code",
@@ -628,6 +665,7 @@
         5
       ],
       "binary_addr": 6482,
+      "comment_inline": "against the \"none\" marker (5)",
       "type": "code",
       "mnemonic": "cpy",
       "operand": "#5"
@@ -639,11 +677,12 @@
         30
       ],
       "binary_addr": 6484,
+      "comment_inline": "No held key -> full matrix scan",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "c0a74",
+      "operand": "scan_matrix",
       "target": 2676,
-      "target_label": "c0a74"
+      "target_label": "scan_matrix"
     },
     {
       "addr": 2646,
@@ -653,6 +692,7 @@
         10
       ],
       "binary_addr": 6486,
+      "comment_inline": "Re-test the held key: fetch its column strobe...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "current_col",
@@ -667,6 +707,7 @@
         10
       ],
       "binary_addr": 6489,
+      "comment_inline": "from the strobe table",
       "type": "code",
       "mnemonic": "lda",
       "operand": "col_strobes,x",
@@ -681,6 +722,7 @@
         254
       ],
       "binary_addr": 6492,
+      "comment_inline": "...drive it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "user_via_orb",
@@ -695,6 +737,7 @@
         254
       ],
       "binary_addr": 6495,
+      "comment_inline": "...read the rows...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "user_via_orb",
@@ -709,6 +752,7 @@
         10
       ],
       "binary_addr": 6498,
+      "comment_inline": "...and mask its row bit",
       "type": "code",
       "mnemonic": "and",
       "operand": "row_masks,y",
@@ -722,11 +766,12 @@
         13
       ],
       "binary_addr": 6501,
+      "comment_inline": "Released (bit high now) -> rescan for a new key",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c0a74",
+      "operand": "scan_matrix",
       "target": 2676,
-      "target_label": "c0a74"
+      "target_label": "scan_matrix"
     },
     {
       "addr": 2663,
@@ -736,6 +781,7 @@
         10
       ],
       "binary_addr": 6503,
+      "comment_inline": "Still held: count down to the next auto-repeat (patched to LDA by the editor to disable auto-repeat)",
       "type": "code",
       "mnemonic": "dec",
       "operand": "debounce_counter",
@@ -749,11 +795,12 @@
         91
       ],
       "binary_addr": 6506,
+      "comment_inline": "Not time to repeat yet -> exit",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c0ac7",
+      "operand": "handler_exit",
       "target": 2759,
-      "target_label": "c0ac7"
+      "target_label": "handler_exit"
     },
     {
       "addr": 2668,
@@ -762,6 +809,7 @@
         4
       ],
       "binary_addr": 6508,
+      "comment_inline": "Reload the repeat interval (4 frames)...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#4"
@@ -774,6 +822,7 @@
         10
       ],
       "binary_addr": 6510,
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "debounce_counter",
@@ -786,6 +835,7 @@
         24
       ],
       "binary_addr": 6513,
+      "comment_inline": "clear carry for the branch",
       "type": "code",
       "mnemonic": "clc"
     },
@@ -796,11 +846,12 @@
         46
       ],
       "binary_addr": 6514,
+      "comment_inline": "Re-emit the held key",
       "type": "code",
       "mnemonic": "bcc",
-      "operand": "c0aa2",
+      "operand": "emit_key",
       "target": 2722,
-      "target_label": "c0aa2"
+      "target_label": "emit_key"
     },
     {
       "addr": 2676,
@@ -810,19 +861,22 @@
       ],
       "binary_addr": 6516,
       "labels": [
-        "c0a74"
+        "scan_matrix"
       ],
+      "comment_inline": "Full scan: start at column 0",
       "xref_summaries": [
-        "&1974 referenced 2 times by &1954, &1965"
+        "&1974 referenced 2 times by &0a54[1], &0a65[1]"
       ],
       "references": [
         {
-          "addr": 6484,
-          "kind": "direct"
+          "addr": 2644,
+          "kind": "direct",
+          "move_id": 1
         },
         {
-          "addr": 6501,
-          "kind": "direct"
+          "addr": 2661,
+          "kind": "direct",
+          "move_id": 1
         }
       ],
       "type": "code",
@@ -837,15 +891,17 @@
       ],
       "binary_addr": 6518,
       "labels": [
-        "c0a76"
+        "scan_next_column"
       ],
+      "comment_inline": "Start at row 0 of this column",
       "xref_summaries": [
-        "&1976 referenced 1 time by &1992"
+        "&1976 referenced 1 time by &0a92[1]"
       ],
       "references": [
         {
-          "addr": 6546,
-          "kind": "direct"
+          "addr": 2706,
+          "kind": "direct",
+          "move_id": 1
         }
       ],
       "type": "code",
@@ -860,15 +916,17 @@
       ],
       "binary_addr": 6520,
       "labels": [
-        "c0a78"
+        "scan_next_row"
       ],
+      "comment_inline": "Only (re)strobe the column when starting at row 0...",
       "xref_summaries": [
-        "&1978 referenced 1 time by &198d"
+        "&1978 referenced 1 time by &0a8d[1]"
       ],
       "references": [
         {
-          "addr": 6541,
-          "kind": "direct"
+          "addr": 2701,
+          "kind": "direct",
+          "move_id": 1
         }
       ],
       "type": "code",
@@ -882,11 +940,12 @@
         6
       ],
       "binary_addr": 6522,
+      "comment_inline": "...otherwise the strobe already stands",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c0a82",
+      "operand": "test_row",
       "target": 2690,
-      "target_label": "c0a82"
+      "target_label": "test_row"
     },
     {
       "addr": 2684,
@@ -896,6 +955,7 @@
         10
       ],
       "binary_addr": 6524,
+      "comment_inline": "Drive column X (its handset bit included)...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "col_strobes,x",
@@ -910,6 +970,7 @@
         254
       ],
       "binary_addr": 6527,
+      "comment_inline": "write it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "user_via_orb",
@@ -925,15 +986,17 @@
       ],
       "binary_addr": 6530,
       "labels": [
-        "c0a82"
+        "test_row"
       ],
+      "comment_inline": "Read the rows...",
       "xref_summaries": [
-        "&1982 referenced 1 time by &197a"
+        "&1982 referenced 1 time by &0a7a[1]"
       ],
       "references": [
         {
-          "addr": 6522,
-          "kind": "direct"
+          "addr": 2682,
+          "kind": "direct",
+          "move_id": 1
         }
       ],
       "type": "code",
@@ -950,6 +1013,7 @@
         10
       ],
       "binary_addr": 6533,
+      "comment_inline": "...test this row bit",
       "type": "code",
       "mnemonic": "and",
       "operand": "row_masks,y",
@@ -963,11 +1027,12 @@
         13
       ],
       "binary_addr": 6536,
+      "comment_inline": "Bit low -> key at (column X, row Y) is pressed",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "c0a97",
+      "operand": "key_pressed",
       "target": 2711,
-      "target_label": "c0a97"
+      "target_label": "key_pressed"
     },
     {
       "addr": 2698,
@@ -975,6 +1040,7 @@
         200
       ],
       "binary_addr": 6538,
+      "comment_inline": "Next row...",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -985,6 +1051,7 @@
         4
       ],
       "binary_addr": 6539,
+      "comment_inline": "all four rows done?",
       "type": "code",
       "mnemonic": "cpy",
       "operand": "#4"
@@ -996,11 +1063,12 @@
         233
       ],
       "binary_addr": 6541,
+      "comment_inline": "...until all 4 rows tested",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c0a78",
+      "operand": "scan_next_row",
       "target": 2680,
-      "target_label": "c0a78"
+      "target_label": "scan_next_row"
     },
     {
       "addr": 2703,
@@ -1008,6 +1076,7 @@
         232
       ],
       "binary_addr": 6543,
+      "comment_inline": "Next column...",
       "type": "code",
       "mnemonic": "inx"
     },
@@ -1018,6 +1087,7 @@
         6
       ],
       "binary_addr": 6544,
+      "comment_inline": "...6 columns = 3 per handset",
       "type": "code",
       "mnemonic": "cpx",
       "operand": "#6"
@@ -1029,11 +1099,12 @@
         226
       ],
       "binary_addr": 6546,
+      "comment_inline": "loop back for the next column",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c0a76",
+      "operand": "scan_next_column",
       "target": 2678,
-      "target_label": "c0a76"
+      "target_label": "scan_next_column"
     },
     {
       "addr": 2708,
@@ -1041,6 +1112,7 @@
         24
       ],
       "binary_addr": 6548,
+      "comment_inline": "clear carry for the branch",
       "type": "code",
       "mnemonic": "clc"
     },
@@ -1051,11 +1123,12 @@
         48
       ],
       "binary_addr": 6549,
+      "comment_inline": "Nothing pressed -> exit",
       "type": "code",
       "mnemonic": "bcc",
-      "operand": "c0ac7",
+      "operand": "handler_exit",
       "target": 2759,
-      "target_label": "c0ac7"
+      "target_label": "handler_exit"
     },
     {
       "addr": 2711,
@@ -1065,15 +1138,17 @@
       ],
       "binary_addr": 6551,
       "labels": [
-        "c0a97"
+        "key_pressed"
       ],
+      "comment_inline": "New press: set the initial auto-repeat delay (24 frames)...",
       "xref_summaries": [
-        "&1997 referenced 1 time by &1988"
+        "&1997 referenced 1 time by &0a88[1]"
       ],
       "references": [
         {
-          "addr": 6536,
-          "kind": "direct"
+          "addr": 2696,
+          "kind": "direct",
+          "move_id": 1
         }
       ],
       "type": "code",
@@ -1088,6 +1163,7 @@
         10
       ],
       "binary_addr": 6553,
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "debounce_counter",
@@ -1102,6 +1178,7 @@
         10
       ],
       "binary_addr": 6556,
+      "comment_inline": "Remember which key is now held: column...",
       "type": "code",
       "mnemonic": "stx",
       "operand": "current_col",
@@ -1116,6 +1193,7 @@
         10
       ],
       "binary_addr": 6559,
+      "comment_inline": "...and row",
       "type": "code",
       "mnemonic": "sty",
       "operand": "current_row",
@@ -1130,18 +1208,17 @@
       ],
       "binary_addr": 6562,
       "labels": [
-        "c0aa2"
+        "emit_key"
       ],
-      "comments_before_label": [
-        "Acknowledge the press with a short key-click (OSWORD 7)"
-      ],
+      "comment_inline": "OSWORD 7: play the key-click sound...",
       "xref_summaries": [
-        "&19a2 referenced 1 time by &1972"
+        "&19a2 referenced 1 time by &0a72[1]"
       ],
       "references": [
         {
-          "addr": 6514,
-          "kind": "direct"
+          "addr": 2674,
+          "kind": "direct",
+          "move_id": 1
         }
       ],
       "type": "code",
@@ -1155,6 +1232,7 @@
         246
       ],
       "binary_addr": 6564,
+      "comment_inline": "...parameter block at sound_block (&0AF6)...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#&f6"
@@ -1166,6 +1244,7 @@
         10
       ],
       "binary_addr": 6566,
+      "comment_inline": "block high byte &0A",
       "type": "code",
       "mnemonic": "ldy",
       "operand": "#&0a"
@@ -1178,6 +1257,7 @@
         255
       ],
       "binary_addr": 6568,
+      "comment_inline": "call OSWORD",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "osword",
@@ -1190,6 +1270,7 @@
         24
       ],
       "binary_addr": 6571,
+      "comment_inline": "Key-table index = col*4 + row:",
       "type": "code",
       "mnemonic": "clc"
     },
@@ -1201,6 +1282,7 @@
         10
       ],
       "binary_addr": 6572,
+      "comment_inline": "take the column...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "current_col",
@@ -1213,6 +1295,7 @@
         10
       ],
       "binary_addr": 6575,
+      "comment_inline": "...times 4...",
       "type": "code",
       "mnemonic": "asl"
     },
@@ -1222,6 +1305,7 @@
         10
       ],
       "binary_addr": 6576,
+      "comment_inline": "shifted twice = x4",
       "type": "code",
       "mnemonic": "asl"
     },
@@ -1233,9 +1317,7 @@
         10
       ],
       "binary_addr": 6577,
-      "comments_before_label": [
-        "Look up the character for this matrix cell (col*4 + row)"
-      ],
+      "comment_inline": "...plus the row",
       "type": "code",
       "mnemonic": "adc",
       "operand": "current_row",
@@ -1248,6 +1330,7 @@
         170
       ],
       "binary_addr": 6580,
+      "comment_inline": "...as an index",
       "type": "code",
       "mnemonic": "tax"
     },
@@ -1259,6 +1342,7 @@
         10
       ],
       "binary_addr": 6581,
+      "comment_inline": "Fetch that cell character into Y",
       "type": "code",
       "mnemonic": "ldy",
       "operand": "key_codes,x",
@@ -1272,9 +1356,7 @@
         153
       ],
       "binary_addr": 6584,
-      "comments_before_label": [
-        "Deliver the keystroke into the keyboard buffer as if typed (OSBYTE &99)"
-      ],
+      "comment_inline": "OSBYTE &99: insert Y into buffer 0 (keyboard)...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&99"
@@ -1286,6 +1368,7 @@
         0
       ],
       "binary_addr": 6586,
+      "comment_inline": "X=0 selects the keyboard buffer",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#0"
@@ -1298,6 +1381,7 @@
         255
       ],
       "binary_addr": 6588,
+      "comment_inline": "...as if the key were typed",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "osbyte",
@@ -1310,6 +1394,7 @@
         24
       ],
       "binary_addr": 6591,
+      "comment_inline": "clear carry for the branch",
       "type": "code",
       "mnemonic": "clc"
     },
@@ -1320,11 +1405,12 @@
         5
       ],
       "binary_addr": 6592,
+      "comment_inline": "Done",
       "type": "code",
       "mnemonic": "bcc",
-      "operand": "c0ac7",
+      "operand": "handler_exit",
       "target": 2759,
-      "target_label": "c0ac7"
+      "target_label": "handler_exit"
     },
     {
       "addr": 2754,
@@ -1334,15 +1420,17 @@
       ],
       "binary_addr": 6594,
       "labels": [
-        "c0ac2"
+        "no_key_down"
       ],
+      "comment_inline": "Record 'no key held' (row 5)...",
       "xref_summaries": [
-        "&19c2 referenced 1 time by &194d"
+        "&19c2 referenced 1 time by &0a4d[1]"
       ],
       "references": [
         {
-          "addr": 6477,
-          "kind": "direct"
+          "addr": 2637,
+          "kind": "direct",
+          "move_id": 1
         }
       ],
       "type": "code",
@@ -1357,6 +1445,7 @@
         10
       ],
       "binary_addr": 6596,
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "current_row",
@@ -1370,23 +1459,27 @@
       ],
       "binary_addr": 6599,
       "labels": [
-        "c0ac7"
+        "handler_exit"
       ],
+      "comment_inline": "Restore X...",
       "xref_summaries": [
-        "&19c7 referenced 3 times by &196a, &1995, &19c0"
+        "&19c7 referenced 3 times by &0a6a[1], &0a95[1], &0ac0[1]"
       ],
       "references": [
         {
-          "addr": 6506,
-          "kind": "direct"
+          "addr": 2666,
+          "kind": "direct",
+          "move_id": 1
         },
         {
-          "addr": 6549,
-          "kind": "direct"
+          "addr": 2709,
+          "kind": "direct",
+          "move_id": 1
         },
         {
-          "addr": 6592,
-          "kind": "direct"
+          "addr": 2752,
+          "kind": "direct",
+          "move_id": 1
         }
       ],
       "type": "code",
@@ -1398,6 +1491,7 @@
         170
       ],
       "binary_addr": 6600,
+      "comment_inline": "into X",
       "type": "code",
       "mnemonic": "tax"
     },
@@ -1407,6 +1501,7 @@
         104
       ],
       "binary_addr": 6601,
+      "comment_inline": "Restore Y...",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -1416,6 +1511,7 @@
         168
       ],
       "binary_addr": 6602,
+      "comment_inline": "into Y",
       "type": "code",
       "mnemonic": "tay"
     },
@@ -1425,6 +1521,7 @@
         104
       ],
       "binary_addr": 6603,
+      "comment_inline": "Restore A",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -1434,6 +1531,7 @@
         40
       ],
       "binary_addr": 6604,
+      "comment_inline": "Restore the flags",
       "type": "code",
       "mnemonic": "plp"
     },
@@ -1445,9 +1543,7 @@
         10
       ],
       "binary_addr": 6605,
-      "comments_before_label": [
-        "Hand the event on to the handler we displaced"
-      ],
+      "comment_inline": "Chain to the event handler we displaced",
       "type": "code",
       "mnemonic": "jmp",
       "operand": "(saved_evntv)",
@@ -1463,6 +1559,7 @@
       "labels": [
         "debounce_counter"
       ],
+      "comment_inline": "Frames until the next auto-repeat (0 = repeat this frame)",
       "xref_summaries": [
         "&19d0 referenced 3 times by &0a67[1], &0a6e[1], &0a99[1]"
       ],
@@ -1497,6 +1594,7 @@
       "labels": [
         "current_row"
       ],
+      "comment_inline": "Row of the held key (5 = none)",
       "xref_summaries": [
         "&19d1 referenced 4 times by &0a4f[1], &0a9f[1], &0ab1[1], &0ac4[1]"
       ],
@@ -1536,6 +1634,7 @@
       "labels": [
         "current_col"
       ],
+      "comment_inline": "Column of the held key",
       "xref_summaries": [
         "&19d2 referenced 3 times by &0a56[1], &0a9c[1], &0aac[1]"
       ],
@@ -1573,9 +1672,7 @@
       "labels": [
         "row_masks"
       ],
-      "comments_before_label": [
-        "input-bit mask for each of the 4 matrix rows"
-      ],
+      "comment_inline": "Port-B input bit for matrix rows 0-3",
       "xref_summaries": [
         "&19d3 used as index base 2 times by &0a62[1], &0a85[1]"
       ],
@@ -1604,15 +1701,16 @@
       "bytes": [
         96,
         80,
-        48
+        48,
+        224,
+        208,
+        176
       ],
       "binary_addr": 6615,
       "labels": [
         "col_strobes"
       ],
-      "comments_before_label": [
-        "column strobes: the 3 columns for handset 0 (&60,&50,&30) then handset 1 (bit 7 set selects it via the 74LS157)"
-      ],
+      "comment_inline": "Port-B strobe per column: cols 0-2 = handset 0 (&60,&50,&30), cols 3-5 = handset 1 (bit 7 set for the 74LS157)",
       "xref_summaries": [
         "&19d7 used as index base 2 times by &0a59[1], &0a7c[1]"
       ],
@@ -1628,19 +1726,11 @@
           "move_id": 1
         }
       ],
-      "type": "string",
-      "string": "`P0"
-    },
-    {
-      "addr": 2778,
-      "bytes": [
-        224,
-        208,
-        176
-      ],
-      "binary_addr": 6618,
       "type": "byte",
       "values": [
+        96,
+        80,
+        48,
         224,
         208,
         176
@@ -1655,9 +1745,7 @@
       "labels": [
         "key_codes"
       ],
-      "comments_before_label": [
-        "default character for each of the 24 cells (col*4+row): handset 0 = digits/DELETE/RETURN, handset 1 = letters A-L"
-      ],
+      "comment_inline": "Default character per cell, indexed col*4+row: cells 0-11 handset 0 (digits/DELETE/RETURN), cells 12-23 handset 1 (letters). The editor overwrites this table.",
       "xref_summaries": [
         "&19dd used as index base 1 time by &0ab5[1]"
       ],
@@ -1728,6 +1816,7 @@
         0
       ],
       "binary_addr": 6645,
+      "comment_inline": "Spare byte",
       "type": "byte",
       "values": [
         0
@@ -1749,19 +1838,25 @@
       "labels": [
         "sound_block"
       ],
-      "comments_before_label": [
-        "OSWORD 7 parameter block: channel, amplitude, pitch, duration"
-      ],
-      "type": "byte",
+      "comment_inline": "OSWORD 7 block: channel &0000, amplitude &FFF8 (patched by the editor beep option), pitch &0080, duration &0001",
+      "type": "word",
       "values": [
         0,
-        0,
-        248,
-        255,
+        65528,
         128,
-        0,
-        1,
-        0
+        1
+      ],
+      "expressions": [
+        null,
+        null,
+        {
+          "text": "&80",
+          "tree": {
+            "int": 128,
+            "radix": "hex"
+          }
+        },
+        null
       ]
     },
     {
@@ -1776,15 +1871,13 @@
       ],
       "sub_labels": {
         "2815": [
-          "l0aff"
+          "saved_evntv_hi"
         ]
       },
-      "comments_before_label": [
-        "previous EVNTV, restored by the JMP (saved_evntv)"
-      ],
+      "comment_inline": "Previous EVNTV, chained to on exit",
       "xref_summaries": [
         "&19fe referenced 2 times by &0a16[1], &0acd[1]",
-        "&19ff referenced 1 time by &191c"
+        "&19ff referenced 1 time by &0a1c[1]"
       ],
       "references": [
         {
@@ -1798,9 +1891,8 @@
           "move_id": 1
         }
       ],
-      "type": "byte",
+      "type": "word",
       "values": [
-        0,
         0
       ]
     },
@@ -10214,6 +10306,7 @@
       "labels": [
         "main"
       ],
+      "comment_inline": "Preserve A",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -10222,6 +10315,7 @@
       "bytes": [
         138
       ],
+      "comment_inline": "Preserve X...",
       "type": "code",
       "mnemonic": "txa"
     },
@@ -10230,6 +10324,7 @@
       "bytes": [
         72
       ],
+      "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -10238,6 +10333,7 @@
       "bytes": [
         152
       ],
+      "comment_inline": "Preserve Y...",
       "type": "code",
       "mnemonic": "tya"
     },
@@ -10246,6 +10342,7 @@
       "bytes": [
         72
       ],
+      "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
     },
@@ -10256,6 +10353,7 @@
         170,
         57
       ],
+      "comment_inline": "Copy the image down (driver to &0A00, BASIC to PAGE &0C00)",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "relocate_image",
@@ -10269,6 +10367,7 @@
         29,
         57
       ],
+      "comment_inline": "Decrypt the relocated BASIC in place",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "decode_basic",
@@ -10282,6 +10381,7 @@
         97,
         57
       ],
+      "comment_inline": "Repair the BASIC's first-line length byte",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "patch_basic_header",
@@ -10295,6 +10395,7 @@
         78,
         57
       ],
+      "comment_inline": "Queue the auto-run commands (OS-dependent)",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "os_dependent_setup",
@@ -10306,6 +10407,7 @@
       "bytes": [
         104
       ],
+      "comment_inline": "Restore Y...",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -10314,6 +10416,7 @@
       "bytes": [
         168
       ],
+      "comment_inline": "into Y",
       "type": "code",
       "mnemonic": "tay"
     },
@@ -10322,6 +10425,7 @@
       "bytes": [
         104
       ],
+      "comment_inline": "Restore X...",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -10330,6 +10434,7 @@
       "bytes": [
         170
       ],
+      "comment_inline": "into X",
       "type": "code",
       "mnemonic": "tax"
     },
@@ -10338,6 +10443,7 @@
       "bytes": [
         104
       ],
+      "comment_inline": "Restore A",
       "type": "code",
       "mnemonic": "pla"
     },
@@ -10346,6 +10452,7 @@
       "bytes": [
         96
       ],
+      "comment_inline": "Return to the MOS; the queued commands then run the BASIC",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -10358,6 +10465,7 @@
       "labels": [
         "decode_basic"
       ],
+      "comment_inline": "Save the caller decode_ptr low byte...",
       "xref_summaries": [
         "&391d referenced 1 time by &390e"
       ],
@@ -10380,11 +10488,12 @@
         95,
         57
       ],
+      "comment_inline": "save it",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l395f",
+      "operand": "decode_ptr_save",
       "target": 14687,
-      "target_label": "l395f"
+      "target_label": "decode_ptr_save"
     },
     {
       "addr": 14626,
@@ -10392,6 +10501,7 @@
         165,
         129
       ],
+      "comment_inline": "...and high byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "decode_ptr_hi",
@@ -10405,11 +10515,12 @@
         96,
         57
       ],
+      "comment_inline": "...at decode_ptr_save",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l3960",
+      "operand": "decode_ptr_save_hi",
       "target": 14688,
-      "target_label": "l3960"
+      "target_label": "decode_ptr_save_hi"
     },
     {
       "addr": 14631,
@@ -10417,6 +10528,7 @@
         162,
         0
       ],
+      "comment_inline": "Point decode_ptr at PAGE &0C00: low byte 0...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#0"
@@ -10427,6 +10539,7 @@
         134,
         128
       ],
+      "comment_inline": "set it",
       "type": "code",
       "mnemonic": "stx",
       "operand": "decode_ptr",
@@ -10439,6 +10552,7 @@
         162,
         12
       ],
+      "comment_inline": "...high byte &0C...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#&0c"
@@ -10449,6 +10563,7 @@
         160,
         0
       ],
+      "comment_inline": "byte index 0",
       "type": "code",
       "mnemonic": "ldy",
       "operand": "#0"
@@ -10460,8 +10575,9 @@
         129
       ],
       "labels": [
-        "loop_c392f"
+        "decode_next_page"
       ],
+      "comment_inline": "Set the page being decrypted",
       "xref_summaries": [
         "&392f referenced 1 time by &3941"
       ],
@@ -10484,8 +10600,9 @@
         128
       ],
       "labels": [
-        "loop_c3931"
+        "decode_next_byte"
       ],
+      "comment_inline": "Read an encrypted byte...",
       "xref_summaries": [
         "&3931 referenced 1 time by &393a"
       ],
@@ -10506,6 +10623,7 @@
       "bytes": [
         24
       ],
+      "comment_inline": "clear carry for the rotate",
       "type": "code",
       "mnemonic": "clc"
     },
@@ -10514,6 +10632,7 @@
       "bytes": [
         10
       ],
+      "comment_inline": "...rotate it left one bit (undo the ROL-1 protection)...",
       "type": "code",
       "mnemonic": "asl"
     },
@@ -10523,6 +10642,7 @@
         105,
         0
       ],
+      "comment_inline": "...carrying bit 7 into bit 0...",
       "type": "code",
       "mnemonic": "adc",
       "operand": "#0"
@@ -10533,6 +10653,7 @@
         145,
         128
       ],
+      "comment_inline": "...and store it back",
       "type": "code",
       "mnemonic": "sta",
       "operand": "(decode_ptr),y",
@@ -10544,6 +10665,7 @@
       "bytes": [
         200
       ],
+      "comment_inline": "Next byte...",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -10553,11 +10675,12 @@
         208,
         245
       ],
+      "comment_inline": "...to the end of the page",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "loop_c3931",
+      "operand": "decode_next_byte",
       "target": 14641,
-      "target_label": "loop_c3931"
+      "target_label": "decode_next_byte"
     },
     {
       "addr": 14652,
@@ -10565,6 +10688,7 @@
         166,
         129
       ],
+      "comment_inline": "Next page...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "decode_ptr_hi",
@@ -10576,6 +10700,7 @@
       "bytes": [
         232
       ],
+      "comment_inline": "increment the page",
       "type": "code",
       "mnemonic": "inx"
     },
@@ -10585,6 +10710,7 @@
         224,
         43
       ],
+      "comment_inline": "...until page &2B (end of the BASIC region)",
       "type": "code",
       "mnemonic": "cpx",
       "operand": "#&2b"
@@ -10595,11 +10721,12 @@
         208,
         236
       ],
+      "comment_inline": "keep decrypting pages",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "loop_c392f",
+      "operand": "decode_next_page",
       "target": 14639,
-      "target_label": "loop_c392f"
+      "target_label": "decode_next_page"
     },
     {
       "addr": 14659,
@@ -10608,11 +10735,12 @@
         95,
         57
       ],
+      "comment_inline": "Restore the caller decode_ptr...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l395f",
+      "operand": "decode_ptr_save",
       "target": 14687,
-      "target_label": "l395f"
+      "target_label": "decode_ptr_save"
     },
     {
       "addr": 14662,
@@ -10620,6 +10748,7 @@
         133,
         128
       ],
+      "comment_inline": "low byte",
       "type": "code",
       "mnemonic": "sta",
       "operand": "decode_ptr",
@@ -10633,11 +10762,12 @@
         96,
         57
       ],
+      "comment_inline": "high byte",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l3960",
+      "operand": "decode_ptr_save_hi",
       "target": 14688,
-      "target_label": "l3960"
+      "target_label": "decode_ptr_save_hi"
     },
     {
       "addr": 14667,
@@ -10645,6 +10775,7 @@
         133,
         129
       ],
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "decode_ptr_hi",
@@ -10656,6 +10787,7 @@
       "bytes": [
         96
       ],
+      "comment_inline": "Done",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -10668,6 +10800,7 @@
       "labels": [
         "os_dependent_setup"
       ],
+      "comment_inline": "clear Y",
       "xref_summaries": [
         "&394e referenced 1 time by &3914"
       ],
@@ -10688,6 +10821,7 @@
         170,
         232
       ],
+      "comment_inline": "Read the OS ROM signature byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "os_signature",
@@ -10700,6 +10834,7 @@
         201,
         79
       ],
+      "comment_inline": "...'O' identifies the supported OS",
       "type": "code",
       "mnemonic": "cmp",
       "operand": "#&4f"
@@ -10710,11 +10845,12 @@
         240,
         4
       ],
+      "comment_inline": "Supported OS -> poke the buffer directly",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "c395b",
+      "operand": "use_direct_poke",
       "target": 14683,
-      "target_label": "c395b"
+      "target_label": "use_direct_poke"
     },
     {
       "addr": 14679,
@@ -10723,6 +10859,7 @@
         134,
         57
       ],
+      "comment_inline": "Other OS -> insert via OSBYTE",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "setup_keys",
@@ -10734,6 +10871,7 @@
       "bytes": [
         96
       ],
+      "comment_inline": "Done",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -10745,8 +10883,9 @@
         57
       ],
       "labels": [
-        "c395b"
+        "use_direct_poke"
       ],
+      "comment_inline": "Queue by poking the keyboard buffer",
       "xref_summaries": [
         "&395b referenced 1 time by &3955"
       ],
@@ -10767,6 +10906,7 @@
       "bytes": [
         96
       ],
+      "comment_inline": "Done",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -10777,13 +10917,14 @@
         234
       ],
       "labels": [
-        "l395f"
+        "decode_ptr_save"
       ],
       "sub_labels": {
         "14688": [
-          "l3960"
+          "decode_ptr_save_hi"
         ]
       },
+      "comment_inline": "Scratch: caller's decode_ptr saved across decode_basic (NOP NOP at rest)",
       "xref_summaries": [
         "&395f referenced 2 times by &391f, &3943",
         "&3960 referenced 2 times by &3924, &3948"
@@ -10798,10 +10939,9 @@
           "kind": "direct"
         }
       ],
-      "type": "byte",
+      "type": "word",
       "values": [
-        234,
-        234
+        60138
       ]
     },
     {
@@ -10813,6 +10953,7 @@
       "labels": [
         "patch_basic_header"
       ],
+      "comment_inline": "The first BASIC line is 22 bytes long...",
       "xref_summaries": [
         "&3961 referenced 1 time by &3911"
       ],
@@ -10833,6 +10974,7 @@
         3,
         12
       ],
+      "comment_inline": "...restore its length byte (stored as 0 by the protection)",
       "type": "code",
       "mnemonic": "sta",
       "operand": "basic_line10_len",
@@ -10844,6 +10986,7 @@
       "bytes": [
         96
       ],
+      "comment_inline": "Done",
       "type": "code",
       "mnemonic": "rts"
     },
@@ -10856,6 +10999,7 @@
       "labels": [
         "queue_autorun"
       ],
+      "comment_inline": "Start at the first command byte",
       "xref_summaries": [
         "&3967 referenced 1 time by &395b"
       ],
@@ -10877,8 +11021,9 @@
         2
       ],
       "labels": [
-        "c3969"
+        "queue_next_byte"
       ],
+      "comment_inline": "Current buffer fill position...",
       "xref_summaries": [
         "&3969 referenced 1 time by &3982"
       ],
@@ -10901,6 +11046,7 @@
         244,
         57
       ],
+      "comment_inline": "read a command byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "autorun_commands,y",
@@ -10913,11 +11059,12 @@
         240,
         20
       ],
+      "comment_inline": "...&00 terminates",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "return_1",
+      "operand": "queue_done",
       "target": 14725,
-      "target_label": "return_1"
+      "target_label": "queue_done"
     },
     {
       "addr": 14705,
@@ -10926,11 +11073,12 @@
         0,
         3
       ],
+      "comment_inline": "Poke it into the keyboard buffer",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l0300,x",
+      "operand": "kbd_buffer,x",
       "target": 768,
-      "target_label": "l0300"
+      "target_label": "kbd_buffer"
     },
     {
       "addr": 14708,
@@ -10939,6 +11087,7 @@
         60,
         2
       ],
+      "comment_inline": "Advance the fill position...",
       "type": "code",
       "mnemonic": "inc",
       "operand": "autorun_index",
@@ -10952,6 +11101,7 @@
         60,
         2
       ],
+      "comment_inline": "reload it",
       "type": "code",
       "mnemonic": "lda",
       "operand": "autorun_index",
@@ -10964,11 +11114,12 @@
         208,
         5
       ],
+      "comment_inline": "unless it wrapped to 0",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c3981",
+      "operand": "queue_advance",
       "target": 14721,
-      "target_label": "c3981"
+      "target_label": "queue_advance"
     },
     {
       "addr": 14716,
@@ -10976,6 +11127,7 @@
         169,
         224
       ],
+      "comment_inline": "...wrapping back to &E0 (buffer at &03E0)...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&e0"
@@ -10987,6 +11139,7 @@
         60,
         2
       ],
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "autorun_index",
@@ -10999,8 +11152,9 @@
         200
       ],
       "labels": [
-        "c3981"
+        "queue_advance"
       ],
+      "comment_inline": "Next command byte",
       "xref_summaries": [
         "&3981 referenced 1 time by &397a"
       ],
@@ -11020,11 +11174,12 @@
         105,
         57
       ],
+      "comment_inline": "loop",
       "type": "code",
       "mnemonic": "jmp",
-      "operand": "c3969",
+      "operand": "queue_next_byte",
       "target": 14697,
-      "target_label": "c3969"
+      "target_label": "queue_next_byte"
     },
     {
       "addr": 14725,
@@ -11032,8 +11187,9 @@
         96
       ],
       "labels": [
-        "return_1"
+        "queue_done"
       ],
+      "comment_inline": "Done",
       "xref_summaries": [
         "&3985 referenced 1 time by &396f"
       ],
@@ -11055,6 +11211,7 @@
       "labels": [
         "setup_keys"
       ],
+      "comment_inline": "OSBYTE 200: set the BREAK/ESCAPE behaviour...",
       "xref_summaries": [
         "&3986 referenced 1 time by &3957"
       ],
@@ -11074,6 +11231,7 @@
         162,
         3
       ],
+      "comment_inline": "value 3",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#3"
@@ -11085,6 +11243,7 @@
         244,
         255
       ],
+      "comment_inline": "call OSBYTE",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "osbyte",
@@ -11097,6 +11256,7 @@
         162,
         0
       ],
+      "comment_inline": "Start at the first command byte",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#0"
@@ -11109,8 +11269,9 @@
         57
       ],
       "labels": [
-        "c398f"
+        "insert_next_key"
       ],
+      "comment_inline": "Read a command byte...",
       "xref_summaries": [
         "&398f referenced 1 time by &39a5"
       ],
@@ -11132,17 +11293,19 @@
         240,
         20
       ],
+      "comment_inline": "...&00 terminates",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "return_2",
+      "operand": "setup_keys_done",
       "target": 14760,
-      "target_label": "return_2"
+      "target_label": "setup_keys_done"
     },
     {
       "addr": 14740,
       "bytes": [
         168
       ],
+      "comment_inline": "The character to insert",
       "type": "code",
       "mnemonic": "tay"
     },
@@ -11151,6 +11314,7 @@
       "bytes": [
         138
       ],
+      "comment_inline": "Save the loop index...",
       "type": "code",
       "mnemonic": "txa"
     },
@@ -11161,11 +11325,12 @@
         169,
         57
       ],
+      "comment_inline": "save it",
       "type": "code",
       "mnemonic": "sta",
-      "operand": "l39a9",
+      "operand": "setup_key_index",
       "target": 14761,
-      "target_label": "l39a9"
+      "target_label": "setup_key_index"
     },
     {
       "addr": 14745,
@@ -11173,6 +11338,7 @@
         162,
         0
       ],
+      "comment_inline": "OSBYTE &8A: insert Y into buffer 0 (keyboard)...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "#0"
@@ -11183,6 +11349,7 @@
         169,
         138
       ],
+      "comment_inline": "A = &8A",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&8a"
@@ -11194,6 +11361,7 @@
         244,
         255
       ],
+      "comment_inline": "call OSBYTE",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "osbyte",
@@ -11207,17 +11375,19 @@
         169,
         57
       ],
+      "comment_inline": "Restore the loop index...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "l39a9",
+      "operand": "setup_key_index",
       "target": 14761,
-      "target_label": "l39a9"
+      "target_label": "setup_key_index"
     },
     {
       "addr": 14755,
       "bytes": [
         170
       ],
+      "comment_inline": "into X",
       "type": "code",
       "mnemonic": "tax"
     },
@@ -11226,6 +11396,7 @@
       "bytes": [
         232
       ],
+      "comment_inline": "Next command byte",
       "type": "code",
       "mnemonic": "inx"
     },
@@ -11236,11 +11407,12 @@
         143,
         57
       ],
+      "comment_inline": "loop",
       "type": "code",
       "mnemonic": "jmp",
-      "operand": "c398f",
+      "operand": "insert_next_key",
       "target": 14735,
-      "target_label": "c398f"
+      "target_label": "insert_next_key"
     },
     {
       "addr": 14760,
@@ -11248,8 +11420,9 @@
         96
       ],
       "labels": [
-        "return_2"
+        "setup_keys_done"
       ],
+      "comment_inline": "Done",
       "xref_summaries": [
         "&39a8 referenced 1 time by &3992"
       ],
@@ -11268,8 +11441,9 @@
         234
       ],
       "labels": [
-        "l39a9"
+        "setup_key_index"
       ],
+      "comment_inline": "Scratch: saved loop index (NOP at rest)",
       "xref_summaries": [
         "&39a9 referenced 2 times by &3996, &39a0"
       ],
@@ -11297,6 +11471,7 @@
       "labels": [
         "relocate_image"
       ],
+      "comment_inline": "OSCLI the startup command at oscli_command (&39F1): low byte...",
       "xref_summaries": [
         "&39aa referenced 1 time by &390b"
       ],
@@ -11316,6 +11491,7 @@
         160,
         57
       ],
+      "comment_inline": "...high byte...",
       "type": "code",
       "mnemonic": "ldy",
       "operand": "#&39"
@@ -11327,6 +11503,7 @@
         247,
         255
       ],
+      "comment_inline": "...call OSCLI",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "oscli",
@@ -11338,6 +11515,7 @@
       "bytes": [
         56
       ],
+      "comment_inline": "(carry set; not used by the copy below)",
       "type": "code",
       "mnemonic": "sec"
     },
@@ -11347,6 +11525,7 @@
         169,
         0
       ],
+      "comment_inline": "Leftover byte count = 0 (whole pages only)...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#0"
@@ -11357,6 +11536,7 @@
         133,
         116
       ],
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "copy_rem",
@@ -11369,6 +11549,7 @@
         169,
         32
       ],
+      "comment_inline": "Copy &20 = 32 pages...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&20"
@@ -11379,6 +11560,7 @@
         133,
         117
       ],
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "copy_pages",
@@ -11391,6 +11573,7 @@
         169,
         0
       ],
+      "comment_inline": "Destination = &0A00: low byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#0"
@@ -11401,6 +11584,7 @@
         133,
         112
       ],
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "copy_dst",
@@ -11413,6 +11597,7 @@
         169,
         10
       ],
+      "comment_inline": "...high byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&0a"
@@ -11423,6 +11608,7 @@
         133,
         113
       ],
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "copy_dst_hi",
@@ -11435,6 +11621,7 @@
         169,
         0
       ],
+      "comment_inline": "Source = &1900 (the loaded image): low byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#0"
@@ -11445,6 +11632,7 @@
         133,
         114
       ],
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "copy_src",
@@ -11457,6 +11645,7 @@
         169,
         25
       ],
+      "comment_inline": "...high byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "#&19"
@@ -11467,6 +11656,7 @@
         133,
         115
       ],
+      "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "copy_src_hi",
@@ -11479,6 +11669,7 @@
         160,
         0
       ],
+      "comment_inline": "Byte index within the page",
       "type": "code",
       "mnemonic": "ldy",
       "operand": "#0"
@@ -11489,6 +11680,7 @@
         166,
         117
       ],
+      "comment_inline": "Page count...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "copy_pages",
@@ -11501,11 +11693,12 @@
         240,
         20
       ],
+      "comment_inline": "...none -> just the remainder",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "c39e4",
+      "operand": "copy_remainder",
       "target": 14820,
-      "target_label": "c39e4"
+      "target_label": "copy_remainder"
     },
     {
       "addr": 14800,
@@ -11514,8 +11707,9 @@
         113
       ],
       "labels": [
-        "c39d0"
+        "copy_page"
       ],
+      "comment_inline": "Which destination page are we about to write?",
       "xref_summaries": [
         "&39d0 referenced 2 times by &39db, &39e2"
       ],
@@ -11552,11 +11746,12 @@
         240,
         4
       ],
+      "comment_inline": "...skip the store for that page",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "c39da",
+      "operand": "copy_next_byte",
       "target": 14810,
-      "target_label": "c39da"
+      "target_label": "copy_next_byte"
     },
     {
       "addr": 14806,
@@ -11564,6 +11759,7 @@
         177,
         114
       ],
+      "comment_inline": "Copy one byte...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "(copy_src),y",
@@ -11576,6 +11772,7 @@
         145,
         112
       ],
+      "comment_inline": "to the destination",
       "type": "code",
       "mnemonic": "sta",
       "operand": "(copy_dst),y",
@@ -11588,8 +11785,9 @@
         200
       ],
       "labels": [
-        "c39da"
+        "copy_next_byte"
       ],
+      "comment_inline": "Next byte...",
       "xref_summaries": [
         "&39da referenced 1 time by &39d4"
       ],
@@ -11608,11 +11806,12 @@
         208,
         243
       ],
+      "comment_inline": "...to the end of the page",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c39d0",
+      "operand": "copy_page",
       "target": 14800,
-      "target_label": "c39d0"
+      "target_label": "copy_page"
     },
     {
       "addr": 14813,
@@ -11620,6 +11819,7 @@
         230,
         115
       ],
+      "comment_inline": "Next source page...",
       "type": "code",
       "mnemonic": "inc",
       "operand": "copy_src_hi",
@@ -11632,6 +11832,7 @@
         230,
         113
       ],
+      "comment_inline": "...and destination page",
       "type": "code",
       "mnemonic": "inc",
       "operand": "copy_dst_hi",
@@ -11643,6 +11844,7 @@
       "bytes": [
         202
       ],
+      "comment_inline": "one fewer page",
       "type": "code",
       "mnemonic": "dex"
     },
@@ -11652,11 +11854,12 @@
         208,
         236
       ],
+      "comment_inline": "...until all pages copied",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "c39d0",
+      "operand": "copy_page",
       "target": 14800,
-      "target_label": "c39d0"
+      "target_label": "copy_page"
     },
     {
       "addr": 14820,
@@ -11665,8 +11868,9 @@
         116
       ],
       "labels": [
-        "c39e4"
+        "copy_remainder"
       ],
+      "comment_inline": "Any leftover bytes? (none here)",
       "xref_summaries": [
         "&39e4 referenced 1 time by &39ce"
       ],
@@ -11688,11 +11892,12 @@
         240,
         8
       ],
+      "comment_inline": "none -> done",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "return_3",
+      "operand": "copy_done",
       "target": 14832,
-      "target_label": "return_3"
+      "target_label": "copy_done"
     },
     {
       "addr": 14824,
@@ -11701,8 +11906,9 @@
         114
       ],
       "labels": [
-        "loop_c39e8"
+        "copy_remainder_byte"
       ],
+      "comment_inline": "Copy one byte...",
       "xref_summaries": [
         "&39e8 referenced 1 time by &39ee"
       ],
@@ -11724,6 +11930,7 @@
         145,
         112
       ],
+      "comment_inline": "to the destination",
       "type": "code",
       "mnemonic": "sta",
       "operand": "(copy_dst),y",
@@ -11735,6 +11942,7 @@
       "bytes": [
         200
       ],
+      "comment_inline": "next byte",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -11743,6 +11951,7 @@
       "bytes": [
         202
       ],
+      "comment_inline": "one fewer",
       "type": "code",
       "mnemonic": "dex"
     },
@@ -11752,11 +11961,12 @@
         208,
         248
       ],
+      "comment_inline": "loop",
       "type": "code",
       "mnemonic": "bne",
-      "operand": "loop_c39e8",
+      "operand": "copy_remainder_byte",
       "target": 14824,
-      "target_label": "loop_c39e8"
+      "target_label": "copy_remainder_byte"
     },
     {
       "addr": 14832,
@@ -11764,8 +11974,9 @@
         96
       ],
       "labels": [
-        "return_3"
+        "copy_done"
       ],
+      "comment_inline": "Done",
       "xref_summaries": [
         "&39f0 referenced 1 time by &39e6"
       ],
@@ -11782,15 +11993,24 @@
       "addr": 14833,
       "bytes": [
         84,
-        46,
-        13
+        46
       ],
       "labels": [
         "oscli_command"
       ],
-      "comment_inline": "startup command \"*T.\" (*TAPE): select the cassette filing system before relocating",
+      "comment_inline": "Startup *-command \"T.\" (*TAPE): select the cassette filing system, CR-terminated",
       "type": "string",
-      "string": "T.."
+      "string": "T."
+    },
+    {
+      "addr": 14835,
+      "bytes": [
+        13
+      ],
+      "type": "byte",
+      "values": [
+        13
+      ]
     },
     {
       "addr": 14836,
@@ -11801,7 +12021,7 @@
       "labels": [
         "autorun_commands"
       ],
-      "comment_inline": "auto-run command lines: 'PA.=&C00' / 'OLD' / 'RUN', CR-separated, &00-terminated",
+      "comment_inline": "CTRL-U + CR (clear the input line), then 'PAGE=&C00' / 'OLD' / 'RUN' each CR-terminated, then a &00 stop byte",
       "xref_summaries": [
         "&39f4 used as index base 2 times by &396c, &398f"
       ],
@@ -11880,7 +12100,17 @@
       "addr": 14854,
       "bytes": [
         13,
-        0,
+        0
+      ],
+      "type": "byte",
+      "values": [
+        13,
+        0
+      ]
+    },
+    {
+      "addr": 14856,
+      "bytes": [
         13,
         131,
         252,
@@ -12006,12 +12236,10 @@
         "trailing_data"
       ],
       "comments_before_label": [
-        "Trailing bytes the loader never references; the relocated copy is wiped by the BASIC memory-clear (FOR A%=&C00 TO &3A80) at startup"
+        "Unused trailing bytes: single bytes with no discernible structure, referenced by nothing in the loader. The relocated copy of this region is wiped by the BASIC memory-clear (FOR A%=&C00 TO &3A80) at startup."
       ],
       "type": "byte",
       "values": [
-        13,
-        0,
         13,
         131,
         252,
