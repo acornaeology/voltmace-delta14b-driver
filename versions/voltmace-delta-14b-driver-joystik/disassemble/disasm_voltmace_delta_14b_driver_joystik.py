@@ -98,8 +98,8 @@ def _make_driver_disassembler(decoded_bytes):
     return dd
 
 
-def _render_driver(dd):
-    return str(dd.disassemble().render(
+def _render_driver(driver_ir):
+    return str(driver_ir.render(
         'beebasm', byte_column=True, byte_column_format='py8dis',
         default_byte_cols=12, default_word_cols=6,
     ))
@@ -744,10 +744,17 @@ for _name, _addr, _annotate in (
     _bytes = _decoded(_image, _addr)
     _dd = _make_driver_disassembler(_bytes)
     _annotate(_dd, _bytes)
-    _asm = _render_driver(_dd)
-    _asm_filepath = _output_dirpath / f'voltmace-delta-14b-driver-joystik-driver-{_name}.asm'
+    _driver_ir = _dd.disassemble()
+    _stem = f'voltmace-delta-14b-driver-joystik-driver-{_name}'
+    _asm = _render_driver(_driver_ir)
+    _asm_filepath = _output_dirpath / f'{_stem}.asm'
     _asm_filepath.write_text(_asm, encoding='utf-8')
     print(f'Wrote {_asm_filepath}', file=sys.stderr)
+    # Also emit the structured JSON so the site can render the variant as
+    # a formatted, anchored disassembly (not just plain text).
+    _driver_json_filepath = _output_dirpath / f'{_stem}.json'
+    _driver_json_filepath.write_text(str(_driver_ir.render('json')), encoding='utf-8')
+    print(f'Wrote {_driver_json_filepath}', file=sys.stderr)
     _driver_bytes[_name] = _assemble(_asm)
 
 # Regenerate the incbin payload from editable source and prove it matches the

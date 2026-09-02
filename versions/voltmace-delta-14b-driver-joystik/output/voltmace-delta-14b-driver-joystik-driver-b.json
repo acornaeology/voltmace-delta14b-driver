@@ -1,0 +1,1852 @@
+{
+  "meta": {
+    "schema_version": 4,
+    "load_addr": 2560,
+    "end_addr": 2816
+  },
+  "constants": [],
+  "macros": [],
+  "subroutines": [
+    {
+      "addr": 2560,
+      "name": "install",
+      "title": "Install the joystick driver",
+      "description": "Point BYTEV at the OSBYTE intercept at &0A0D. Called from\nthe BASIC via CALL &A00, after it has saved the previous BYTEV (line 50) and\npatched the chain slot (line 1840) and sensitivity thresholds (line 1850)."
+    },
+    {
+      "addr": 2573,
+      "name": "osbyte_intercept",
+      "title": "BYTEV handler: map the joystick and keypad to INKEY",
+      "description": "As variant A, but joystick_map entries >= &10 test the\nDelta 14B keypad matrix through the User VIA instead of an analogue channel."
+    },
+    {
+      "addr": 2620,
+      "name": "read_input",
+      "title": "Test one joystick or keypad input",
+      "description": "For the matched entry: entries below &10 read an analogue\nchannel (OSBYTE &80 / ADVAL) against the thresholds; entries >= &10 strobe a\nkeypad column through User VIA port B and test a row bit. A hit sets\nresult_flag."
+    }
+  ],
+  "banners": [],
+  "external_labels": {
+    "bytev": 522,
+    "bytev_hi": 523,
+    "user_via_orb": 65120,
+    "user_via_ddrb": 65122,
+    "osbyte": 65524
+  },
+  "memory_map": [],
+  "regions": [],
+  "items": [
+    {
+      "addr": 2560,
+      "bytes": [
+        72
+      ],
+      "labels": [
+        "install"
+      ],
+      "comment_inline": "Preserve A",
+      "type": "code",
+      "mnemonic": "pha"
+    },
+    {
+      "addr": 2561,
+      "bytes": [
+        169,
+        13
+      ],
+      "comment_inline": "BYTEV low byte -> &0D...",
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "#&0d"
+    },
+    {
+      "addr": 2563,
+      "bytes": [
+        141,
+        10,
+        2
+      ],
+      "comment_inline": "store it",
+      "type": "code",
+      "mnemonic": "sta",
+      "operand": "bytev",
+      "target": 522,
+      "target_label": "bytev"
+    },
+    {
+      "addr": 2566,
+      "bytes": [
+        169,
+        10
+      ],
+      "comment_inline": "...high byte -> &0A...",
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "#&0a"
+    },
+    {
+      "addr": 2568,
+      "bytes": [
+        141,
+        11,
+        2
+      ],
+      "comment_inline": "...so every OSBYTE now enters the handler at &0A0D",
+      "type": "code",
+      "mnemonic": "sta",
+      "operand": "bytev_hi",
+      "target": 523,
+      "target_label": "bytev_hi"
+    },
+    {
+      "addr": 2571,
+      "bytes": [
+        104
+      ],
+      "comment_inline": "Restore A",
+      "type": "code",
+      "mnemonic": "pla"
+    },
+    {
+      "addr": 2572,
+      "bytes": [
+        96
+      ],
+      "comment_inline": "Return to the BASIC caller",
+      "type": "code",
+      "mnemonic": "rts"
+    },
+    {
+      "addr": 2573,
+      "bytes": [
+        201,
+        129
+      ],
+      "labels": [
+        "osbyte_intercept"
+      ],
+      "comment_inline": "Only intercept OSBYTE &81 (INKEY / read key)",
+      "type": "code",
+      "mnemonic": "cmp",
+      "operand": "#&81"
+    },
+    {
+      "addr": 2575,
+      "bytes": [
+        208,
+        40
+      ],
+      "comment_inline": "other reason codes -> chain to the previous handler",
+      "type": "code",
+      "mnemonic": "bne",
+      "operand": "chain",
+      "target": 2617,
+      "target_label": "chain"
+    },
+    {
+      "addr": 2577,
+      "bytes": [
+        72
+      ],
+      "comment_inline": "Preserve A (reason code)...",
+      "type": "code",
+      "mnemonic": "pha"
+    },
+    {
+      "addr": 2578,
+      "bytes": [
+        152
+      ],
+      "comment_inline": "Preserve Y (INKEY high byte)...",
+      "type": "code",
+      "mnemonic": "tya"
+    },
+    {
+      "addr": 2579,
+      "bytes": [
+        72
+      ],
+      "comment_inline": "on the stack",
+      "type": "code",
+      "mnemonic": "pha"
+    },
+    {
+      "addr": 2580,
+      "bytes": [
+        138
+      ],
+      "comment_inline": "A := X = the INKEY key number being tested",
+      "type": "code",
+      "mnemonic": "txa"
+    },
+    {
+      "addr": 2581,
+      "bytes": [
+        72
+      ],
+      "comment_inline": "...(X also preserved)",
+      "type": "code",
+      "mnemonic": "pha"
+    },
+    {
+      "addr": 2582,
+      "bytes": [
+        160,
+        0
+      ],
+      "comment_inline": "No match yet...",
+      "type": "code",
+      "mnemonic": "ldy",
+      "operand": "#0"
+    },
+    {
+      "addr": 2584,
+      "bytes": [
+        140,
+        157,
+        10
+      ],
+      "comment_inline": "...clear the result flag",
+      "type": "code",
+      "mnemonic": "sty",
+      "operand": "result_flag",
+      "target": 2717,
+      "target_label": "result_flag"
+    },
+    {
+      "addr": 2587,
+      "bytes": [
+        217,
+        176,
+        10
+      ],
+      "labels": [
+        "scan_map"
+      ],
+      "comment_inline": "Does the tested key match this map entry?",
+      "xref_summaries": [
+        "&0a1b referenced 1 time by &0a27"
+      ],
+      "references": [
+        {
+          "addr": 2599,
+          "kind": "direct"
+        }
+      ],
+      "type": "code",
+      "mnemonic": "cmp",
+      "operand": "joystick_map,y",
+      "target": 2736,
+      "target_label": "joystick_map"
+    },
+    {
+      "addr": 2590,
+      "bytes": [
+        208,
+        3
+      ],
+      "comment_inline": "no -> skip it",
+      "type": "code",
+      "mnemonic": "bne",
+      "operand": "scan_next",
+      "target": 2595,
+      "target_label": "scan_next"
+    },
+    {
+      "addr": 2592,
+      "bytes": [
+        32,
+        60,
+        10
+      ],
+      "comment_inline": "yes -> read the mapped input for it",
+      "type": "code",
+      "mnemonic": "jsr",
+      "operand": "read_input",
+      "target": 2620,
+      "target_label": "read_input"
+    },
+    {
+      "addr": 2595,
+      "bytes": [
+        200
+      ],
+      "labels": [
+        "scan_next"
+      ],
+      "comment_inline": "Step over the 2-byte entry...",
+      "xref_summaries": [
+        "&0a23 referenced 1 time by &0a1e"
+      ],
+      "references": [
+        {
+          "addr": 2590,
+          "kind": "direct"
+        }
+      ],
+      "type": "code",
+      "mnemonic": "iny"
+    },
+    {
+      "addr": 2596,
+      "bytes": [
+        200
+      ],
+      "comment_inline": "twice",
+      "type": "code",
+      "mnemonic": "iny"
+    },
+    {
+      "addr": 2597,
+      "bytes": [
+        192,
+        72
+      ],
+      "comment_inline": "end of the map?",
+      "type": "code",
+      "mnemonic": "cpy",
+      "operand": "#&48"
+    },
+    {
+      "addr": 2599,
+      "bytes": [
+        208,
+        242
+      ],
+      "comment_inline": "no -> keep scanning",
+      "type": "code",
+      "mnemonic": "bne",
+      "operand": "scan_map",
+      "target": 2587,
+      "target_label": "scan_map"
+    },
+    {
+      "addr": 2601,
+      "bytes": [
+        173,
+        157,
+        10
+      ],
+      "comment_inline": "Did any mapped input read as active?",
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "result_flag",
+      "target": 2717,
+      "target_label": "result_flag"
+    },
+    {
+      "addr": 2604,
+      "bytes": [
+        240,
+        6
+      ],
+      "comment_inline": "no -> return the normal INKEY result",
+      "type": "code",
+      "mnemonic": "beq",
+      "operand": "not_pressed",
+      "target": 2612,
+      "target_label": "not_pressed"
+    },
+    {
+      "addr": 2606,
+      "bytes": [
+        170
+      ],
+      "comment_inline": "yes: return \"key pressed\" (X=Y=&FF)...",
+      "type": "code",
+      "mnemonic": "tax"
+    },
+    {
+      "addr": 2607,
+      "bytes": [
+        168
+      ],
+      "comment_inline": "X and Y",
+      "type": "code",
+      "mnemonic": "tay"
+    },
+    {
+      "addr": 2608,
+      "bytes": [
+        104
+      ],
+      "comment_inline": "drop the saved X...",
+      "type": "code",
+      "mnemonic": "pla"
+    },
+    {
+      "addr": 2609,
+      "bytes": [
+        104
+      ],
+      "comment_inline": "...Y...",
+      "type": "code",
+      "mnemonic": "pla"
+    },
+    {
+      "addr": 2610,
+      "bytes": [
+        104
+      ],
+      "comment_inline": "...A",
+      "type": "code",
+      "mnemonic": "pla"
+    },
+    {
+      "addr": 2611,
+      "bytes": [
+        96
+      ],
+      "comment_inline": "and return, claiming the OSBYTE",
+      "type": "code",
+      "mnemonic": "rts"
+    },
+    {
+      "addr": 2612,
+      "bytes": [
+        104
+      ],
+      "labels": [
+        "not_pressed"
+      ],
+      "comment_inline": "Restore X...",
+      "xref_summaries": [
+        "&0a34 referenced 1 time by &0a2c"
+      ],
+      "references": [
+        {
+          "addr": 2604,
+          "kind": "direct"
+        }
+      ],
+      "type": "code",
+      "mnemonic": "pla"
+    },
+    {
+      "addr": 2613,
+      "bytes": [
+        170
+      ],
+      "comment_inline": "into X",
+      "type": "code",
+      "mnemonic": "tax"
+    },
+    {
+      "addr": 2614,
+      "bytes": [
+        104
+      ],
+      "comment_inline": "Restore Y...",
+      "type": "code",
+      "mnemonic": "pla"
+    },
+    {
+      "addr": 2615,
+      "bytes": [
+        168
+      ],
+      "comment_inline": "into Y",
+      "type": "code",
+      "mnemonic": "tay"
+    },
+    {
+      "addr": 2616,
+      "bytes": [
+        104
+      ],
+      "comment_inline": "Restore A",
+      "type": "code",
+      "mnemonic": "pla"
+    },
+    {
+      "addr": 2617,
+      "bytes": [
+        76,
+        250,
+        10
+      ],
+      "labels": [
+        "chain"
+      ],
+      "comment_inline": "Pass the call to the previous BYTEV (chain slot below)",
+      "xref_summaries": [
+        "&0a39 referenced 1 time by &0a0f"
+      ],
+      "references": [
+        {
+          "addr": 2575,
+          "kind": "direct"
+        }
+      ],
+      "type": "code",
+      "mnemonic": "jmp",
+      "operand": "chain_to_old_bytev",
+      "target": 2810,
+      "target_label": "chain_to_old_bytev"
+    },
+    {
+      "addr": 2620,
+      "bytes": [
+        72
+      ],
+      "labels": [
+        "read_input"
+      ],
+      "comment_inline": "Preserve A...",
+      "xref_summaries": [
+        "&0a3c referenced 1 time by &0a20"
+      ],
+      "references": [
+        {
+          "addr": 2592,
+          "kind": "direct"
+        }
+      ],
+      "type": "code",
+      "mnemonic": "pha"
+    },
+    {
+      "addr": 2621,
+      "bytes": [
+        152
+      ],
+      "comment_inline": "Preserve Y...",
+      "type": "code",
+      "mnemonic": "tya"
+    },
+    {
+      "addr": 2622,
+      "bytes": [
+        72
+      ],
+      "comment_inline": "on the stack",
+      "type": "code",
+      "mnemonic": "pha"
+    },
+    {
+      "addr": 2623,
+      "bytes": [
+        201,
+        16
+      ],
+      "comment_inline": "Analogue entry (< &10) or keypad entry?",
+      "type": "code",
+      "mnemonic": "cmp",
+      "operand": "#&10"
+    },
+    {
+      "addr": 2625,
+      "bytes": [
+        16,
+        40
+      ],
+      "comment_inline": ">= &10 -> the keypad path",
+      "type": "code",
+      "mnemonic": "bpl",
+      "operand": "test_keypad",
+      "target": 2667,
+      "target_label": "test_keypad"
+    },
+    {
+      "addr": 2627,
+      "bytes": [
+        200
+      ],
+      "comment_inline": "Point at the entry parameter",
+      "type": "code",
+      "mnemonic": "iny"
+    },
+    {
+      "addr": 2628,
+      "bytes": [
+        185,
+        176,
+        10
+      ],
+      "comment_inline": "ADC channel in the top nibble...",
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "joystick_map,y",
+      "target": 2736,
+      "target_label": "joystick_map"
+    },
+    {
+      "addr": 2631,
+      "bytes": [
+        74
+      ],
+      "comment_inline": "...shift it down...",
+      "type": "code",
+      "mnemonic": "lsr"
+    },
+    {
+      "addr": 2632,
+      "bytes": [
+        74
+      ],
+      "comment_inline": "...shift it down...",
+      "type": "code",
+      "mnemonic": "lsr"
+    },
+    {
+      "addr": 2633,
+      "bytes": [
+        74
+      ],
+      "comment_inline": "...shift it down...",
+      "type": "code",
+      "mnemonic": "lsr"
+    },
+    {
+      "addr": 2634,
+      "bytes": [
+        74
+      ],
+      "comment_inline": "...shift it down...",
+      "type": "code",
+      "mnemonic": "lsr"
+    },
+    {
+      "addr": 2635,
+      "bytes": [
+        170
+      ],
+      "comment_inline": "...into X for OSBYTE &80",
+      "type": "code",
+      "mnemonic": "tax"
+    },
+    {
+      "addr": 2636,
+      "bytes": [
+        185,
+        176,
+        10
+      ],
+      "comment_inline": "reload the parameter",
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "joystick_map,y",
+      "target": 2736,
+      "target_label": "joystick_map"
+    },
+    {
+      "addr": 2639,
+      "bytes": [
+        41,
+        1
+      ],
+      "comment_inline": "low bit picks which threshold (push vs pull)",
+      "type": "code",
+      "mnemonic": "and",
+      "operand": "#1"
+    },
+    {
+      "addr": 2641,
+      "bytes": [
+        240,
+        12
+      ],
+      "comment_inline": "else test the high threshold",
+      "type": "code",
+      "mnemonic": "beq",
+      "operand": "test_high_threshold",
+      "target": 2655,
+      "target_label": "test_high_threshold"
+    },
+    {
+      "addr": 2643,
+      "bytes": [
+        169,
+        128
+      ],
+      "comment_inline": "OSBYTE &80: read ADC channel X (ADVAL, Y=high byte)...",
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "#&80"
+    },
+    {
+      "addr": 2645,
+      "bytes": [
+        32,
+        244,
+        255
+      ],
+      "comment_inline": "call OSBYTE",
+      "type": "code",
+      "mnemonic": "jsr",
+      "operand": "osbyte",
+      "target": 65524,
+      "target_label": "osbyte"
+    },
+    {
+      "addr": 2648,
+      "bytes": [
+        204,
+        253,
+        10
+      ],
+      "comment_inline": "past the low threshold?",
+      "type": "code",
+      "mnemonic": "cpy",
+      "operand": "threshold_lo",
+      "target": 2813,
+      "target_label": "threshold_lo"
+    },
+    {
+      "addr": 2651,
+      "bytes": [
+        144,
+        58
+      ],
+      "comment_inline": "no -> not active",
+      "type": "code",
+      "mnemonic": "bcc",
+      "operand": "read_done",
+      "target": 2711,
+      "target_label": "read_done"
+    },
+    {
+      "addr": 2653,
+      "bytes": [
+        176,
+        51
+      ],
+      "comment_inline": "yes -> active",
+      "type": "code",
+      "mnemonic": "bcs",
+      "operand": "active",
+      "target": 2706,
+      "target_label": "active"
+    },
+    {
+      "addr": 2655,
+      "bytes": [
+        169,
+        128
+      ],
+      "labels": [
+        "test_high_threshold"
+      ],
+      "comment_inline": "OSBYTE &80: read ADC channel X...",
+      "xref_summaries": [
+        "&0a5f referenced 1 time by &0a51"
+      ],
+      "references": [
+        {
+          "addr": 2641,
+          "kind": "direct"
+        }
+      ],
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "#&80"
+    },
+    {
+      "addr": 2657,
+      "bytes": [
+        32,
+        244,
+        255
+      ],
+      "comment_inline": "call OSBYTE",
+      "type": "code",
+      "mnemonic": "jsr",
+      "operand": "osbyte",
+      "target": 65524,
+      "target_label": "osbyte"
+    },
+    {
+      "addr": 2660,
+      "bytes": [
+        204,
+        254,
+        10
+      ],
+      "comment_inline": "past the high threshold?",
+      "type": "code",
+      "mnemonic": "cpy",
+      "operand": "threshold_hi",
+      "target": 2814,
+      "target_label": "threshold_hi"
+    },
+    {
+      "addr": 2663,
+      "bytes": [
+        144,
+        41
+      ],
+      "comment_inline": "no -> active",
+      "type": "code",
+      "mnemonic": "bcc",
+      "operand": "active",
+      "target": 2706,
+      "target_label": "active"
+    },
+    {
+      "addr": 2665,
+      "bytes": [
+        176,
+        44
+      ],
+      "comment_inline": "yes -> not active",
+      "type": "code",
+      "mnemonic": "bcs",
+      "operand": "read_done",
+      "target": 2711,
+      "target_label": "read_done"
+    },
+    {
+      "addr": 2667,
+      "bytes": [
+        200
+      ],
+      "labels": [
+        "test_keypad"
+      ],
+      "comment_inline": "Point at the entry parameter",
+      "xref_summaries": [
+        "&0a6b referenced 1 time by &0a41"
+      ],
+      "references": [
+        {
+          "addr": 2625,
+          "kind": "direct"
+        }
+      ],
+      "type": "code",
+      "mnemonic": "iny"
+    },
+    {
+      "addr": 2668,
+      "bytes": [
+        185,
+        176,
+        10
+      ],
+      "comment_inline": "top nibble = the column strobe...",
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "joystick_map,y",
+      "target": 2736,
+      "target_label": "joystick_map"
+    },
+    {
+      "addr": 2671,
+      "bytes": [
+        41,
+        240
+      ],
+      "comment_inline": "mask the top nibble",
+      "type": "code",
+      "mnemonic": "and",
+      "operand": "#&f0"
+    },
+    {
+      "addr": 2673,
+      "bytes": [
+        141,
+        156,
+        10
+      ],
+      "comment_inline": "...saved",
+      "type": "code",
+      "mnemonic": "sta",
+      "operand": "col_strobe",
+      "target": 2716,
+      "target_label": "col_strobe"
+    },
+    {
+      "addr": 2676,
+      "bytes": [
+        185,
+        176,
+        10
+      ],
+      "comment_inline": "low nibble = the row bit mask...",
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "joystick_map,y",
+      "target": 2736,
+      "target_label": "joystick_map"
+    },
+    {
+      "addr": 2679,
+      "bytes": [
+        41,
+        15
+      ],
+      "comment_inline": "mask the low nibble",
+      "type": "code",
+      "mnemonic": "and",
+      "operand": "#&0f"
+    },
+    {
+      "addr": 2681,
+      "bytes": [
+        160,
+        240
+      ],
+      "comment_inline": "DDRB = &F0: strobes out, rows in...",
+      "type": "code",
+      "mnemonic": "ldy",
+      "operand": "#&f0"
+    },
+    {
+      "addr": 2683,
+      "bytes": [
+        140,
+        98,
+        254
+      ],
+      "comment_inline": "set it",
+      "type": "code",
+      "mnemonic": "sty",
+      "operand": "user_via_ddrb",
+      "target": 65122,
+      "target_label": "user_via_ddrb"
+    },
+    {
+      "addr": 2686,
+      "bytes": [
+        141,
+        155,
+        10
+      ],
+      "comment_inline": "save the row mask",
+      "type": "code",
+      "mnemonic": "sta",
+      "operand": "row_mask",
+      "target": 2715,
+      "target_label": "row_mask"
+    },
+    {
+      "addr": 2689,
+      "bytes": [
+        172,
+        156,
+        10
+      ],
+      "comment_inline": "Drive the column strobe...",
+      "type": "code",
+      "mnemonic": "ldy",
+      "operand": "col_strobe",
+      "target": 2716,
+      "target_label": "col_strobe"
+    },
+    {
+      "addr": 2692,
+      "bytes": [
+        140,
+        96,
+        254
+      ],
+      "comment_inline": "...onto port B",
+      "type": "code",
+      "mnemonic": "sty",
+      "operand": "user_via_orb",
+      "target": 65120,
+      "target_label": "user_via_orb"
+    },
+    {
+      "addr": 2695,
+      "bytes": [
+        172,
+        96,
+        254
+      ],
+      "comment_inline": "Read the rows back...",
+      "type": "code",
+      "mnemonic": "ldy",
+      "operand": "user_via_orb",
+      "target": 65120,
+      "target_label": "user_via_orb"
+    },
+    {
+      "addr": 2698,
+      "bytes": [
+        152
+      ],
+      "comment_inline": "into A",
+      "type": "code",
+      "mnemonic": "tya"
+    },
+    {
+      "addr": 2699,
+      "bytes": [
+        45,
+        155,
+        10
+      ],
+      "comment_inline": "...and mask this row bit",
+      "type": "code",
+      "mnemonic": "and",
+      "operand": "row_mask",
+      "target": 2715,
+      "target_label": "row_mask"
+    },
+    {
+      "addr": 2702,
+      "bytes": [
+        240,
+        2
+      ],
+      "comment_inline": "low (pressed) -> not-active path... ",
+      "type": "code",
+      "mnemonic": "beq",
+      "operand": "active",
+      "target": 2706,
+      "target_label": "active"
+    },
+    {
+      "addr": 2704,
+      "bytes": [
+        208,
+        5
+      ],
+      "comment_inline": "high -> active",
+      "type": "code",
+      "mnemonic": "bne",
+      "operand": "read_done",
+      "target": 2711,
+      "target_label": "read_done"
+    },
+    {
+      "addr": 2706,
+      "bytes": [
+        169,
+        255
+      ],
+      "labels": [
+        "active"
+      ],
+      "comment_inline": "Flag a hit...",
+      "xref_summaries": [
+        "&0a92 referenced 3 times by &0a5d, &0a67, &0a8e"
+      ],
+      "references": [
+        {
+          "addr": 2653,
+          "kind": "direct"
+        },
+        {
+          "addr": 2663,
+          "kind": "direct"
+        },
+        {
+          "addr": 2702,
+          "kind": "direct"
+        }
+      ],
+      "type": "code",
+      "mnemonic": "lda",
+      "operand": "#&ff"
+    },
+    {
+      "addr": 2708,
+      "bytes": [
+        141,
+        157,
+        10
+      ],
+      "comment_inline": "...in result_flag",
+      "type": "code",
+      "mnemonic": "sta",
+      "operand": "result_flag",
+      "target": 2717,
+      "target_label": "result_flag"
+    },
+    {
+      "addr": 2711,
+      "bytes": [
+        104
+      ],
+      "labels": [
+        "read_done"
+      ],
+      "comment_inline": "Restore Y...",
+      "xref_summaries": [
+        "&0a97 referenced 3 times by &0a5b, &0a69, &0a90"
+      ],
+      "references": [
+        {
+          "addr": 2651,
+          "kind": "direct"
+        },
+        {
+          "addr": 2665,
+          "kind": "direct"
+        },
+        {
+          "addr": 2704,
+          "kind": "direct"
+        }
+      ],
+      "type": "code",
+      "mnemonic": "pla"
+    },
+    {
+      "addr": 2712,
+      "bytes": [
+        168
+      ],
+      "comment_inline": "into Y",
+      "type": "code",
+      "mnemonic": "tay"
+    },
+    {
+      "addr": 2713,
+      "bytes": [
+        104
+      ],
+      "comment_inline": "Restore A",
+      "type": "code",
+      "mnemonic": "pla"
+    },
+    {
+      "addr": 2714,
+      "bytes": [
+        96
+      ],
+      "comment_inline": "Done",
+      "type": "code",
+      "mnemonic": "rts"
+    },
+    {
+      "addr": 2715,
+      "bytes": [
+        234
+      ],
+      "labels": [
+        "row_mask"
+      ],
+      "comment_inline": "Scratch: keypad row bit mask (&EA at rest)",
+      "xref_summaries": [
+        "&0a9b referenced 2 times by &0a7e, &0a8b"
+      ],
+      "references": [
+        {
+          "addr": 2686,
+          "kind": "direct"
+        },
+        {
+          "addr": 2699,
+          "kind": "direct"
+        }
+      ],
+      "type": "byte",
+      "values": [
+        234
+      ]
+    },
+    {
+      "addr": 2716,
+      "bytes": [
+        234
+      ],
+      "labels": [
+        "col_strobe"
+      ],
+      "comment_inline": "Scratch: keypad column strobe (&EA at rest)",
+      "xref_summaries": [
+        "&0a9c referenced 2 times by &0a71, &0a81"
+      ],
+      "references": [
+        {
+          "addr": 2673,
+          "kind": "direct"
+        },
+        {
+          "addr": 2689,
+          "kind": "direct"
+        }
+      ],
+      "type": "byte",
+      "values": [
+        234
+      ]
+    },
+    {
+      "addr": 2717,
+      "bytes": [
+        234
+      ],
+      "labels": [
+        "result_flag"
+      ],
+      "comment_inline": "Result byte (&EA at rest): the handler zeroes it, then sets it to &FF if a mapped input reads active",
+      "xref_summaries": [
+        "&0a9d referenced 3 times by &0a18, &0a29, &0a94"
+      ],
+      "references": [
+        {
+          "addr": 2584,
+          "kind": "direct"
+        },
+        {
+          "addr": 2601,
+          "kind": "direct"
+        },
+        {
+          "addr": 2708,
+          "kind": "direct"
+        }
+      ],
+      "type": "byte",
+      "values": [
+        234
+      ]
+    },
+    {
+      "addr": 2718,
+      "bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "labels": [
+        "unused_b"
+      ],
+      "comments_before_label": [
+        "Unused"
+      ],
+      "type": "byte",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "addr": 2736,
+      "bytes": [
+        0,
+        16
+      ],
+      "labels": [
+        "joystick_map"
+      ],
+      "comments_before_label": [
+        "2-byte entries <INKEY key, input descriptor>. The key byte is 0 here; the BASIC (PROCASSEM, lines 1780-1830) pokes each with the user's chosen INKEY value. The fixed descriptor decodes as:"
+      ],
+      "comment_inline": "joystick axis: ADC channel 1, high threshold",
+      "xref_summaries": [
+        "&0ab0 used as index base 5 times by &0a1b, &0a44, &0a4c, &0a6c, &0a74"
+      ],
+      "references": [
+        {
+          "addr": 2587,
+          "kind": "indexed"
+        },
+        {
+          "addr": 2628,
+          "kind": "indexed"
+        },
+        {
+          "addr": 2636,
+          "kind": "indexed"
+        },
+        {
+          "addr": 2668,
+          "kind": "indexed"
+        },
+        {
+          "addr": 2676,
+          "kind": "indexed"
+        }
+      ],
+      "type": "byte",
+      "values": [
+        0,
+        16
+      ]
+    },
+    {
+      "addr": 2738,
+      "bytes": [
+        0,
+        17
+      ],
+      "comment_inline": "joystick axis: ADC channel 1, low threshold",
+      "type": "byte",
+      "values": [
+        0,
+        17
+      ]
+    },
+    {
+      "addr": 2740,
+      "bytes": [
+        0,
+        32
+      ],
+      "comment_inline": "joystick axis: ADC channel 2, high threshold",
+      "type": "byte",
+      "values": [
+        0,
+        32
+      ]
+    },
+    {
+      "addr": 2742,
+      "bytes": [
+        0,
+        33
+      ],
+      "comment_inline": "joystick axis: ADC channel 2, low threshold",
+      "type": "byte",
+      "values": [
+        0,
+        33
+      ]
+    },
+    {
+      "addr": 2744,
+      "bytes": [
+        0,
+        48
+      ],
+      "comment_inline": "joystick axis: ADC channel 3, high threshold",
+      "type": "byte",
+      "values": [
+        0,
+        48
+      ]
+    },
+    {
+      "addr": 2746,
+      "bytes": [
+        0,
+        49
+      ],
+      "comment_inline": "joystick axis: ADC channel 3, low threshold",
+      "type": "byte",
+      "values": [
+        0,
+        49
+      ]
+    },
+    {
+      "addr": 2748,
+      "bytes": [
+        0,
+        64
+      ],
+      "comment_inline": "joystick axis: ADC channel 4, high threshold",
+      "type": "byte",
+      "values": [
+        0,
+        64
+      ]
+    },
+    {
+      "addr": 2750,
+      "bytes": [
+        0,
+        65
+      ],
+      "comment_inline": "joystick axis: ADC channel 4, low threshold",
+      "type": "byte",
+      "values": [
+        0,
+        65
+      ]
+    },
+    {
+      "addr": 2752,
+      "bytes": [
+        0,
+        81
+      ],
+      "comment_inline": "keypad: strobe column &50, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        81
+      ]
+    },
+    {
+      "addr": 2754,
+      "bytes": [
+        0,
+        81
+      ],
+      "comment_inline": "keypad: strobe column &50, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        81
+      ]
+    },
+    {
+      "addr": 2756,
+      "bytes": [
+        0,
+        81
+      ],
+      "comment_inline": "keypad: strobe column &50, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        81
+      ]
+    },
+    {
+      "addr": 2758,
+      "bytes": [
+        0,
+        49
+      ],
+      "comment_inline": "keypad: strobe column &30, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        49
+      ]
+    },
+    {
+      "addr": 2760,
+      "bytes": [
+        0,
+        97
+      ],
+      "comment_inline": "keypad: strobe column &60, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        97
+      ]
+    },
+    {
+      "addr": 2762,
+      "bytes": [
+        0,
+        50
+      ],
+      "comment_inline": "keypad: strobe column &30, test row bit &2",
+      "type": "byte",
+      "values": [
+        0,
+        50
+      ]
+    },
+    {
+      "addr": 2764,
+      "bytes": [
+        0,
+        82
+      ],
+      "comment_inline": "keypad: strobe column &50, test row bit &2",
+      "type": "byte",
+      "values": [
+        0,
+        82
+      ]
+    },
+    {
+      "addr": 2766,
+      "bytes": [
+        0,
+        98
+      ],
+      "comment_inline": "keypad: strobe column &60, test row bit &2",
+      "type": "byte",
+      "values": [
+        0,
+        98
+      ]
+    },
+    {
+      "addr": 2768,
+      "bytes": [
+        0,
+        52
+      ],
+      "comment_inline": "keypad: strobe column &30, test row bit &4",
+      "type": "byte",
+      "values": [
+        0,
+        52
+      ]
+    },
+    {
+      "addr": 2770,
+      "bytes": [
+        0,
+        84
+      ],
+      "comment_inline": "keypad: strobe column &50, test row bit &4",
+      "type": "byte",
+      "values": [
+        0,
+        84
+      ]
+    },
+    {
+      "addr": 2772,
+      "bytes": [
+        0,
+        100
+      ],
+      "comment_inline": "keypad: strobe column &60, test row bit &4",
+      "type": "byte",
+      "values": [
+        0,
+        100
+      ]
+    },
+    {
+      "addr": 2774,
+      "bytes": [
+        0,
+        56
+      ],
+      "comment_inline": "keypad: strobe column &30, test row bit &8",
+      "type": "byte",
+      "values": [
+        0,
+        56
+      ]
+    },
+    {
+      "addr": 2776,
+      "bytes": [
+        0,
+        88
+      ],
+      "comment_inline": "keypad: strobe column &50, test row bit &8",
+      "type": "byte",
+      "values": [
+        0,
+        88
+      ]
+    },
+    {
+      "addr": 2778,
+      "bytes": [
+        0,
+        104
+      ],
+      "comment_inline": "keypad: strobe column &60, test row bit &8",
+      "type": "byte",
+      "values": [
+        0,
+        104
+      ]
+    },
+    {
+      "addr": 2780,
+      "bytes": [
+        0,
+        209
+      ],
+      "comment_inline": "keypad: strobe column &D0, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        209
+      ]
+    },
+    {
+      "addr": 2782,
+      "bytes": [
+        0,
+        209
+      ],
+      "comment_inline": "keypad: strobe column &D0, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        209
+      ]
+    },
+    {
+      "addr": 2784,
+      "bytes": [
+        0,
+        209
+      ],
+      "comment_inline": "keypad: strobe column &D0, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        209
+      ]
+    },
+    {
+      "addr": 2786,
+      "bytes": [
+        0,
+        177
+      ],
+      "comment_inline": "keypad: strobe column &B0, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        177
+      ]
+    },
+    {
+      "addr": 2788,
+      "bytes": [
+        0,
+        225
+      ],
+      "comment_inline": "keypad: strobe column &E0, test row bit &1",
+      "type": "byte",
+      "values": [
+        0,
+        225
+      ]
+    },
+    {
+      "addr": 2790,
+      "bytes": [
+        0,
+        178
+      ],
+      "comment_inline": "keypad: strobe column &B0, test row bit &2",
+      "type": "byte",
+      "values": [
+        0,
+        178
+      ]
+    },
+    {
+      "addr": 2792,
+      "bytes": [
+        0,
+        210
+      ],
+      "comment_inline": "keypad: strobe column &D0, test row bit &2",
+      "type": "byte",
+      "values": [
+        0,
+        210
+      ]
+    },
+    {
+      "addr": 2794,
+      "bytes": [
+        0,
+        226
+      ],
+      "comment_inline": "keypad: strobe column &E0, test row bit &2",
+      "type": "byte",
+      "values": [
+        0,
+        226
+      ]
+    },
+    {
+      "addr": 2796,
+      "bytes": [
+        0,
+        180
+      ],
+      "comment_inline": "keypad: strobe column &B0, test row bit &4",
+      "type": "byte",
+      "values": [
+        0,
+        180
+      ]
+    },
+    {
+      "addr": 2798,
+      "bytes": [
+        0,
+        212
+      ],
+      "comment_inline": "keypad: strobe column &D0, test row bit &4",
+      "type": "byte",
+      "values": [
+        0,
+        212
+      ]
+    },
+    {
+      "addr": 2800,
+      "bytes": [
+        0,
+        228
+      ],
+      "comment_inline": "keypad: strobe column &E0, test row bit &4",
+      "type": "byte",
+      "values": [
+        0,
+        228
+      ]
+    },
+    {
+      "addr": 2802,
+      "bytes": [
+        0,
+        184
+      ],
+      "comment_inline": "keypad: strobe column &B0, test row bit &8",
+      "type": "byte",
+      "values": [
+        0,
+        184
+      ]
+    },
+    {
+      "addr": 2804,
+      "bytes": [
+        0,
+        216
+      ],
+      "comment_inline": "keypad: strobe column &D0, test row bit &8",
+      "type": "byte",
+      "values": [
+        0,
+        216
+      ]
+    },
+    {
+      "addr": 2806,
+      "bytes": [
+        0,
+        232
+      ],
+      "comment_inline": "keypad: strobe column &E0, test row bit &8",
+      "type": "byte",
+      "values": [
+        0,
+        232
+      ]
+    },
+    {
+      "addr": 2808,
+      "bytes": [
+        0,
+        0
+      ],
+      "comment_inline": "end-of-map marker",
+      "type": "byte",
+      "values": [
+        0,
+        0
+      ]
+    },
+    {
+      "addr": 2810,
+      "bytes": [
+        96,
+        0,
+        0
+      ],
+      "labels": [
+        "chain_to_old_bytev"
+      ],
+      "comments_before_label": [
+        "RTS placeholder; the BASIC (line 1840) patches this to JMP <previous BYTEV> so non-INKEY OSBYTEs are chained."
+      ],
+      "xref_summaries": [
+        "&0afa referenced 1 time by &0a39"
+      ],
+      "references": [
+        {
+          "addr": 2617,
+          "kind": "direct"
+        }
+      ],
+      "type": "byte",
+      "values": [
+        96,
+        0,
+        0
+      ]
+    },
+    {
+      "addr": 2813,
+      "bytes": [
+        0
+      ],
+      "labels": [
+        "threshold_lo"
+      ],
+      "comment_inline": "Low sensitivity threshold (BASIC line 1850: SL%)",
+      "xref_summaries": [
+        "&0afd referenced 1 time by &0a58"
+      ],
+      "references": [
+        {
+          "addr": 2648,
+          "kind": "direct"
+        }
+      ],
+      "type": "byte",
+      "values": [
+        0
+      ]
+    },
+    {
+      "addr": 2814,
+      "bytes": [
+        0
+      ],
+      "labels": [
+        "threshold_hi"
+      ],
+      "comment_inline": "High sensitivity threshold (BASIC line 1850: SH%)",
+      "xref_summaries": [
+        "&0afe referenced 1 time by &0a64"
+      ],
+      "references": [
+        {
+          "addr": 2660,
+          "kind": "direct"
+        }
+      ],
+      "type": "byte",
+      "values": [
+        0
+      ]
+    },
+    {
+      "addr": 2815,
+      "bytes": [
+        0
+      ],
+      "labels": [
+        "unused_b_end"
+      ],
+      "comment_inline": "Unused",
+      "type": "byte",
+      "values": [
+        0
+      ]
+    }
+  ]
+}

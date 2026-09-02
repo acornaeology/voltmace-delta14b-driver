@@ -1,5 +1,5 @@
 {
-    "title": "Voltmace Delta 14B/1 JOYSTIK driver (© 1983 Custom Video Productions)",
+    "title": "Voltmace Delta 14B/1 JOYSTIK loader",
     "size": 13312,
     "load_address": "0x1900",
     "exec_address": "0x1909",
@@ -14,19 +14,21 @@
         "os_rom": "OS ROM",
         "os_entry_points": "OS entry points"
     },
-    "source_files": [
+    "disassemblies": [
         {
-            "label": "Joystick driver, variant A (joystick only)",
+            "label": "Resident driver — joystick only",
             "slug": "driver-a",
-            "path": "output/voltmace-delta-14b-driver-joystik-driver-a.asm",
-            "language": "6502 assembly (beebasm)"
+            "json": "output/voltmace-delta-14b-driver-joystik-driver-a.json",
+            "runtime": "Runs relocated at &0A00; joystick only, read through the analogue port (OSBYTE &80 / ADVAL)."
         },
         {
-            "label": "Joystick driver, variant B (joystick + keypad)",
+            "label": "Resident driver — joystick + keypad",
             "slug": "driver-b",
-            "path": "output/voltmace-delta-14b-driver-joystik-driver-b.asm",
-            "language": "6502 assembly (beebasm)"
-        },
+            "json": "output/voltmace-delta-14b-driver-joystik-driver-b.json",
+            "runtime": "Runs relocated at &0A00; joystick plus the keypad matrix scanned through the User VIA."
+        }
+    ],
+    "source_files": [
         {
             "label": "Joystick configuration program (BBC BASIC front-end)",
             "slug": "basic",
