@@ -16,8 +16,8 @@ You interact with an on-screen picture of the keypad: press a key **on the
 handset** to select it, then press the key **on the BBC keyboard** whose
 character (or control code, function key, cursor key, …) that keypad key should
 produce. Two handsets can be defined independently. When you finish, the program
-writes your definitions into the resident driver, installs it at `&0A00`, and (for the
-disc version) wipes itself, leaving the resident driver in place. The resident driver then scans
+writes your definitions into the resident driver, installs it at `&0A00`, and
+erases its own program text, leaving the resident driver in place. The resident driver then scans
 the keypad on every 50 Hz vertical-sync event and feeds your characters into the
 keyboard buffer.
 
@@ -47,12 +47,21 @@ length byte is stored as zero in the file and repaired to `&16` by the loader
 before the program can run.
 
 Line 30 selects MODE 7, clears the status flags (`Z%`, `E1%`, `E2%`), and sets
-the error handler to line 220. `Z%` records whether the program is still running
-under protection (`Z%=0`) or has been re-saved unprotected.
+the error handler to line 220. `Z%` selects between the protected behaviour
+(`Z%=0`, which self-erases) and an unprotected/developer mode (`Z%=1`, which
+stops with the editor listable). `Z%` is a *resident* integer — BBC BASIC keeps
+`@%` and `A%`–`Z%` at fixed page-`&4` addresses (`Z%` at `&468`), so unlike
+ordinary variables it survives `RUN` and could in principle be preset by machine
+code. Here it isn't: line 30 sets it to `0`, nothing assigns it again, and
+neither the loader nor the resident driver touches page `&4`. So `Z%` is `0`
+throughout, the `Z%=1` branches are never taken, and the program always runs
+protected.
 
-Line 60, on a protected first run, zeroes memory from `&C00` to `&3A80` — the
-scaffolding the loader used to relocate and decrypt everything — so nothing of
-the protection remains once the editor is up.
+Line 60, when `Z%=0`, defines soft key 10 (`*KEY10`) as a self-destruct
+sequence — `CLS`, then a loop zeroing `&C00`–`&3A80`, the region where the
+just-relocated BASIC program sits. It only *arms* this trap (hence the "DO NOT
+PRESS BREAK" warning later); it does not run the wipe now, which would erase the
+running editor.
 
 Lines 70–120 guard against an incompatible operating system: `?&E8AA` is read
 as an OS signature (the expected value is `&4F`); on a mismatch the program
@@ -69,8 +78,10 @@ returns a choice in `Q$`:
 
 - `Q$="E"` (line 200) — re-edit: go back to line 180.
 - `Q$="F"` (line 210) — finish: `PROCFIN` builds and installs the resident driver, then
-  the program either `STOP`s (protected) or jumps to the wipe-and-run code at
-  1350.
+  branches on `Z%` — `STOP` if `Z%=1` (the unprotected/developer path, which
+  leaves the editor listable), or `GOTO 1350`, the wipe-and-run code, if `Z%=0`.
+  In the software as shipped `Z%` is always `0` (see below), so the wipe-and-run
+  path is always taken.
 
 Lines 220–280 are the error handlers, including the "SYSTEM ERROR" report
 (line 250) and the ESCAPE-driven restart (error 17).
@@ -187,8 +198,9 @@ it to the main loop.
 
 ## Finishing (1350–1370)
 
-Reached when the program is running unprotected (from disc): line 1350 wipes the
-BASIC program (`FOR N%=PAGE TO PAGE+&1C00 STEP4:!N%=0`), leaves an empty program
-(`!PAGE=&FF0D`), re-arms `*KEY10 CALL&A00`, and prints "KEYPAD OPERATIONAL". Line
+Reached on finish whenever `Z%=0` — which is always, in the shipped program.
+Line 1350 wipes the BASIC program (`FOR N%=PAGE TO PAGE+&1C00 STEP4:!N%=0`),
+leaves an empty program (`!PAGE=&FF0D`), re-arms `*KEY10 CALL&A00`, and prints
+"KEYPAD OPERATIONAL". Line
 1370 resets `PAGE` and `END`s, leaving only the now-configured resident driver
 in memory.

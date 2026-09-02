@@ -46,11 +46,16 @@ and
 ## Startup and protection (10–170)
 
 Line 10 is a `REM` whose length byte is stored as 0 and repaired to `&17` by the
-loader before the program runs. Line 50 selects MODE 7 and saves the current
-BYTEV (`OVL%=?&20A:OVH%=?&20B`) — the previous OSBYTE vector, which the resident driver
-will chain to. Line 80, on a protected first run, blanks memory. Line 90 reads
-the OS version (`?&F0C7`/`?&F0C8`), and lines 140–150 dimension the working
-arrays.
+loader before the program runs. Line 50 selects MODE 7, clears `Z%`, and saves
+the current BYTEV (`OVL%=?&20A:OVH%=?&20B`) — the previous OSBYTE vector, which
+the resident driver will chain to. As in the KEYPAD editor, `Z%` is a resident
+integer (at `&468`) that selects protected behaviour (`Z%=0`) over an
+unprotected/developer mode (`Z%=1`); it is `0` here and nothing changes it, so
+the protected path always runs. Lines 60–80 accordingly define soft key 10
+(`*KEY10`) as a self-destruct — set an empty program at `PAGE`, zero
+`&1902`–`&5000`, and print "PROGRAM PROTECTED" — *arming* that trap rather than
+firing it now. Line 90 reads the OS version (`?&F0C7`/`?&F0C8`), and lines
+140–150 dimension the working arrays.
 
 ## Intro and joystick configuration (280–520)
 

@@ -70,13 +70,17 @@ snooping, not a serious barrier. It has four parts:
   `LIST`ed or `RUN` until the loader writes the true length back (`&16` for
   KEYPAD, `&17` for JOYSTIK) — the `patch_header`/`patch_basic_header` routine.
   The `REM` text is literally `PROTECTION 3=&16` / `=&17`.
-- **Self-erasure.** When the configured resident driver is finished, the BASIC blanks its
-  own program text (a `FOR … !A%=0` sweep) and detaches, leaving only the
-  resident driver in memory.
+- **Self-erasure.** When the user finishes configuring, the BASIC blanks its own
+  program text (a `FOR … !A%=0` sweep) and detaches, leaving only the resident
+  driver in memory. Both programs also arm soft key 10 (`*KEY10`) as a
+  self-destruct so an interrupted session erases rather than exposes the program
+  (hence their "DO NOT PRESS BREAK" warnings).
 
-The BASIC configuration program is aware of all this: a `Z%` flag distinguishes the protected first run
-from an unprotected re-save, and lines print `PROGRAM PROTECTED` / `UNPROTECTED`
-accordingly.
+Each BASIC configuration program carries a `Z%` flag that would select an
+unprotected/developer mode — leaving the editor listable, and (in JOYSTIK)
+printing `UNPROTECTED` rather than `PROGRAM PROTECTED`. But `Z%` is a resident
+integer (`&468`) left at `0` in the shipped software and never changed, so the
+protected behaviour always runs; the `Z%=1` paths are effectively dead code.
 
 ## 4. The driver loader (plain 6502)
 
