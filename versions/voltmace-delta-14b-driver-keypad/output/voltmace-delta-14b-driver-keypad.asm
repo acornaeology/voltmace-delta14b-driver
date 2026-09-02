@@ -494,7 +494,7 @@ decode_ptr_save_hi = decode_ptr_save+1
     equb &0d                                                          ; 3a02: 0d          .     
     equs "RUN"                                                        ; 3a03: 52 55 4e    RUN   
     equb &0d, &00                                                     ; 3a06: 0d 00       ..    
-; Unused trailing bytes: single bytes with no discernible structure, referenced by nothing in the loader. The relocated copy of this region is wiped by the BASIC memory-clear (FOR A%=&C00 TO &3A80) at startup.
+; Uninitialised tail of the saved image. The file is a memory dump &1900-&3A80 (the BASIC clears exactly TO &3A80); the loader's code and tables end ~120 bytes short, so this holds whatever occupied the memory at save time. It is referenced by nothing and decodes as neither 6502, tokenised BASIC (raw or bit-rotated), nor text; its byte statistics are those of noise. Inert: the BASIC memory-clear overwrites it at startup.
 .trailing_data
     equb &0d, &83, &fc, &a6, &9a, &0e, &ef, &7c, &d1, &53, &48, &0a   ; 3a08: 0d 83 fc... ......
     equb &df, &19, &6b, &a3, &c5, &a4, &06, &e7, &f8, &19, &48, &da   ; 3a14: df 19 6b... ..k...

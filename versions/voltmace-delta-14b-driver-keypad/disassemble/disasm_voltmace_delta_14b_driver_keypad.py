@@ -544,10 +544,13 @@ d.comment(0x3900, 'Filler ahead of the loader entry; reads as a stub BASIC line 
                   '(&0D, line 13, then RTS bytes)')
 d.byte(0x3A08, 0x3A80 - 0x3A08)
 d.label(0x3A08, 'trailing_data')
-d.comment(0x3A08, 'Unused trailing bytes: single bytes with no discernible '
-                  'structure, referenced by nothing in the loader. The relocated '
-                  'copy of this region is wiped by the BASIC memory-clear '
-                  '(FOR A%=&C00 TO &3A80) at startup.')
+d.comment(0x3A08, 'Uninitialised tail of the saved image. The file is a memory '
+                  'dump &1900-&3A80 (the BASIC clears exactly TO &3A80); the '
+                  "loader's code and tables end ~120 bytes short, so this holds "
+                  'whatever occupied the memory at save time. It is referenced by '
+                  'nothing and decodes as neither 6502, tokenised BASIC (raw or '
+                  'bit-rotated), nor text; its byte statistics are those of noise. '
+                  'Inert: the BASIC memory-clear overwrites it at startup.')
 
 # Entry points.
 d.entry(EXEC_ADDR)                     # *RUN entry: relocator-installer
