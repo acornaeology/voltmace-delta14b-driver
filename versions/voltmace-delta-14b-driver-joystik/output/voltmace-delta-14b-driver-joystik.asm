@@ -26,16 +26,16 @@ osbyte         = &fff4  ; OSBYTE: used to read/set vectors and enable ADC input 
 ; ***************************************************************************************
 ; *RUN entry: decrypt and auto-run
 ;
-; The DFS execution address. Decrypts the drivers and BASIC in place, repairs the BASIC's
-; first line, then queues PAGE=&1C00 / OLD / RUN so the now-plain BASIC configuration
-; program starts.
+; The DFS execution address. Decrypts the resident drivers and BASIC in place, repairs
+; the BASIC's first line, then queues PAGE=&1C00 / OLD / RUN so the now-plain BASIC
+; configuration program starts.
 .main
     pha                                                               ; 1909: 48          H        ; Preserve A
     txa                                                               ; 190a: 8a          .        ; Preserve X...
     pha                                                               ; 190b: 48          H        ; ...on the stack
     tya                                                               ; 190c: 98          .        ; Preserve Y...
     pha                                                               ; 190d: 48          H        ; ...on the stack
-    jsr decode_basic                                                  ; 190e: 20 1d 19     ..      ; Decrypt the drivers and BASIC in place
+    jsr decode_basic                                                  ; 190e: 20 1d 19     ..      ; Decrypt the resident drivers and BASIC in place
     jsr patch_header                                                  ; 1911: 20 76 19     v.      ; Repair the BASIC's first-line length byte
     jsr os_dependent_setup                                            ; 1914: 20 4e 19     N.      ; Queue the auto-run commands (OS-dependent)
     pla                                                               ; 1917: 68          h        ; Restore Y...
@@ -45,10 +45,10 @@ osbyte         = &fff4  ; OSBYTE: used to read/set vectors and enable ADC input 
     pla                                                               ; 191b: 68          h        ; Restore A
     rts                                                               ; 191c: 60          `        ; Return to the MOS; the queued commands then run the BASIC
 ; ***************************************************************************************
-; Decrypt the drivers and BASIC
+; Decrypt the resident drivers and BASIC
 ;
 ; Rotate every byte of &1A00-&4AFF left one bit (the inverse of the ROL-1 storage
-; protection), in place. That covers both driver variants (&1A00, &1B00) and the
+; protection), in place. That covers both resident driver variants (&1A00, &1B00) and the
 ; tokenised BASIC from PAGE=&1C00; the loop stops at page &4B, leaving the BASIC's raw
 ; tail untouched.
 ; &191d referenced 1 time by &190e
@@ -196,13 +196,13 @@ decode_ptr_save_hi = decode_ptr_save+1
     equb &0d                                                          ; 19ce: 0d          .        ; submit
     equs "RUN"                                                        ; 19cf: 52 55 4e    RUN      ; run it (RUN)
     equb &0d, &00                                                     ; 19d2: 0d 00       ..       ; submit; the &00 then stops the queue copy
-; Unused bytes after the command list, up to the driver at &1A00; referenced by nothing and inert.
+; Unused bytes after the command list, up to the resident driver at &1A00; referenced by nothing and inert.
 .loader_tail
     equb &0d, &54, &67, &42, &cc, &6d, &f6, &b0, &c0, &ff, &38, &25   ; 19d4: 0d 54 67... .Tg...
     equb &4d, &05, &55, &06, &b7, &84, &20, &d6, &88, &b0, &40, &bd   ; 19e0: 4d 05 55... M.U...
     equb &d3, &fa, &c8, &10, &f8, &f1, &eb, &44, &1b, &4c, &01, &63   ; 19ec: d3 fa c8... ......
     equb &f6, &50, &74, &21, &39, &71, &c0, &86                       ; 19f8: f6 50 74... .Pt...
-; ROL-encoded: driver variant A (&1A00), driver variant B (&1B00), then the tokenised BASIC from PAGE=&1C00 (raw past &4B00). Drivers: see driver_a.asm/driver_b.asm; BASIC: basic/voltmace-delta-14b-driver-joystik.bas.
+; ROL-encoded: resident driver variant A (&1A00), resident driver variant B (&1B00), then the tokenised BASIC from PAGE=&1C00 (raw past &4B00). Resident drivers: see driver_a.asm/driver_b.asm; BASIC: basic/voltmace-delta-14b-driver-joystik.bas.
 .encoded_region
 ; &1c03 referenced 1 time by &1978
 basic_line10_len = encoded_region+515

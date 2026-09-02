@@ -15,13 +15,13 @@
       "addr": 6409,
       "name": "main",
       "title": "*RUN entry: decrypt and auto-run",
-      "description": "The DFS execution address. Decrypts the drivers and BASIC in\nplace, repairs the BASIC's first line, then queues PAGE=&1C00 / OLD / RUN so the\nnow-plain BASIC configuration program starts."
+      "description": "The DFS execution address. Decrypts the resident drivers and BASIC in\nplace, repairs the BASIC's first line, then queues PAGE=&1C00 / OLD / RUN so the\nnow-plain BASIC configuration program starts."
     },
     {
       "addr": 6429,
       "name": "decode_basic",
-      "title": "Decrypt the drivers and BASIC",
-      "description": "Rotate every byte of &1A00-&4AFF left one bit (the inverse of\nthe ROL-1 storage protection), in place. That covers both driver variants\n(&1A00, &1B00) and the tokenised BASIC from PAGE=&1C00; the loop stops at page\n&4B, leaving the BASIC's raw tail untouched."
+      "title": "Decrypt the resident drivers and BASIC",
+      "description": "Rotate every byte of &1A00-&4AFF left one bit (the inverse of\nthe ROL-1 storage protection), in place. That covers both resident driver variants\n(&1A00, &1B00) and the tokenised BASIC from PAGE=&1C00; the loop stops at page\n&4B, leaving the BASIC's raw tail untouched."
     },
     {
       "addr": 6478,
@@ -197,7 +197,7 @@
         29,
         25
       ],
-      "comment_inline": "Decrypt the drivers and BASIC in place",
+      "comment_inline": "Decrypt the resident drivers and BASIC in place",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "decode_basic",
@@ -1610,7 +1610,7 @@
         "loader_tail"
       ],
       "comments_before_label": [
-        "Unused bytes after the command list, up to the driver at &1A00; referenced by nothing and inert."
+        "Unused bytes after the command list, up to the resident driver at &1A00; referenced by nothing and inert."
       ],
       "type": "byte",
       "values": [
@@ -14620,7 +14620,7 @@
         ]
       },
       "comments_before_label": [
-        "ROL-encoded: driver variant A (&1A00), driver variant B (&1B00), then the tokenised BASIC from PAGE=&1C00 (raw past &4B00). Drivers: see driver_a.asm/driver_b.asm; BASIC: basic/voltmace-delta-14b-driver-joystik.bas."
+        "ROL-encoded: resident driver variant A (&1A00), resident driver variant B (&1B00), then the tokenised BASIC from PAGE=&1C00 (raw past &4B00). Resident drivers: see driver_a.asm/driver_b.asm; BASIC: basic/voltmace-delta-14b-driver-joystik.bas."
       ],
       "xref_summaries": [
         "&1c03 referenced 1 time by &1978"

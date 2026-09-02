@@ -8,16 +8,16 @@ The file loads at &1900 and executes at &1909. Its layout:
   &1900-&1908  decoy: a stub BASIC line so a naive *LOAD/LIST sees junk.
   &1909-&19FF  head loader (plain 6502): ROL-decrypts &1A00-&4AFF in place,
                repairs the BASIC's first line, and queues PAGE=&1C00/OLD/RUN.
-  &1A00-&1AFF  joystick driver, variant A (6502, ROL-encoded here; runs at
+  &1A00-&1AFF  joystick resident driver, variant A (6502, ROL-encoded here; runs at
                &0A00 -- hooks BYTEV and intercepts OSBYTE &81).
-  &1B00-&1BFF  joystick driver, variant B (same, an alternate build).
+  &1B00-&1BFF  joystick resident driver, variant B (same, an alternate build).
   &1C00-&4AFF  the configuration/demo program, tokenised BBC BASIC (PAGE),
                ROL-encoded; the loader decrypts it up to page &4B.
   &4B00-&4C92  the rest of that BASIC, stored RAW (beyond the decode range).
   &4C93-&4CFF  tail.
 
-The ROL-encoded region (&1A00-&4C92, drivers + BASIC) is carried as editable
-source -- the drivers as annotated disassembly, the BASIC as basic/*.bas -- and
+The ROL-encoded region (&1A00-&4C92, resident drivers + BASIC) is carried as editable
+source -- the resident drivers as annotated disassembly, the BASIC as basic/*.bas -- and
 re-encoded to an incbin payload at build time (build_encoded_dat), so the whole
 file still reassembles byte-identically.
 """
@@ -44,9 +44,9 @@ ENCODED_DAT_NAME = 'voltmace-delta-14b-driver-joystik-encoded.dat'
 
 LOAD_ADDR = 0x1900          # DFS load address
 EXEC_ADDR = 0x1909          # DFS execution address (*RUN entry)
-DRIVER_A_ADDR = 0x1A00      # driver variant A, stored here
-DRIVER_B_ADDR = 0x1B00      # driver variant B, stored here
-DRIVER_LEN = 0x0100         # each driver variant is 256 bytes
+DRIVER_A_ADDR = 0x1A00      # resident driver variant A, stored here
+DRIVER_B_ADDR = 0x1B00      # resident driver variant B, stored here
+DRIVER_LEN = 0x0100         # each resident driver variant is 256 bytes
 BASIC_PAGE = 0x1C00         # PAGE of the tokenised BASIC
 ENC_END = 0x4B00            # decode stops here (loader: cpx #&4B)
 BASIC_END = 0x4C93          # one past the BASIC's &0D &FF terminator
@@ -77,7 +77,7 @@ def _tokenise_basic(bas_filepath):
     return bytes(tokens)
 
 
-DRIVER_RUNTIME = 0x0A00      # both driver variants run relocated here
+DRIVER_RUNTIME = 0x0A00      # both resident driver variants run relocated here
 
 
 def _decoded(image, addr):
@@ -124,7 +124,7 @@ def build_encoded_dat(driver_a_bytes, driver_b_bytes, bas_filepath):
     The loader ROL-decrypts &1A00-&4AFF in place, so the plaintext of that
     region is [driver A][driver B][encoded part of the BASIC]; we ROR-encode it
     (the inverse) and append the BASIC's raw tail (&4B00+, beyond the decode
-    range). The driver bytes come from assembling their annotated disassembly.
+    range). The resident driver bytes come from assembling their annotated disassembly.
     """
     basic = _tokenise_basic(bas_filepath)
     split = ENC_END - BASIC_PAGE            # BASIC bytes that fall inside the decode range
@@ -171,7 +171,7 @@ def _map_comment_b(i, key, param):
 
 
 def _annotate_driver_common(dd):
-    """Labels, install routine, and BYTEV-handler frame shared by both variants."""
+    """Labels, install routine, and BYTEV-handler frame shared by both resident driver variants."""
     dd.label(0x020A, 'bytev')            # BYTEV: the OSBYTE indirection vector
     dd.label(0x020B, 'bytev_hi')
     dd.label(0xFFF4, 'osbyte')
@@ -183,7 +183,7 @@ def _annotate_driver_common(dd):
 
     dd.subroutine(
         0x0A00, 'install',
-        title='Install the joystick driver',
+        title='Install the resident joystick driver',
         description="""Point BYTEV at the OSBYTE intercept at &0A0D. Called from
 the BASIC via CALL &A00, after it has saved the previous BYTEV (line 50) and
 patched the chain slot (line 1840) and sensitivity thresholds (line 1850).""",
@@ -199,7 +199,7 @@ patched the chain slot (line 1840) and sensitivity thresholds (line 1850).""",
 
 
 def annotate_driver_a(dd, driver_bytes):
-    """Variant A: joystick only (analogue port via OSBYTE &80 / ADVAL)."""
+    """Resident driver, variant A: joystick only (analogue port via OSBYTE &80 / ADVAL)."""
     ci = _annotate_driver_common(dd)
     dd.subroutine(
         0x0A0D, 'osbyte_intercept',
@@ -330,7 +330,7 @@ OSBYTE &80 (ADVAL) and compare the value against the sensitivity thresholds
 
 
 def annotate_driver_b(dd, driver_bytes):
-    """Variant B: joystick (analogue) plus keypad matrix (User VIA)."""
+    """Resident driver, variant B: joystick (analogue) plus keypad matrix (User VIA)."""
     ci = _annotate_driver_common(dd)
     dd.label(0xFE60, 'user_via_orb')
     dd.label(0xFE62, 'user_via_ddrb')
@@ -480,9 +480,9 @@ d.label(0x1900, 'decoy')
 # The ROL-encoded drivers + BASIC, carried as editable source (see build).
 d.include_binary(INCBIN_START, INCBIN_END - INCBIN_START, ENCODED_DAT_NAME)
 d.label(INCBIN_START, 'encoded_region')
-d.comment(INCBIN_START, 'ROL-encoded: driver variant A (&1A00), driver variant B '
+d.comment(INCBIN_START, 'ROL-encoded: resident driver variant A (&1A00), resident driver variant B '
                         '(&1B00), then the tokenised BASIC from PAGE=&1C00 '
-                        '(raw past &4B00). Drivers: see driver_a.asm/driver_b.asm; '
+                        '(raw past &4B00). Resident drivers: see driver_a.asm/driver_b.asm; '
                         'BASIC: basic/voltmace-delta-14b-driver-joystik.bas.')
 
 # Tail after the BASIC: BBC BASIC's own variable heap, saved with the image.
@@ -535,7 +535,7 @@ d.label(0x0081, 'decode_ptr_hi')
 d.subroutine(
     EXEC_ADDR, 'main',
     title='*RUN entry: decrypt and auto-run',
-    description="""The DFS execution address. Decrypts the drivers and BASIC in
+    description="""The DFS execution address. Decrypts the resident drivers and BASIC in
 place, repairs the BASIC's first line, then queues PAGE=&1C00 / OLD / RUN so the
 now-plain BASIC configuration program starts.""",
 )
@@ -544,7 +544,7 @@ c(0x190A, 'Preserve X...')
 c(0x190B, '...on the stack')
 c(0x190C, 'Preserve Y...')
 c(0x190D, '...on the stack')
-c(0x190E, 'Decrypt the drivers and BASIC in place')
+c(0x190E, 'Decrypt the resident drivers and BASIC in place')
 c(0x1911, "Repair the BASIC's first-line length byte")
 c(0x1914, 'Queue the auto-run commands (OS-dependent)')
 c(0x1917, 'Restore Y...')
@@ -556,9 +556,9 @@ c(0x191C, 'Return to the MOS; the queued commands then run the BASIC')
 
 d.subroutine(
     0x191D, 'decode_basic',
-    title='Decrypt the drivers and BASIC',
+    title='Decrypt the resident drivers and BASIC',
     description="""Rotate every byte of &1A00-&4AFF left one bit (the inverse of
-the ROL-1 storage protection), in place. That covers both driver variants
+the ROL-1 storage protection), in place. That covers both resident driver variants
 (&1A00, &1B00) and the tokenised BASIC from PAGE=&1C00; the loop stops at page
 &4B, leaving the BASIC's raw tail untouched.""",
 )
@@ -706,10 +706,10 @@ c(0x19CE, 'submit')
 c(0x19CF, 'run it (RUN)')
 c(0x19D2, 'submit; the &00 then stops the queue copy')
 
-# Uninitialised bytes between the loader and the drivers.
+# Uninitialised bytes between the loader and the resident drivers.
 d.byte(0x19D4, DRIVER_A_ADDR - 0x19D4)
 d.label(0x19D4, 'loader_tail')
-d.comment(0x19D4, 'Unused bytes after the command list, up to the driver at '
+d.comment(0x19D4, 'Unused bytes after the command list, up to the resident driver at '
                   '&1A00; referenced by nothing and inert.')
 
 # Entry point: the *RUN loader.
@@ -733,7 +733,7 @@ json_filepath = _output_dirpath / 'voltmace-delta-14b-driver-joystik.json'
 json_filepath.write_text(str(ir.render('json')), encoding='utf-8')
 print(f'Wrote {json_filepath}', file=sys.stderr)
 
-# Disassemble and annotate the two decrypted driver variants at their &0A00
+# Disassemble and annotate the two decrypted resident driver variants at their &0A00
 # runtime address, write their listings, and assemble them back to bytes.
 _image = open(_binary_filepath, 'rb').read()
 _driver_bytes = {}

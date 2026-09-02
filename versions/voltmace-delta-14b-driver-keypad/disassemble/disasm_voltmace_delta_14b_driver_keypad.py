@@ -8,7 +8,7 @@ or directly:
 
 The file loads at &1900 and executes at &3906. Its layout:
 
-  &1900-&19FF  6502 keypad driver (256 bytes), STORED here but written to RUN
+  &1900-&19FF  6502 keypad resident driver (256 bytes), STORED here but written to RUN
                relocated at &0A00 (offset -&F00): install routine + vsync-event
                matrix scanner (User VIA port B &FE60, DDRB &FE62, 74LS157 bit).
   &1A00-&1AFF  image of page &0B, which the relocator deliberately SKIPS so the
@@ -18,7 +18,7 @@ The file loads at &1900 and executes at &3906. Its layout:
                rudimentary protection. It relocates to PAGE=&0C00; the first
                line's length byte is stored as 0 and patched to &16 at run time.
   &3869-&3A7F  *RUN entry / relocator-installer (exec &3906): copies the image
-               down (driver to &0A00, BASIC to &0C00), decrypts the BASIC,
+               down (resident driver to &0A00, BASIC to &0C00), decrypts the BASIC,
                and queues PAGE=&C00 / OLD / RUN to start it.
 
 The ROL-encoded BASIC region is carried as detokenised source (basic/*.bas)
@@ -72,7 +72,7 @@ def build_basic_dat(bas_filepath):
 
 LOAD_ADDR = 0x1900          # DFS load address
 EXEC_ADDR = 0x3906          # DFS execution address (*RUN entry)
-DRIVER_RUNTIME = 0x0A00     # the driver is relocated here before it runs
+DRIVER_RUNTIME = 0x0A00     # the resident driver is relocated here before it runs
 DRIVER_LEN = 0x0100         # &1900-&19FF (256 bytes) -> &0A00-&0AFF
 FILLER_START = 0x1A00       # image of page &0B (soft-key buffer), not relocated
 FILLER_END = 0x1B00
@@ -91,7 +91,7 @@ d.load(_binary_filepath, LOAD_ADDR)
 # Load-and-run metadata for a *RUN-able SAVE (DFS load &1900, exec &3906).
 d.program(exec_addr=EXEC_ADDR, reload_addr=LOAD_ADDR)
 
-# The driver is stored at &1900 but copied down to &0A00 before execution;
+# The resident driver is stored at &1900 but copied down to &0A00 before execution;
 # annotate it at its runtime address.
 driver = d.add_move(DRIVER_RUNTIME, LOAD_ADDR, DRIVER_LEN, name='driver')
 
@@ -109,7 +109,7 @@ d.comment(BASIC_START, 'ROL-encoded tokenised BASIC (the keypad-definition '
                        'editor); relocates to PAGE=&0C00 and is decrypted in '
                        'place. Source: basic/voltmace-delta-14b-driver-keypad.bas.')
 
-# Inline-comment helpers: cm() annotates the relocated driver (&0A00),
+# Inline-comment helpers: cm() annotates the relocated resident driver (&0A00),
 # ct() annotates the in-place loader tail (&3900).
 INLINE = dasmos.Align.INLINE
 
@@ -128,7 +128,7 @@ def ct(addr, text):
 # MOS entry-point call vectors (group only -- these are JSR targets, not
 # read/write locations).
 d.label(0xFFF1, 'osword', group='os_entry_points',
-        description='OSWORD: the driver calls OSWORD 7 to sound the key-click.')
+        description='OSWORD: the resident driver calls OSWORD 7 to sound the key-click.')
 d.label(0xFFF4, 'osbyte', group='os_entry_points',
         description='OSBYTE: used with A=&99 to insert a key into the buffer, '
                     'A=&0E to enable the vsync event, and to read/set vectors.')
@@ -146,7 +146,7 @@ d.label(0xFE62, 'user_via_ddrb', group='hardware', access='w',
 
 # OS vectors and workspace.
 d.label(0x0220, 'evntv', group='os_vectors', access='rw', length=2,
-        description='EVNTV, the event vector: the driver saves the old value '
+        description='EVNTV, the event vector: the resident driver saves the old value '
                     'and points it at its vsync-event handler.')
 d.label(0x0221, 'evntv_hi')
 d.label(0x023C, 'autorun_index', group='os_workspace', access='rw',
@@ -180,11 +180,11 @@ d.label(0x0080, 'decode_ptr', group='zero_page', access='rw', length=2,
 d.label(0x0081, 'decode_ptr_hi')
 
 # ---------------------------------------------------------------------------
-# install_driver -- the driver, at its &0A00 runtime address
+# install_driver -- the resident driver, at its &0A00 runtime address
 # ---------------------------------------------------------------------------
 d.subroutine(
     DRIVER_RUNTIME, 'install_driver', move=driver,
-    title='Install the keypad driver',
+    title='Install the resident keypad driver',
     description="""Enable the 50 Hz vertical-sync event and route it to the
 matrix scanner. Sets User VIA port B to strobe the keypad (DDRB = &F0: top
 nibble out, bottom nibble in) and hooks EVNTV to point at the event handler,
@@ -360,7 +360,7 @@ d.subroutine(
     EXEC_ADDR, 'main',
     title='*RUN entry: relocate, decode, and auto-run',
     description="""The DFS execution address. Relocates the whole image down to
-&0A00 (installing the driver code and moving the encrypted BASIC to PAGE
+&0A00 (installing the resident driver code and moving the encrypted BASIC to PAGE
 &0C00), decrypts the BASIC in place, then queues 'PAGE=&C00 / OLD / RUN' so the
 now-plain BASIC front-end starts.""",
 )
@@ -369,7 +369,7 @@ ct(0x3907, 'Preserve X...')
 ct(0x3908, '...on the stack')
 ct(0x3909, 'Preserve Y...')
 ct(0x390A, '...on the stack')
-ct(0x390B, 'Copy the image down (driver to &0A00, BASIC to PAGE &0C00)')
+ct(0x390B, 'Copy the image down (resident driver to &0A00, BASIC to PAGE &0C00)')
 ct(0x390E, 'Decrypt the relocated BASIC in place')
 ct(0x3911, "Repair the BASIC's first-line length byte")
 ct(0x3914, 'Queue the auto-run commands (OS-dependent)')

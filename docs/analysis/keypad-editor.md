@@ -9,19 +9,19 @@ below refer to that program.
 
 The Delta 14B handset has a 12-key keypad. On its own the BBC Micro cannot tell
 those keys apart, so this program lets you **define what each keypad key sends**
-and then installs a small machine-code driver that makes the keypad behave like
+and then installs a small machine-code resident driver that makes the keypad behave like
 a set of extra keyboard keys.
 
 You interact with an on-screen picture of the keypad: press a key **on the
 handset** to select it, then press the key **on the BBC keyboard** whose
 character (or control code, function key, cursor key, …) that keypad key should
 produce. Two handsets can be defined independently. When you finish, the program
-writes your definitions into the driver, installs it at `&0A00`, and (for the
-disc version) wipes itself, leaving the driver resident. The driver then scans
+writes your definitions into the resident driver, installs it at `&0A00`, and (for the
+disc version) wipes itself, leaving the resident driver in place. The resident driver then scans
 the keypad on every 50 Hz vertical-sync event and feeds your characters into the
 keyboard buffer.
 
-The companion machine code — the driver the editor configures and installs — is
+The companion machine code — the resident driver the editor configures and installs — is
 covered by the disassembly in
 [`voltmace-delta-14b-driver-keypad.asm`](../../versions/voltmace-delta-14b-driver-keypad/output/voltmace-delta-14b-driver-keypad.asm).
 
@@ -37,8 +37,8 @@ covered by the disassembly in
 | 750–840 | `PROCREADKP` — scan the physical keypad matrix |
 | 850–1070 | Screen furniture: headers, instructions, the intro slideshow |
 | 1080–1210 | `PROCMENU` — the Sound / Auto / Edit / Finish options |
-| 1220–1340 | `PROCFIN` — build, patch, and install the driver |
-| 1350–1370 | Finish: wipe the editor and leave the driver running |
+| 1220–1340 | `PROCFIN` — build, patch, and install the resident driver |
+| 1350–1370 | Finish: wipe the editor and leave the resident driver running |
 
 ## Startup and protection (10–170)
 
@@ -68,7 +68,7 @@ editor (`PROCEDIT`). Line 190 then shows the options menu (`PROCMENU`), which
 returns a choice in `Q$`:
 
 - `Q$="E"` (line 200) — re-edit: go back to line 180.
-- `Q$="F"` (line 210) — finish: `PROCFIN` builds and installs the driver, then
+- `Q$="F"` (line 210) — finish: `PROCFIN` builds and installs the resident driver, then
   the program either `STOP`s (protected) or jumps to the wipe-and-run code at
   1350.
 
@@ -145,7 +145,7 @@ Supporting routines:
 ## Scanning the physical keypad (750–840)
 
 `PROCREADKP` reads the handset matrix directly through User VIA port B (`&FE60`),
-exactly as the driver does. Line 750 selects the handset by writing `KP%*&80`
+exactly as the resident driver does. Line 750 selects the handset by writing `KP%*&80`
 (bit 7 drives the 74LS157 multiplexer) and checks for "no key". The nested loops
 (780–830) strobe each column (`?&FE60=COL%(X%)+&80*KP%`) and test each row
 (`?&FE60 AND ROW%(Y%)`); a pressed cell yields `CURKEY%=3*CURROW%+CURCOL%`.
@@ -157,8 +157,8 @@ These procedures build the MODE-1/MODE-7 screens: `PROCH1`/`PROCHEAD`/`PROCBIG`
 "DO NOT PRESS BREAK" line), `PROCINS` (the how-to-use instructions, 890–900), and
 `PROCINTRO` (910–1010), the copyright-and-explanation slideshow shown at startup.
 `PROCCONT` (1050–1070) is the "PRESS SPACE-BAR TO CONTINUE" pause. The intro text
-explains that the driver installs at `&A00–&AFF` and runs under EVENT 4 (vertical
-sync), which the driver enables itself (lines 950–960).
+explains that the resident driver installs at `&A00–&AFF` and runs under EVENT 4 (vertical
+sync), which the resident driver enables itself (lines 950–960).
 
 ## The options menu (1080–1210)
 
@@ -167,22 +167,22 @@ press, toggled by `B%`, `PROCONOFF`), **Auto** repeat (`A%`, `PROCAUTO`),
 **re-Edit**, and **Finish**. Lines 1130–1180 read the choice into `Q$` and return
 it to the main loop.
 
-## Building and installing the driver (1220–1340)
+## Building and installing the resident driver (1220–1340)
 
-`PROCFIN` turns the on-screen definitions into a working driver:
+`PROCFIN` turns the on-screen definitions into a working resident driver:
 
-- Lines 1220–1230 tell the user how to save/reload the resulting driver
+- Lines 1220–1230 tell the user how to save/reload the resulting resident driver
   (`*SAVE MC A00 +100`, `*KEY10 CALL&A00`).
-- Lines 1240–1280 rewrite the stored codes into the form the driver inserts:
+- Lines 1240–1280 rewrite the stored codes into the form the resident driver inserts:
   function-key codes in `&87–&8B` are nudged by 4, codes in `&90–&9B` are reduced
   by `&10`, and a zero becomes `&1B` (ESCAPE).
-- **Line 1290** pokes the finished 24-entry table into the driver:
-  `?(&ADD+4*C%+R%+12*KP%)=KNUM%(3*R%+C%,KP%)`. `&ADD` is the driver's `key_codes`
+- **Line 1290** pokes the finished 24-entry table into the resident driver:
+  `?(&ADD+4*C%+R%+12*KP%)=KNUM%(3*R%+C%,KP%)`. `&ADD` is the resident driver's `key_codes`
   table (see the machine-code disassembly), indexed by `column*4 + row +
   12*handset` — this is the bridge between the editor and the resident driver.
-- Line 1300 patches the driver to enable auto-repeat if selected; line 1310
+- Line 1300 patches the resident driver to enable auto-repeat if selected; line 1310
   patches the sound block for the beep option.
-- Line 1330 `CALL &A00` runs the driver's install routine (enable the vsync
+- Line 1330 `CALL &A00` runs the resident driver's install routine (enable the vsync
   event, set the port directions, hook `EVNTV`).
 
 ## Finishing (1350–1370)
@@ -190,5 +190,5 @@ it to the main loop.
 Reached when the program is running unprotected (from disc): line 1350 wipes the
 BASIC program (`FOR N%=PAGE TO PAGE+&1C00 STEP4:!N%=0`), leaves an empty program
 (`!PAGE=&FF0D`), re-arms `*KEY10 CALL&A00`, and prints "KEYPAD OPERATIONAL". Line
-1370 resets `PAGE` and `END`s, leaving only the resident, now-configured driver
+1370 resets `PAGE` and `END`s, leaving only the now-configured resident driver
 in memory.

@@ -55,7 +55,7 @@ For each program the *source of truth* a person edits is:
 - the **dasmos driver script** — the annotations (every instruction commented,
   every label meaningful) live here as Python calls;
 - a **`.bas` file** — the BASIC front-end as detokenised, editable text;
-- for JOYSTIK, the two **driver variants** are additionally re-emitted as their
+- for JOYSTIK, the two **resident driver variants** are additionally re-emitted as their
   own annotated `.asm` listings (`…-driver-a.asm`, `…-driver-b.asm`) which the
   build assembles.
 
@@ -76,7 +76,7 @@ payload does not match, the build fails loudly.
 2. reverses the first-line length repair (stores byte 3 as `0`, see §6);
 3. rotates every byte right one bit (the inverse of the loader's left-rotate);
 
-and that is the `.dat` the listing `incbin`s at `&1B00`. The driver itself is
+and that is the `.dat` the listing `incbin`s at `&1B00`. The resident driver itself is
 plain 6502, disassembled in place with an `add_move(0x0A00, 0x1900, 0x100)` so
 it reads at its `&0A00` runtime address.
 
@@ -84,7 +84,7 @@ it reads at its `&0A00` runtime address.
 `[driver A][driver B][encrypted part of the BASIC]`, followed by the BASIC's raw
 tail. The build
 
-1. disassembles and annotates each 256-byte driver variant at its `&0A00`
+1. disassembles and annotates each 256-byte resident driver variant at its `&0A00`
    runtime address, renders its `.asm`, and **assembles it back to bytes** with
    beebasm (which also *proves* the disassembly round-trips);
 2. greedy-tokenises `joystik.bas` and reverses the first-line repair;
@@ -93,7 +93,7 @@ tail. The build
 4. appends the BASIC's raw tail (past the loader's page-`&4B` decode limit).
 
 The result is the `.dat` the listing `incbin`s at `&1A00`. So the two joystick
-drivers are readable, annotated assembly *and* the byte source for the encrypted
+resident drivers are readable, annotated assembly *and* the byte source for the encrypted
 region — beebasm assembles them, and the build re-encrypts the result.
 
 ## 5. Why the greedy tokeniser

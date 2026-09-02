@@ -15,7 +15,7 @@
       "addr": 2560,
       "binary_addr": 6400,
       "name": "install_driver",
-      "title": "Install the keypad driver",
+      "title": "Install the resident keypad driver",
       "description": "Enable the 50 Hz vertical-sync event and route it to the\nmatrix scanner. Sets User VIA port B to strobe the keypad (DDRB = &F0: top\nnibble out, bottom nibble in) and hooks EVNTV to point at the event handler,\nsaving the previous vector at saved_evntv. Called from the BASIC front-end\nvia CALL &A00.",
       "on_exit": {
         "A": "corrupted",
@@ -34,7 +34,7 @@
       "addr": 14598,
       "name": "main",
       "title": "*RUN entry: relocate, decode, and auto-run",
-      "description": "The DFS execution address. Relocates the whole image down to\n&0A00 (installing the driver code and moving the encrypted BASIC to PAGE\n&0C00), decrypts the BASIC in place, then queues 'PAGE=&C00 / OLD / RUN' so the\nnow-plain BASIC front-end starts."
+      "description": "The DFS execution address. Relocates the whole image down to\n&0A00 (installing the resident driver code and moving the encrypted BASIC to PAGE\n&0C00), decrypts the BASIC in place, then queues 'PAGE=&C00 / OLD / RUN' so the\nnow-plain BASIC front-end starts."
     },
     {
       "addr": 14621,
@@ -158,7 +158,7 @@
         "r",
         "w"
       ],
-      "description": "EVNTV, the event vector: the driver saves the old value and points it at its vsync-event handler."
+      "description": "EVNTV, the event vector: the resident driver saves the old value and points it at its vsync-event handler."
     },
     {
       "addr": 572,
@@ -221,7 +221,7 @@
       "addr": 65521,
       "name": "osword",
       "group": "os_entry_points",
-      "description": "OSWORD: the driver calls OSWORD 7 to sound the key-click."
+      "description": "OSWORD: the resident driver calls OSWORD 7 to sound the key-click."
     },
     {
       "addr": 65524,
@@ -10493,7 +10493,7 @@
         170,
         57
       ],
-      "comment_inline": "Copy the image down (driver to &0A00, BASIC to PAGE &0C00)",
+      "comment_inline": "Copy the image down (resident driver to &0A00, BASIC to PAGE &0C00)",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "relocate_image",

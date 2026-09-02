@@ -15,7 +15,7 @@ decode_ptr       = &80  ; ROL-decode cursor sweeping the encrypted BASIC in plac
 ; &80 referenced 5 times by &391d, &3929, &3931, &3937, &3946
 decode_ptr_hi    = &81
 ; &81 referenced 4 times by &3922, &392f, &393c, &394b
-evntv            = &0220  ; EVNTV, the event vector: the driver saves the old value and points it at its vsync-event handler.
+evntv            = &0220  ; EVNTV, the event vector: the resident driver saves the old value and points it at its vsync-event handler.
 ; &0220 referenced 2 times by &1913, &1921
 evntv_hi         = &0221
 ; &0221 referenced 2 times by &1919, &1926
@@ -31,7 +31,7 @@ user_via_orb     = &fe60  ; User VIA port B: writes column strobes and the 74LS1
 ; &fe60 referenced 8 times by &1939, &193c, &1945, &1948, &195c, &195f, &197f, &1982
 user_via_ddrb    = &fe62  ; User VIA data-direction register B: set to &F0 so the four strobe/select lines are outputs, the four rows inputs.
 ; &fe62 referenced 1 time by &190f
-osword           = &fff1  ; OSWORD: the driver calls OSWORD 7 to sound the key-click.
+osword           = &fff1  ; OSWORD: the resident driver calls OSWORD 7 to sound the key-click.
 ; &fff1 referenced 1 time by &19a8
 osbyte           = &fff4  ; OSBYTE: used with A=&99 to insert a key into the buffer, A=&0E to enable the vsync event, and to read/set vectors.
 ; &fff4 referenced 4 times by &190a, &19bc, &398a, &399d
@@ -44,7 +44,7 @@ oscli            = &fff7  ; OSCLI: issues the *KEY / *FX-style commands the load
 ; Move 1: &1900 to &0a00 for length 256
     org &0a00
 ; ***************************************************************************************
-; Install the keypad driver
+; Install the resident keypad driver
 ;
 ; Enable the 50 Hz vertical-sync event and route it to the matrix scanner. Sets User VIA
 ; port B to strobe the keypad (DDRB = &F0: top nibble out, bottom nibble in) and hooks
@@ -283,15 +283,15 @@ saved_evntv_hi = saved_evntv+1
 ; *RUN entry: relocate, decode, and auto-run
 ;
 ; The DFS execution address. Relocates the whole image down to &0A00 (installing the
-; driver code and moving the encrypted BASIC to PAGE &0C00), decrypts the BASIC in place,
-; then queues 'PAGE=&C00 / OLD / RUN' so the now-plain BASIC front-end starts.
+; resident driver code and moving the encrypted BASIC to PAGE &0C00), decrypts the BASIC
+; in place, then queues 'PAGE=&C00 / OLD / RUN' so the now-plain BASIC front-end starts.
 .main
     pha                                                               ; 3906: 48          H        ; Preserve A
     txa                                                               ; 3907: 8a          .        ; Preserve X...
     pha                                                               ; 3908: 48          H        ; ...on the stack
     tya                                                               ; 3909: 98          .        ; Preserve Y...
     pha                                                               ; 390a: 48          H        ; ...on the stack
-    jsr relocate_image                                                ; 390b: 20 aa 39     .9      ; Copy the image down (driver to &0A00, BASIC to PAGE &0C00)
+    jsr relocate_image                                                ; 390b: 20 aa 39     .9      ; Copy the image down (resident driver to &0A00, BASIC to PAGE &0C00)
     jsr decode_basic                                                  ; 390e: 20 1d 39     .9      ; Decrypt the relocated BASIC in place
     jsr patch_basic_header                                            ; 3911: 20 61 39     a9      ; Repair the BASIC's first-line length byte
     jsr os_dependent_setup                                            ; 3914: 20 4e 39     N9      ; Queue the auto-run commands (OS-dependent)

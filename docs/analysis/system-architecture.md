@@ -41,10 +41,16 @@ and [`JOYSTIK`](../../versions/voltmace-delta-14b-driver-joystik/binary/JOYSTIK)
 3. a **decoy** and some leftover bytes.
 
 The loader decrypts the protected region, repairs the BASIC, and hands control
-to it; the BASIC lets the user configure a driver and then installs it; the
-driver stays resident and makes the handset look like the keyboard to ordinary
-games. They differ in *which* MOS mechanism the driver hooks — and that
-difference is the heart of the system.
+to it; the BASIC lets the user configure a resident driver and then installs it;
+the resident driver stays in memory and makes the handset look like the keyboard
+to ordinary games. They differ in *which* MOS mechanism the resident driver hooks — and
+that difference is the heart of the system.
+
+Three roles recur throughout, and this article names them consistently: the
+**driver loader** (the plain-6502 bootstrap that decrypts the image and hands
+off), the **BASIC front-end** (the configuration program the user drives), and
+the **resident driver** (the 6502 code that stays in memory and makes the
+handset look like the keyboard).
 
 ## 3. The protection
 
@@ -63,7 +69,7 @@ snooping, not a serious barrier. It has four parts:
   `LIST`ed or `RUN` until the loader writes the true length back (`&16` for
   KEYPAD, `&17` for JOYSTIK) — the `patch_header`/`patch_basic_header` routine.
   The `REM` text is literally `PROTECTION 3=&16` / `=&17`.
-- **Self-erasure.** When the configured driver is finished, the BASIC blanks its
+- **Self-erasure.** When the configured resident driver is finished, the BASIC blanks its
   own program text (a `FOR … !A%=0` sweep) and detaches, leaving only the
   resident driver in memory.
 
@@ -71,10 +77,10 @@ The BASIC is aware of all this: a `Z%` flag distinguishes the protected first ru
 from an unprotected re-save, and lines print `PROGRAM PROTECTED` / `UNPROTECTED`
 accordingly.
 
-## 4. The loader (plain 6502)
+## 4. The driver loader (plain 6502)
 
-The loader is the only part that runs as stored, un-encoded code. Its job is
-identical in both programs, though it sits at opposite ends of the file (KEYPAD's
+The **driver loader** is the only part that runs as stored, un-encoded code. Its
+job is identical in both programs, though it sits at opposite ends of the file (KEYPAD's
 is a *tail* at `&3906`, JOYSTIK's is a *head* at `&1909`, matching each file's
 DFS execution address):
 
@@ -99,7 +105,7 @@ written to **run relocated at `&0A00`**; the loader copies it down, deliberately
 skipping page `&0B` so the MOS soft-key buffer survives. See
 [`…-keypad.asm`](../../versions/voltmace-delta-14b-driver-keypad/output/voltmace-delta-14b-driver-keypad.asm).
 
-The driver installs by enabling the **50 Hz vertical-sync event** (OSBYTE 14,
+The resident driver installs by enabling the **50 Hz vertical-sync event** (OSBYTE 14,
 event 4) and pointing **EVNTV** (`&0220`) at its handler. Thereafter the MOS
 calls the handler every frame. The handler:
 
@@ -121,17 +127,17 @@ patches the sound and auto-repeat options, and `CALL &A00` installs it.
 
 ## 6. JOYSTIK: an INKEY the MOS asks
 
-JOYSTIK is richer. Here the drivers are themselves **inside the encrypted
-region** — two 256-byte variants at `&1A00` and `&1B00`, both ROL-encoded and
-both written to run at `&0A00`. See
+JOYSTIK is richer. Here the resident drivers are themselves **inside the
+encrypted region** — two 256-byte variants at `&1A00` and `&1B00`, both
+ROL-encoded and both written to run at `&0A00`. See
 [`driver-a.asm`](../../versions/voltmace-delta-14b-driver-joystik/output/voltmace-delta-14b-driver-joystik-driver-a.asm)
 and [`driver-b.asm`](../../versions/voltmace-delta-14b-driver-joystik/output/voltmace-delta-14b-driver-joystik-driver-b.asm).
 
-Rather than *push* keys into the buffer, the JOYSTIK driver **answers a question
+Rather than *push* keys into the buffer, the JOYSTIK resident driver **answers a question
 the game asks**. It hooks **BYTEV** (`&020A`, the OSBYTE vector) and intercepts
 **OSBYTE `&81` (INKEY)**. Games that read the keyboard with `INKEY(-key)` — the
 Acornsoft convention the BASIC's help screens describe — call OSBYTE `&81` with a
-negative key number; the driver checks that key against its `joystick_map` and,
+negative key number; the resident driver checks that key against its `joystick_map` and,
 if it matches, reads the corresponding input and returns "pressed" (`X=Y=&FF`).
 Every other OSBYTE is passed on to the previous handler through a chain slot
 (`&AFA`) that the BASIC patches to `JMP <old BYTEV>`.
@@ -140,19 +146,20 @@ Every other OSBYTE is passed on to the previous handler through a chain slot
 is 0 in the file; the BASIC pokes it with the user's chosen `INKEY` value. The
 **descriptor** is fixed and decodes per variant:
 
-- **Variant A** (single joystick): descriptors below index 8 are joystick axes
-  (top nibble = ADC channel; the low bit picks the high or low sensitivity
-  threshold); the rest are fire buttons (`ADVAL(0)` bit masks).
-- **Variant B** (with the adaptor box): the later entries instead strobe a
-  **keypad column** (top nibble) through user-port B and test a **row bit** (low
-  nibble) — the same matrix scan KEYPAD uses.
+- the **joystick-only** resident driver (variant A): descriptors below index 8
+  are joystick axes (top nibble = ADC channel; the low bit picks the high or low
+  sensitivity threshold); the rest are fire buttons (`ADVAL(0)` bit masks).
+- the **joystick + keypad** resident driver (variant B): the later entries
+  instead strobe a **keypad column** (top nibble) through user-port B and test a
+  **row bit** (low nibble) — the same matrix scan KEYPAD uses.
 
 The **BASIC front-end** ([`joystik-editor.md`](joystik-editor.md))
-lets you pick a joystick configuration (which selects variant A or B, `H%=7`
-vs. `H%=35`), choose a ready-made mapping for an Acornsoft game or define your
-own, test it live, tune the sensitivity, and finish. `PROCASSEM` copies the
-chosen variant to `&A00`, pokes `joystick_map` with the mapping, patches the
-chain slot and thresholds, and `CALL &A00` installs it.
+lets you pick a joystick configuration (which selects the joystick-only or
+joystick + keypad resident driver, `H%=7` vs. `H%=35`), choose a ready-made
+mapping for an Acornsoft game or define your own, test it live, tune the
+sensitivity, and finish. `PROCASSEM` copies the chosen resident driver to
+`&A00`, pokes `joystick_map` with the mapping, patches the chain slot and
+thresholds, and `CALL &A00` installs it.
 
 ## 7. Two ways to fake a keyboard
 
@@ -164,9 +171,9 @@ The contrast between the two programs is the interesting part of the system:
 | Model | **push** — polls the hardware each frame and *injects* keys | **pull** — answers `INKEY(-key)` on demand from the hardware |
 | Hardware read | user-port matrix scan | analogue (ADVAL) + optional matrix scan |
 | Compatible with | anything reading the keyboard buffer | games using `INKEY(-key)` |
-| Driver storage | plain (relocated) | ROL-encrypted, two variants |
+| Resident driver storage | plain (relocated) | ROL-encrypted, two variants |
 
-Both end at the same place: a small routine resident at `&0A00–&0AFF` that makes
+Both end at the same place: a resident driver at `&0A00–&0AFF` that makes
 the Voltmace hardware indistinguishable from keyboard input to an unmodified
 game, which can then be `*SAVE`d and re-installed with `*KEY10 CALL &A00`.
 
@@ -179,9 +186,9 @@ Putting it together, a run of either program goes:
    and queues `PAGE=…`/`OLD`/`RUN`.
 3. The OS reads those queued commands and the **BASIC configuration program**
    starts.
-4. The user configures the driver; the BASIC **pokes and installs** it at
-   `&0A00` (hooking EVNTV or BYTEV).
-5. On finishing, the BASIC prints how to `*SAVE` the driver, **erases its own
-   program text**, and ends — leaving the resident driver in place.
-6. The user loads their game; the driver quietly translates handset input into
-   the key presses the game expects.
+4. The user configures the resident driver; the BASIC **pokes and installs** it
+   at `&0A00` (hooking EVNTV or BYTEV).
+5. On finishing, the BASIC prints how to `*SAVE` the resident driver, **erases
+   its own program text**, and ends — leaving the resident driver in place.
+6. The user loads their game; the resident driver quietly translates handset
+   input into the key presses the game expects.

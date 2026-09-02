@@ -10,7 +10,7 @@
     {
       "addr": 2560,
       "name": "install",
-      "title": "Install the joystick driver",
+      "title": "Install the resident joystick driver",
       "description": "Point BYTEV at the OSBYTE intercept at &0A0D. Called from\nthe BASIC via CALL &A00, after it has saved the previous BYTEV (line 50) and\npatched the chain slot (line 1840) and sensitivity thresholds (line 1850)."
     },
     {

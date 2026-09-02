@@ -15,7 +15,7 @@ osbyte        = &fff4
 
 .dasmos_start
 ; ***************************************************************************************
-; Install the joystick driver
+; Install the resident joystick driver
 ;
 ; Point BYTEV at the OSBYTE intercept at &0A0D. Called from the BASIC via CALL &A00,
 ; after it has saved the previous BYTEV (line 50) and patched the chain slot (line 1840)
