@@ -21,8 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Add "joystik" once its disassembly driver is in place.
-        version: ["keypad"]
+        version: ["keypad", "joystik"]
     steps:
       - uses: actions/checkout@v4
 

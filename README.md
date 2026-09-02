@@ -13,6 +13,7 @@ Each program pairs a 6502 machine-code driver with a BBC BASIC front-end that is
   - [How the KEYPAD editor (BASIC front-end) works](versions/voltmace-delta-14b-driver-keypad/basic/keypad-editor.md)
 - **Voltmace Delta 14B/1 JOYSTIK driver (© 1983 Custom Video Productions)**
   - [Formatted disassembly on acornaeology.uk](https://acornaeology.uk/voltmace-delta14b-driver/joystik.html)
+  - [How the JOYSTIK editor (BASIC front-end) works](versions/voltmace-delta-14b-driver-joystik/basic/joystik-editor.md)
 
 ## How it works
 
