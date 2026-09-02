@@ -1,7 +1,7 @@
 # The KEYPAD editor (BASIC front-end)
 
 This describes the BBC BASIC program in
-[`voltmace-delta-14b-driver-keypad.bas`](voltmace-delta-14b-driver-keypad.bas) —
+[`voltmace-delta-14b-driver-keypad.bas`](../../versions/voltmace-delta-14b-driver-keypad/basic/voltmace-delta-14b-driver-keypad.bas) —
 the user-facing half of the Voltmace Delta 14B KEYPAD software. Line numbers
 below refer to that program.
 
@@ -23,7 +23,7 @@ keyboard buffer.
 
 The companion machine code — the driver the editor configures and installs — is
 covered by the disassembly in
-[`../output/voltmace-delta-14b-driver-keypad.asm`](../output/voltmace-delta-14b-driver-keypad.asm).
+[`voltmace-delta-14b-driver-keypad.asm`](../../versions/voltmace-delta-14b-driver-keypad/output/voltmace-delta-14b-driver-keypad.asm).
 
 ## Shape of the program
 

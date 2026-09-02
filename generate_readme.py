@@ -70,6 +70,7 @@ def main():
         description=manifest["description"],
         repo_url=REPO_URL,
         versions=versions,
+        analyses=manifest.get("analyses", []),
         references=manifest.get("references", []),
     )
 

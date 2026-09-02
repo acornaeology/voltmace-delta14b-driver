@@ -17,7 +17,17 @@ Each program pairs a 6502 machine-code driver with a BBC BASIC front-end that is
   - [{{ doc.label }}]({{ doc.path }})
 {%- endfor %}
 {%- endfor %}
+{% if analyses %}
+## Documentation
 
+Longer-form articles on how the system works and how this repository rebuilds it:
+{% for analysis in analyses %}
+- [{{ analysis.label }}]({{ analysis.url }})
+{%- if analysis.note %}
+  {{ analysis.note }}
+{%- endif %}
+{%- endfor %}
+{% endif %}
 ## How it works
 
 The machine code is disassembled by a Python script that drives [dasmos](https://github.com/acornaeology/dasmos), a programmable disassembler for 6502/65C02 binaries with a byte-faithful round-trip oracle. The script feeds the original program image to dasmos along with annotations — entry points, labels, the load-time relocation, and comments — to produce readable assembly.

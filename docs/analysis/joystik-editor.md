@@ -1,7 +1,7 @@
 # The JOYSTIK editor (BASIC front-end)
 
 This describes the BBC BASIC program in
-[`voltmace-delta-14b-driver-joystik.bas`](voltmace-delta-14b-driver-joystik.bas) —
+[`voltmace-delta-14b-driver-joystik.bas`](../../versions/voltmace-delta-14b-driver-joystik/basic/voltmace-delta-14b-driver-joystik.bas) —
 the user-facing half of the Voltmace Delta 14B JOYSTIK software. Line numbers
 below refer to that program.
 
@@ -20,9 +20,9 @@ then stays resident at `&A00–&AFF` while your game is loaded and run.
 
 The companion machine code — the two driver variants this program installs — is
 covered by the disassemblies in
-[`../output/voltmace-delta-14b-driver-joystik-driver-a.asm`](../output/voltmace-delta-14b-driver-joystik-driver-a.asm)
+[`driver-a.asm`](../../versions/voltmace-delta-14b-driver-joystik/output/voltmace-delta-14b-driver-joystik-driver-a.asm)
 and
-[`driver-b.asm`](../output/voltmace-delta-14b-driver-joystik-driver-b.asm).
+[`driver-b.asm`](../../versions/voltmace-delta-14b-driver-joystik/output/voltmace-delta-14b-driver-joystik-driver-b.asm).
 
 ## Shape of the program
 

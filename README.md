@@ -10,10 +10,21 @@ Each program pairs a 6502 machine-code driver with a BBC BASIC front-end that is
 
 - **Voltmace Delta 14B/1 KEYPAD driver (© 1983 Custom Video Productions)**
   - [Formatted disassembly on acornaeology.uk](https://acornaeology.uk/voltmace-delta14b-driver/keypad.html)
-  - [How the KEYPAD editor (BASIC front-end) works](versions/voltmace-delta-14b-driver-keypad/basic/keypad-editor.md)
 - **Voltmace Delta 14B/1 JOYSTIK driver (© 1983 Custom Video Productions)**
   - [Formatted disassembly on acornaeology.uk](https://acornaeology.uk/voltmace-delta14b-driver/joystik.html)
-  - [How the JOYSTIK editor (BASIC front-end) works](versions/voltmace-delta-14b-driver-joystik/basic/joystik-editor.md)
+
+## Documentation
+
+Longer-form articles on how the system works and how this repository rebuilds it:
+
+- [The Voltmace Delta 14B driver system: architecture and runtime](docs/analysis/system-architecture.md)
+  How the original system fits together: the handset hardware, the two protected programs, the ROL-1 obfuscation and loader, the BASIC front-ends that configure the drivers, and the resident 6502 drivers that hook EVNTV (KEYPAD, a keyboard the MOS polls) and BYTEV (JOYSTIK, an INKEY the MOS asks).
+- [Reproducing the originals: sources, build and verification](docs/analysis/build-and-verification.md)
+  How the modern build regenerates the KEYPAD/JOYSTIK files byte-for-byte from editable sources (annotated assembly + detokenised BASIC), re-encrypting a greedy-tokenised, ROR-rotated incbin payload and assembling the JOYSTIK driver variants back to bytes; and the whole-file verification that keeps it honest.
+- [How the KEYPAD editor (BASIC front-end) works](docs/analysis/keypad-editor.md)
+  A line-by-line walkthrough of the KEYPAD keypad-definition editor: reading the configuration DATA tables, the interactive key editor, the matrix scan, and how PROCFIN pokes the resident driver's key table and installs it.
+- [How the JOYSTIK editor (BASIC front-end) works](docs/analysis/joystik-editor.md)
+  A line-by-line walkthrough of the JOYSTIK configuration/demo program: joystick-configuration choice, the Acornsoft-game presets, defining keys, and how PROCASSEM copies a driver variant to &A00, pokes joystick_map, and patches the chain slot and thresholds.
 
 ## How it works
 
