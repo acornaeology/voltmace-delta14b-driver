@@ -1,5 +1,5 @@
 {
-    "title": "Voltmace Delta 14B/1 KEYPAD driver (© 1983 Custom Video Productions)",
+    "title": "Voltmace Delta 14B/1 KEYPAD driver",
     "size": 8576,
     "load_address": "0x1900",
     "exec_address": "0x3906",
