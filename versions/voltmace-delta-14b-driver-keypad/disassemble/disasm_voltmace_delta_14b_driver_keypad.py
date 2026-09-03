@@ -32,6 +32,7 @@ import sys
 import tempfile
 from pathlib import Path
 import dasmos
+from dasmos.expr import lo, hi, sym
 
 _script_dirpath = Path(__file__).resolve().parent
 _version_dirpath = _script_dirpath.parent
@@ -508,7 +509,11 @@ d.subroutine(
 &1900 down to &0A00 (copy_pages pages via copy_src -> copy_dst), skipping
 destination page &0B so the soft-key buffer survives.""",
 )
-ct(0x39AA, 'OSCLI the startup command at oscli_command (&39F1): low byte...')
+# The X/Y pair is the address of oscli_command; render the immediates as its
+# low/high bytes so they track the label rather than being bare hex.
+d.expr(0x39AB, lo(sym('oscli_command')))
+d.expr(0x39AD, hi(sym('oscli_command')))
+ct(0x39AA, 'Point X/Y at oscli_command (&39F1): low byte...')
 ct(0x39AC, '...high byte...')
 ct(0x39AE, '...call OSCLI')
 ct(0x39B1, '(carry set; not used by the copy below)')

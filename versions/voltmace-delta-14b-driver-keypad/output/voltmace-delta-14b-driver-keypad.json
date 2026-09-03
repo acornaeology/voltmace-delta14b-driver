@@ -11617,7 +11617,7 @@
       "labels": [
         "relocate_image"
       ],
-      "comment_inline": "OSCLI the startup command at oscli_command (&39F1): low byte...",
+      "comment_inline": "Point X/Y at oscli_command (&39F1): low byte...",
       "xref_summaries": [
         "&39aa referenced 1 time by &390b"
       ],
@@ -11629,7 +11629,16 @@
       ],
       "type": "code",
       "mnemonic": "ldx",
-      "operand": "#&f1"
+      "operand": "#<(oscli_command)",
+      "expr": {
+        "text": "<(oscli_command)",
+        "tree": {
+          "op": "lowbyte",
+          "operand": {
+            "sym": "oscli_command"
+          }
+        }
+      }
     },
     {
       "addr": 14764,
@@ -11640,7 +11649,16 @@
       "comment_inline": "...high byte...",
       "type": "code",
       "mnemonic": "ldy",
-      "operand": "#&39"
+      "operand": "#>(oscli_command)",
+      "expr": {
+        "text": ">(oscli_command)",
+        "tree": {
+          "op": "highbyte",
+          "operand": {
+            "sym": "oscli_command"
+          }
+        }
+      }
     },
     {
       "addr": 14766,
