@@ -505,7 +505,10 @@ def c(addr, text):
 
 
 d.comment(0x1900, 'Decoy stub BASIC line (&0D, line 13, RTS bytes) so a naive '
-                  '*LOAD/LIST at PAGE sees junk, not the loader')
+                  '*LOAD/LIST at PAGE sees junk, not the loader. It is 9 bytes '
+                  '(&1900-&1908); the exec address &1909 starts just past it. '
+                  '(KEYPAD has no such decoy: its file opens on the resident '
+                  'driver, and its loader sits in the tail at &3906.)')
 
 # MOS entry points, OS locations, and zero page. This is the loader's
 # view; the resident drivers add BYTEV, the analogue port and the User
@@ -535,9 +538,11 @@ d.label(0x0081, 'decode_ptr_hi')
 d.subroutine(
     EXEC_ADDR, 'main',
     title='*RUN entry: decrypt and auto-run',
-    description="""The DFS execution address. Decrypts the resident drivers and BASIC in
-place, repairs the BASIC's first line, then queues PAGE=&1C00 / OLD / RUN so the
-now-plain BASIC configuration program starts.""",
+    description="""The file system execution address (*RUN entry-point) for this
+binary; it starts just past the decoy stub at &1900. Decrypts the resident
+drivers and BASIC in place, writes the correct length byte back into the BASIC's
+first line, then queues PAGE=&1C00 / OLD / RUN so the now-plain BASIC
+configuration program starts.""",
 )
 c(0x1909, 'Preserve A')
 c(0x190A, 'Preserve X...')

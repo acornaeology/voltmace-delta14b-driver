@@ -38,7 +38,8 @@ and [`JOYSTIK`](../../versions/voltmace-delta-14b-driver-joystik/binary/JOYSTIK)
 1. a small **loader** in plain 6502;
 2. one or more **resident drivers** in 6502, and a **tokenised BBC BASIC**
    configuration program, both stored **bit-rotated** as protection;
-3. a **decoy** and some leftover bytes.
+3. some **leftover / padding bytes** — and, in JOYSTIK, a **decoy** stub at the
+   very start (see §3).
 
 The loader decrypts the protected region, writes the correct length byte back
 into the BASIC's first line (the protection stores it as zero), and hands control
@@ -58,9 +59,13 @@ handset look like the keyboard).
 The protection is light — enough to stop casual `*LOAD`/`LIST`
 snooping, not a serious barrier. It has four parts:
 
-- **A decoy.** The first bytes at `&1900` are `0D 00 0D 60 60 60…` — a stub that
-  reads as a broken BASIC line so a naive `*LOAD "KEYPAD"` + `LIST` at PAGE shows
-  junk rather than the program.
+- **A decoy (JOYSTIK only).** JOYSTIK's first nine bytes at `&1900` are
+  `0D 00 0D 60 60 60…` — a stub that reads as a broken BASIC line, so a naive
+  `*LOAD "JOYSTIK"` + `LIST` at PAGE shows junk. Its execution address (`&1909`)
+  deliberately starts on the byte just past the stub. KEYPAD has no decoy: its
+  file opens on the resident driver itself and its loader sits in the tail (exec
+  `&3906`), so its snoop-resistance rests on the encrypted, relocated BASIC
+  (below), not on a fake first line.
 - **ROL-1 encoding.** A contiguous region is stored with every byte **rotated
   left one bit**. The loader rotates each byte back (`ASL A : ADC #0`, a
   left-rotate) in place. Recover the plaintext by rotating left; re-encode by
@@ -90,7 +95,7 @@ protected behaviour always runs; the `Z%=1` paths are effectively dead code.
 The **driver loader** is the only part that runs as stored, un-encoded code. Its
 job is identical in both programs, though it sits at opposite ends of the file (KEYPAD's
 is a *tail* at `&3906`, JOYSTIK's is a *head* at `&1909`, matching each file's
-DFS execution address):
+execution (`*RUN`) address):
 
 1. **`decode_basic`** — ROL-decrypt the protected region in place.
 2. **`patch_header`** — restore the first BASIC line's length byte.

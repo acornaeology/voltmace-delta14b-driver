@@ -359,10 +359,10 @@ cm(0x0AFE, 'Previous EVNTV, chained to on exit')
 d.subroutine(
     EXEC_ADDR, 'main',
     title='*RUN entry: relocate, decode, and auto-run',
-    description="""The DFS execution address. Relocates the whole image down to
-&0A00 (installing the resident driver code and moving the encrypted BASIC to PAGE
-&0C00), decrypts the BASIC in place, then queues 'PAGE=&C00 / OLD / RUN' so the
-now-plain BASIC front-end starts.""",
+    description="""The file system execution address (*RUN entry-point) for this
+binary. Relocates the whole image down to &0A00 (installing the resident driver
+code and moving the encrypted BASIC to PAGE &0C00), decrypts the BASIC in place,
+then queues 'PAGE=&C00 / OLD / RUN' so the now-plain BASIC front-end starts.""",
 )
 ct(0x3906, 'Preserve A')
 ct(0x3907, 'Preserve X...')

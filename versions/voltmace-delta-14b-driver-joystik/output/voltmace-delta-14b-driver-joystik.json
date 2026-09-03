@@ -15,7 +15,7 @@
       "addr": 6409,
       "name": "main",
       "title": "*RUN entry: decrypt and auto-run",
-      "description": "The DFS execution address. Decrypts the resident drivers and BASIC in\nplace, repairs the BASIC's first line, then queues PAGE=&1C00 / OLD / RUN so the\nnow-plain BASIC configuration program starts."
+      "description": "The file system execution address (*RUN entry-point) for this\nbinary; it starts just past the decoy stub at &1900. Decrypts the resident\ndrivers and BASIC in place, writes the correct length byte back into the BASIC's\nfirst line, then queues PAGE=&1C00 / OLD / RUN so the now-plain BASIC\nconfiguration program starts."
     },
     {
       "addr": 6429,
@@ -127,7 +127,7 @@
         "decoy"
       ],
       "comments_before_label": [
-        "Decoy stub BASIC line (&0D, line 13, RTS bytes) so a naive *LOAD/LIST at PAGE sees junk, not the loader"
+        "Decoy stub BASIC line (&0D, line 13, RTS bytes) so a naive *LOAD/LIST at PAGE sees junk, not the loader. It is 9 bytes (&1900-&1908); the exec address &1909 starts just past it. (KEYPAD has no such decoy: its file opens on the resident driver, and its loader sits in the tail at &3906.)"
       ],
       "type": "byte",
       "values": [

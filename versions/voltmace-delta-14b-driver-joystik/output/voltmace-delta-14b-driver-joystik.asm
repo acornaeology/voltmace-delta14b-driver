@@ -20,15 +20,16 @@ osbyte         = &fff4  ; OSBYTE: used to read/set vectors and enable ADC input 
     org &1900
 
 .dasmos_start
-; Decoy stub BASIC line (&0D, line 13, RTS bytes) so a naive *LOAD/LIST at PAGE sees junk, not the loader
+; Decoy stub BASIC line (&0D, line 13, RTS bytes) so a naive *LOAD/LIST at PAGE sees junk, not the loader. It is 9 bytes (&1900-&1908); the exec address &1909 starts just past it. (KEYPAD has no such decoy: its file opens on the resident driver, and its loader sits in the tail at &3906.)
 .decoy
     equb &0d, &00, &0d, &60, &60, &60, &60, &60, &60                  ; 1900: 0d 00 0d... ......
 ; ***************************************************************************************
 ; *RUN entry: decrypt and auto-run
 ;
-; The DFS execution address. Decrypts the resident drivers and BASIC in place, repairs
-; the BASIC's first line, then queues PAGE=&1C00 / OLD / RUN so the now-plain BASIC
-; configuration program starts.
+; The file system execution address (*RUN entry-point) for this binary; it starts just
+; past the decoy stub at &1900. Decrypts the resident drivers and BASIC in place, writes
+; the correct length byte back into the BASIC's first line, then queues PAGE=&1C00 / OLD
+; / RUN so the now-plain BASIC configuration program starts.
 .main
     pha                                                               ; 1909: 48          H        ; Preserve A
     txa                                                               ; 190a: 8a          .        ; Preserve X...
