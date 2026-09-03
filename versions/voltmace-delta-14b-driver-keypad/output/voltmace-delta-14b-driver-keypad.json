@@ -195,6 +195,14 @@
   ],
   "banners": [
     {
+      "addr": 2768,
+      "binary_addr": 6608,
+      "name": "debounce_counter",
+      "title": "Driver data tables",
+      "description": "End of the handler code (which exits at the JMP (saved_evntv) above); what follows is embedded data \u2014 the mutable scan state (debounce_counter, current_row / current_col) and the lookup tables (row_masks, col_strobes, key_codes, sound_block).",
+      "align": "before_label"
+    },
+    {
       "addr": 6656,
       "name": "softkey_buffer_image",
       "title": "Soft-key buffer image (page &0B)",

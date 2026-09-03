@@ -208,6 +208,12 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
     pla                                                               ; 19cb: 68          h :0acb[1]          ; Restore A
     plp                                                               ; 19cc: 28          ( :0acc[1]          ; Restore the flags
     jmp (saved_evntv)                                                 ; 19cd: 6c fe 0a    l.. :0acd[1]        ; Chain to the event handler we displaced
+; ***************************************************************************************
+; Driver data tables
+;
+; End of the handler code (which exits at the JMP (saved_evntv) above); what follows is
+; embedded data — the mutable scan state (debounce_counter, current_row / current_col)
+; and the lookup tables (row_masks, col_strobes, key_codes, sound_block).
 ; &0ad0 referenced 3 times by &1967, &196e, &1999
 .debounce_counter
     equb &10                                                          ; 19d0: 10          . :0ad0[1]          ; Frames until the next auto-repeat (0 = repeat this frame)

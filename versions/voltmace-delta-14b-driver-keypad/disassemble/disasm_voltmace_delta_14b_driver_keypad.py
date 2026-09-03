@@ -350,6 +350,12 @@ cm(0x0ACD, 'Chain to the event handler we displaced')
 # ---------------------------------------------------------------------------
 # Driver data tables (in the relocated &0A00 block)
 # ---------------------------------------------------------------------------
+d.banner(0x0AD0, title='Driver data tables',
+         description='End of the handler code (which exits at the JMP '
+                     '(saved_evntv) above); what follows is embedded data — the '
+                     'mutable scan state (debounce_counter, current_row / '
+                     'current_col) and the lookup tables (row_masks, col_strobes, '
+                     'key_codes, sound_block).', move=driver)
 d.label(0x0AD0, 'debounce_counter', move=driver)
 cm(0x0AD0, 'Frames until the next auto-repeat (0 = repeat this frame)')
 d.label(0x0AD1, 'current_row', move=driver)
