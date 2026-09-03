@@ -141,13 +141,29 @@ fire keys as above, leave handset A unmapped, and for three games map the
 `PROCINIT` sets the sensitivity (`SEN%`, and the thresholds `SL%`/`SH%`, line
 1080), then reads:
 
-- **`K$()`** (line 1100) — printable key names (`f0`…`f9`, `A`…`Z`, digits,
+- **`K$()`** (lines 1100–1110) — printable key names (`f0`…`f9`, `A`…`Z`, digits,
   symbols, `ESCAPE`, cursor keys, …).
-- **`N%()`** (line 1120) — the `INKEY` (negative-`INKEY`) value for each of those
-  keys.
+- **`N%()`** (lines 1120–1130) — the key code for each of those keys.
 - **`T$()`** (line 1150) — the game names.
 - **`C$()`** (line 1170) and **`CH%()`** (line 1180) — the on-screen labels and
   ADC channel for each joystick input (direction, fire, keypad cell).
+
+`K$()` and `N%()` are **one table in two halves**: index `i` names a key
+(`K$(i)`) and gives its code (`N%(i)`). The code is the BBC's **internal
+key number** — the value you negate to test the key with `INKEY(-code)`, and the
+number the resident driver returns a "pressed" answer to. So `SHIFT`=1, `CTRL`=2,
+`SPACEBAR`=99 (`&63`), `RETURN`=74 (`&4A`), `ESCAPE`=113 (`&71`). This is the
+Rosetta stone the whole editor turns on: the game presets (*Choosing a mapping*,
+above) are stored as these codes and decoded back to names through it, and
+`PROCKEY` (*Defining and displaying keys*, below) identifies a held key by
+scanning `INKEY(-N%(n))` across the table.
+
+Each half spans two `DATA` lines only because 73 entries (indices 0–72) don't fit
+on one: `K$()` runs `f0`…`SLASH` on 1100 then `ESCAPE`…cursor keys on 1110, and
+`N%()` runs 72 codes on 1120 with the 73rd spilling onto 1130. That last entry
+pairs a **blank** name with code `3` — internal key number `&03` is one of the
+keyboard's row-0 startup-link (DIP-switch) lines, not a pressable key, so it names
+nothing and acts as an inert end-stop the presets never select.
 
 ## Defining and displaying keys (1000–1240)
 
