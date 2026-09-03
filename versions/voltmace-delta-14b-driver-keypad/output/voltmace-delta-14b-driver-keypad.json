@@ -233,7 +233,7 @@
       "addr": 65527,
       "name": "oscli",
       "group": "os_entry_points",
-      "description": "OSCLI: issues the *KEY / *FX-style commands the loader queues."
+      "description": "OSCLI: issues the single startup command \"T.\" (*TAPE) to select the cassette filing system; the PAGE/OLD/RUN commands instead go through the keyboard buffer."
     }
   ],
   "regions": [],

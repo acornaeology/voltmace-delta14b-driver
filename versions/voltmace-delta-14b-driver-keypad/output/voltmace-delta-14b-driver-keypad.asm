@@ -35,7 +35,7 @@ osword           = &fff1  ; OSWORD: the resident driver calls OSWORD 7 to sound 
 ; &fff1 referenced 1 time by &19a8
 osbyte           = &fff4  ; OSBYTE: A=&99 inserts a key into the buffer, A=&0E enables the vsync event, A=&8A inserts the loader's auto-run commands, and A=&C8 (200) sets the BREAK/ESCAPE effect.
 ; &fff4 referenced 4 times by &190a, &19bc, &398a, &399d
-oscli            = &fff7  ; OSCLI: issues the *KEY / *FX-style commands the loader queues.
+oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE) to select the cassette filing system; the PAGE/OLD/RUN commands instead go through the keyboard buffer.
 ; &fff7 referenced 1 time by &39ae
 
 

@@ -134,8 +134,9 @@ d.label(0xFFF4, 'osbyte', group='os_entry_points',
                     'the vsync event, A=&8A inserts the loader\'s auto-run '
                     'commands, and A=&C8 (200) sets the BREAK/ESCAPE effect.')
 d.label(0xFFF7, 'oscli', group='os_entry_points',
-        description='OSCLI: issues the *KEY / *FX-style commands the loader '
-                    'queues.')
+        description='OSCLI: issues the single startup command "T." (*TAPE) to '
+                    'select the cassette filing system; the PAGE/OLD/RUN '
+                    'commands instead go through the keyboard buffer.')
 
 # Memory-mapped I/O -- the User 6522 VIA that strobes the keypad matrix.
 d.label(0xFE60, 'user_via_orb', group='hardware', access='rw',
