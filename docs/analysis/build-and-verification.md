@@ -16,8 +16,9 @@ disassembler can read it, a human can annotate it, and an assembler can turn the
 annotated listing straight back into the identical bytes. The Voltmace files
 break that property three ways:
 
-- part of each file is **6502 machine code** stored **rotated left one bit**, so
-  it is meaningless as code until decrypted;
+- part of each file is **6502 machine code** stored **rotated right one bit**
+  (the loader rotates it left to decode), so it is meaningless as code until
+  decrypted;
 - another part is a **tokenised BBC BASIC** program, also bit-rotated, that we
   want to keep as *editable BASIC text*, not an opaque blob;
 - and the tokenisation was done by a **non-standard, greedier tokeniser** than

@@ -67,9 +67,10 @@ snooping, not a serious barrier. It has four parts:
   `&3906`), so its snoop-resistance rests on the encrypted, relocated BASIC
   (below), not on a fake first line.
 - **ROL-1 encoding.** A contiguous region is stored with every byte **rotated
-  left one bit**. The loader rotates each byte back (`ASL A : ADC #0`, a
-  left-rotate) in place. Recover the plaintext by rotating left; re-encode by
-  rotating right. This is the `decode_basic` routine in each loader.
+  right one bit**. The loader rotates each byte left again (`ASL A : ADC #0`, a
+  left-rotate) in place to recover the plaintext; re-encode by rotating right.
+  This is the `decode_basic` routine in each loader — named "ROL-1" after that
+  decode step.
 - **A corrupted first line.** The tokenised BASIC's first line is a `REM` whose
   **length byte is stored as 0**. Even after decryption the program cannot be
   `LIST`ed or `RUN` until the loader writes the true length back (`&16` for
