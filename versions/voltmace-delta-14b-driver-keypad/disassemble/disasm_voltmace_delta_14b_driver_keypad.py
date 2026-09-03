@@ -253,7 +253,11 @@ d.subroutine(
 3x4 matrix through User VIA port B (bit 7 selects handset 0/1 via the 74LS157),
 debounces and auto-repeats via debounce_counter, and on a pressed key sounds a
 short key-click (OSWORD 7) and inserts the mapped character into the keyboard
-buffer (OSBYTE &99). Chains to the previous event vector on exit.""",
+buffer (OSBYTE &99). Every path exits through handler_exit, which restores the
+registers and flags before chaining to the previous event vector, so all are
+preserved (as the MOS event convention requires).""",
+    on_exit={'A': 'preserved', 'X': 'preserved', 'Y': 'preserved',
+             'flags': 'preserved'},
 )
 cm(0x0A31, 'Preserve the interrupted flags')
 cm(0x0A32, 'Preserve A')

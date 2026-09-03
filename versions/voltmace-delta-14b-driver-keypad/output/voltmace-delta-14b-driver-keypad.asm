@@ -103,8 +103,15 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
 ; Entered from the MOS every 50 Hz vsync event. Strobes the 3x4 matrix through User VIA
 ; port B (bit 7 selects handset 0/1 via the 74LS157), debounces and auto-repeats via
 ; debounce_counter, and on a pressed key sounds a short key-click (OSWORD 7) and inserts
-; the mapped character into the keyboard buffer (OSBYTE &99). Chains to the previous
-; event vector on exit.
+; the mapped character into the keyboard buffer (OSBYTE &99). Every path exits through
+; handler_exit, which restores the registers and flags before chaining to the previous
+; event vector, so all are preserved (as the MOS event convention requires).
+;
+; On Exit:
+;     A: preserved
+;     X: preserved
+;     Y: preserved
+;     FLAGS: preserved
 .vsync_event_handler
     php                                                               ; 1931: 08          . :0a31[1]          ; Preserve the interrupted flags
     pha                                                               ; 1932: 48          H :0a32[1]          ; Preserve A

@@ -142,7 +142,13 @@
       "binary_addr": 6449,
       "name": "vsync_event_handler",
       "title": "Vertical-sync event handler: scan the keypad",
-      "description": "Entered from the MOS every 50 Hz vsync event. Strobes the\n3x4 matrix through User VIA port B (bit 7 selects handset 0/1 via the 74LS157),\ndebounces and auto-repeats via debounce_counter, and on a pressed key sounds a\nshort key-click (OSWORD 7) and inserts the mapped character into the keyboard\nbuffer (OSBYTE &99). Chains to the previous event vector on exit."
+      "description": "Entered from the MOS every 50 Hz vsync event. Strobes the\n3x4 matrix through User VIA port B (bit 7 selects handset 0/1 via the 74LS157),\ndebounces and auto-repeats via debounce_counter, and on a pressed key sounds a\nshort key-click (OSWORD 7) and inserts the mapped character into the keyboard\nbuffer (OSBYTE &99). Every path exits through handler_exit, which restores the\nregisters and flags before chaining to the previous event vector, so all are\npreserved (as the MOS event convention requires).",
+      "on_exit": {
+        "A": "preserved",
+        "X": "preserved",
+        "Y": "preserved",
+        "flags": "preserved"
+      }
     },
     {
       "addr": 14598,
