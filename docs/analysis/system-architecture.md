@@ -139,7 +139,7 @@ is an interactive editor: you press a key *on the handset* to select it, then a
 key *on the BBC keyboard* to assign its character, for two handsets. On finishing
 it pokes the 24-entry `key_codes` table inside the resident driver (at `&ADD`),
 sets the driver's two behaviour options — whether a keypress sounds the
-key-click (the OSWORD 7 call above) and the auto-repeat rate — and `CALL &A00`
+key-click (the OSWORD 7 call above) and whether keys auto-repeat — and `CALL &A00`
 installs it.
 
 ## 6. JOYSTIK: an INKEY the MOS asks
