@@ -764,7 +764,7 @@
         192,
         16
       ],
-      "comment_inline": "direction entry (>= &10) or a fire button?",
+      "comment_inline": "axis entry (offset < &10) or a fire button (offset >= &10)?",
       "type": "code",
       "mnemonic": "cpy",
       "operand": "#&10"
@@ -775,7 +775,7 @@
         176,
         28
       ],
-      "comment_inline": ">= &10 -> the fire-button path",
+      "comment_inline": "offset >= &10 -> the fire-button path",
       "type": "code",
       "mnemonic": "bcs",
       "operand": "test_button",

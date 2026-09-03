@@ -106,8 +106,8 @@ osbyte   = &fff4
     lsr a                                                             ; 0a57: 4a          J        ; ...shift it down
     tax                                                               ; 0a58: aa          .        ; ...into X for OSBYTE &80
     lda joystick_map,y                                                ; 0a59: b9 b0 0a    ...      ; reload the parameter
-    cpy #&10                                                          ; 0a5c: c0 10       ..       ; direction entry (>= &10) or a fire button?
-    bcs test_button                                                   ; 0a5e: b0 1c       ..       ; > = &10 -> the fire-button path
+    cpy #&10                                                          ; 0a5c: c0 10       ..       ; axis entry (offset < &10) or a fire button (offset >= &10)?
+    bcs test_button                                                   ; 0a5e: b0 1c       ..       ; offset >= &10 -> the fire-button path
     and #1                                                            ; 0a60: 29 01       ).       ; low bit picks which threshold (push vs pull)
     beq test_high_threshold                                           ; 0a62: f0 0c       ..       ; else test the high threshold
     lda #&80                                                          ; 0a64: a9 80       ..       ; OSBYTE &80: read ADC channel X (ADVAL, Y=high byte)...
