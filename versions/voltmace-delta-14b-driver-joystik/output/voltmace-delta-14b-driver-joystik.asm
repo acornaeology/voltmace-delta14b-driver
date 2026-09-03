@@ -203,11 +203,17 @@ decode_ptr_save_hi = decode_ptr_save+1
     equb &4d, &05, &55, &06, &b7, &84, &20, &d6, &88, &b0, &40, &bd   ; 19e0: 4d 05 55... M.U...
     equb &d3, &fa, &c8, &10, &f8, &f1, &eb, &44, &1b, &4c, &01, &63   ; 19ec: d3 fa c8... ......
     equb &f6, &50, &74, &21, &39, &71, &c0, &86                       ; 19f8: f6 50 74... .Pt...
-; ROL-encoded: resident driver variant A (&1A00), resident driver variant B (&1B00), then the tokenised BASIC from PAGE=&1C00 (raw past &4B00). Resident drivers: see driver_a.asm/driver_b.asm; BASIC: basic/voltmace-delta-14b-driver-joystik.bas.
-.encoded_region
+; Resident-driver template A, ROL-encoded (256 bytes; runs at &0A00). Disassembled in driver-a.asm.
+.driver_a_template_encoded
+    incbin "voltmace-delta-14b-driver-joystik-driver-a-encoded.dat"   ; 1a00: 24 d4 86... $.....
+; Resident-driver template B, ROL-encoded (256 bytes; runs at &0A00). Disassembled in driver-b.asm.
+.driver_b_template_encoded
+    incbin "voltmace-delta-14b-driver-joystik-driver-b-encoded.dat"   ; 1b00: 24 d4 86... $.....
+; Tokenised BASIC configuration program (PAGE=&1C00), ROL-encoded up to &4B00 then stored raw. Source: basic/voltmace-delta-14b-driver-joystik.bas.
+.basic_encoded
 ; &1c03 referenced 1 time by &1978
-basic_line10_len = encoded_region+515
-    incbin "voltmace-delta-14b-driver-joystik-encoded.dat"            ; 1a00: 24 d4 86... $.....
+basic_line10_len = basic_encoded+3
+    incbin "voltmace-delta-14b-driver-joystik-basic-encoded.dat"      ; 1c00: 86 00 05... ......
 ; BBC BASIC's variable heap as it stood when the author saved the &1900-&4D00 image: variable-name/value records for the program globals (e.g. REV$="Rev 2.0", and LR%, R1%, EV$, LVL%, LVH%, S% ...). Not used by the loader; PAGE=&1C00 sits below it, so BASIC rebuilds its own variables on RUN.
 .basic_variables
     equb &e5, &e5, &e5, &e5, &e5, &a1, &4c, &52, &25, &00, &00, &00   ; 4c93: e5 e5 e5... ......
@@ -266,4 +272,4 @@ save dasmos_start, dasmos_end, &1909, &1900
 ;     Number of string bytes   = 15 bytes
 ;     Number of strings        = 3
 ;     Number of included bytes = 12947 bytes
-;     Number of includes       = 1
+;     Number of includes       = 3

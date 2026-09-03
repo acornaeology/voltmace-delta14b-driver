@@ -1918,7 +1918,21 @@
         0,
         0,
         0,
-        0,
+        0
+      ],
+      "labels": [
+        "driver_a_template_encoded"
+      ],
+      "comments_before_label": [
+        "Resident-driver template A, ROL-encoded (256 bytes; runs at &0A00). Disassembled in driver-a.asm."
+      ],
+      "type": "incbin",
+      "path": "voltmace-delta-14b-driver-joystik-driver-a-encoded.dat",
+      "length": 256
+    },
+    {
+      "addr": 6912,
+      "bytes": [
         36,
         212,
         134,
@@ -2174,7 +2188,21 @@
         0,
         0,
         0,
-        0,
+        0
+      ],
+      "labels": [
+        "driver_b_template_encoded"
+      ],
+      "comments_before_label": [
+        "Resident-driver template B, ROL-encoded (256 bytes; runs at &0A00). Disassembled in driver-b.asm."
+      ],
+      "type": "incbin",
+      "path": "voltmace-delta-14b-driver-joystik-driver-b-encoded.dat",
+      "length": 256
+    },
+    {
+      "addr": 7168,
+      "bytes": [
         134,
         0,
         5,
@@ -14612,7 +14640,7 @@
         255
       ],
       "labels": [
-        "encoded_region"
+        "basic_encoded"
       ],
       "sub_labels": {
         "7171": [
@@ -14620,14 +14648,14 @@
         ]
       },
       "comments_before_label": [
-        "ROL-encoded: resident driver variant A (&1A00), resident driver variant B (&1B00), then the tokenised BASIC from PAGE=&1C00 (raw past &4B00). Resident drivers: see driver_a.asm/driver_b.asm; BASIC: basic/voltmace-delta-14b-driver-joystik.bas."
+        "Tokenised BASIC configuration program (PAGE=&1C00), ROL-encoded up to &4B00 then stored raw. Source: basic/voltmace-delta-14b-driver-joystik.bas."
       ],
       "xref_summaries": [
         "&1c03 referenced 1 time by &1978"
       ],
       "type": "incbin",
-      "path": "voltmace-delta-14b-driver-joystik-encoded.dat",
-      "length": 12947
+      "path": "voltmace-delta-14b-driver-joystik-basic-encoded.dat",
+      "length": 12435
     },
     {
       "addr": 19603,

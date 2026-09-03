@@ -18,10 +18,10 @@ The file loads at &1900 and executes at &1909. Its layout:
   &4B00-&4C92  the rest of that BASIC, stored RAW (beyond the decode range).
   &4C93-&4CFF  tail.
 
-The ROL-encoded region (&1A00-&4C92, resident drivers + BASIC) is carried as editable
-source -- the resident drivers as annotated disassembly, the BASIC as basic/*.bas -- and
-re-encoded to an incbin payload at build time (build_encoded_dat), so the whole
-file still reassembles byte-identically.
+The ROL-encoded region (&1A00-&4C92, resident-driver templates + BASIC) is carried as
+editable source -- the templates as annotated disassembly, the BASIC as basic/*.bas --
+and re-encoded to three incbin payloads at build time (build_encoded_dats), so the
+whole file still reassembles byte-identically.
 """
 import os
 import shutil
@@ -42,18 +42,21 @@ _output_dirpath = Path(
     os.environ.get('FANTASM_OUTPUT_DIR', str(_version_dirpath / 'output'))
 )
 _basic_filepath = _version_dirpath / 'basic' / 'voltmace-delta-14b-driver-joystik.bas'
-ENCODED_DAT_NAME = 'voltmace-delta-14b-driver-joystik-encoded.dat'
+
+# The ROL-encoded region is three conceptually distinct binaries, each carried
+# as its own incbin: the two resident-driver templates and the tokenised BASIC.
+DRIVER_A_DAT_NAME = 'voltmace-delta-14b-driver-joystik-driver-a-encoded.dat'
+DRIVER_B_DAT_NAME = 'voltmace-delta-14b-driver-joystik-driver-b-encoded.dat'
+BASIC_DAT_NAME = 'voltmace-delta-14b-driver-joystik-basic-encoded.dat'
 
 LOAD_ADDR = 0x1900          # DFS load address
 EXEC_ADDR = 0x1909          # DFS execution address (*RUN entry)
-DRIVER_A_ADDR = 0x1A00      # resident driver variant A, stored here
-DRIVER_B_ADDR = 0x1B00      # resident driver variant B, stored here
-DRIVER_LEN = 0x0100         # each resident driver variant is 256 bytes
+DRIVER_A_ADDR = 0x1A00      # resident-driver template A, stored here
+DRIVER_B_ADDR = 0x1B00      # resident-driver template B, stored here
+DRIVER_LEN = 0x0100         # each resident-driver template is 256 bytes
 BASIC_PAGE = 0x1C00         # PAGE of the tokenised BASIC
 ENC_END = 0x4B00            # decode stops here (loader: cpx #&4B)
 BASIC_END = 0x4C93          # one past the BASIC's &0D &FF terminator
-INCBIN_START = DRIVER_A_ADDR
-INCBIN_END = BASIC_END
 TAIL_START = BASIC_END
 
 
@@ -120,18 +123,21 @@ def _assemble(asm_text):
         return out.read_bytes()
 
 
-def build_encoded_dat(driver_a_bytes, driver_b_bytes, bas_filepath):
-    """Regenerate the incbin payload (&1A00-&4C92) from editable source.
+def build_encoded_dats(driver_a_bytes, driver_b_bytes, bas_filepath):
+    """Regenerate the three incbin payloads from editable source.
 
-    The loader ROL-decrypts &1A00-&4AFF in place, so the plaintext of that
-    region is [driver A][driver B][encoded part of the BASIC]; we ROR-encode it
-    (the inverse) and append the BASIC's raw tail (&4B00+, beyond the decode
-    range). The resident driver bytes come from assembling their annotated disassembly.
+    The loader ROL-decrypts &1A00-&4AFF in place, byte by byte, so each part
+    is ROR-encoded independently (the inverse). The two resident-driver
+    templates come from assembling their annotated disassembly; the BASIC part
+    is the tokenised BASIC ROR-encoded up to the decode limit (&4B00), then its
+    raw tail appended unencoded. Returns (driver_a, driver_b, basic) bytes.
     """
     basic = _tokenise_basic(bas_filepath)
     split = ENC_END - BASIC_PAGE            # BASIC bytes that fall inside the decode range
-    plain_encoded = driver_a_bytes + driver_b_bytes + basic[:split]
-    return bytes(_ror(b) for b in plain_encoded) + basic[split:]
+    driver_a_dat = bytes(_ror(b) for b in driver_a_bytes)
+    driver_b_dat = bytes(_ror(b) for b in driver_b_bytes)
+    basic_dat = bytes(_ror(b) for b in basic[:split]) + basic[split:]
+    return driver_a_dat, driver_b_dat, basic_dat
 
 
 def _emit_joystick_map(dd, driver_bytes, comment_fn):
@@ -479,13 +485,21 @@ d.program(exec_addr=EXEC_ADDR, reload_addr=LOAD_ADDR)
 d.byte(0x1900, EXEC_ADDR - 0x1900)
 d.label(0x1900, 'decoy')
 
-# The ROL-encoded drivers + BASIC, carried as editable source (see build).
-d.include_binary(INCBIN_START, INCBIN_END - INCBIN_START, ENCODED_DAT_NAME)
-d.label(INCBIN_START, 'encoded_region')
-d.comment(INCBIN_START, 'ROL-encoded: resident driver variant A (&1A00), resident driver variant B '
-                        '(&1B00), then the tokenised BASIC from PAGE=&1C00 '
-                        '(raw past &4B00). Resident drivers: see driver_a.asm/driver_b.asm; '
-                        'BASIC: basic/voltmace-delta-14b-driver-joystik.bas.')
+# The three conceptually distinct binaries in the ROL-encoded region, each its
+# own incbin, all carried as editable source and regenerated at build time.
+d.include_binary(DRIVER_A_ADDR, DRIVER_LEN, DRIVER_A_DAT_NAME)
+d.label(DRIVER_A_ADDR, 'driver_a_template_encoded')
+d.comment(DRIVER_A_ADDR, 'Resident-driver template A, ROL-encoded (256 bytes; '
+                         'runs at &0A00). Disassembled in driver-a.asm.')
+d.include_binary(DRIVER_B_ADDR, DRIVER_LEN, DRIVER_B_DAT_NAME)
+d.label(DRIVER_B_ADDR, 'driver_b_template_encoded')
+d.comment(DRIVER_B_ADDR, 'Resident-driver template B, ROL-encoded (256 bytes; '
+                         'runs at &0A00). Disassembled in driver-b.asm.')
+d.include_binary(BASIC_PAGE, BASIC_END - BASIC_PAGE, BASIC_DAT_NAME)
+d.label(BASIC_PAGE, 'basic_encoded')
+d.comment(BASIC_PAGE, 'Tokenised BASIC configuration program (PAGE=&1C00), '
+                      'ROL-encoded up to &4B00 then stored raw. Source: '
+                      'basic/voltmace-delta-14b-driver-joystik.bas.')
 
 # Tail after the BASIC: BBC BASIC's own variable heap, saved with the image.
 d.byte(TAIL_START, 0x1900 + len(open(_binary_filepath, 'rb').read()) - TAIL_START)
@@ -764,17 +778,20 @@ for _name, _addr, _annotate in (
     print(f'Wrote {_driver_json_filepath}', file=sys.stderr)
     _driver_bytes[_name] = _assemble(_asm)
 
-# Regenerate the incbin payload from editable source and prove it matches the
-# bytes dasmos accounted for.
-dat_bytes = build_encoded_dat(_driver_bytes['a'], _driver_bytes['b'], _basic_filepath)
+# Regenerate the three incbin payloads from editable source and prove each
+# matches the bytes dasmos accounted for.
+_dats = build_encoded_dats(_driver_bytes['a'], _driver_bytes['b'], _basic_filepath)
+_dat_names = (DRIVER_A_DAT_NAME, DRIVER_B_DAT_NAME, BASIC_DAT_NAME)
 with tempfile.TemporaryDirectory() as tmp:
     ir.write_included_binaries(tmp)
-    canonical = (Path(tmp) / ENCODED_DAT_NAME).read_bytes()
-if dat_bytes != canonical:
-    raise SystemExit(
-        f'rebuilt payload does not match the image: '
-        f'{len(dat_bytes)} bytes built vs {len(canonical)} canonical'
-    )
-dat_filepath = _output_dirpath / ENCODED_DAT_NAME
-dat_filepath.write_bytes(dat_bytes)
-print(f'Wrote {dat_filepath}', file=sys.stderr)
+    for _name, _dat in zip(_dat_names, _dats):
+        _canonical = (Path(tmp) / _name).read_bytes()
+        if _dat != _canonical:
+            raise SystemExit(
+                f'rebuilt {_name} does not match the image: '
+                f'{len(_dat)} bytes built vs {len(_canonical)} canonical'
+            )
+for _name, _dat in zip(_dat_names, _dats):
+    _dat_filepath = _output_dirpath / _name
+    _dat_filepath.write_bytes(_dat)
+    print(f'Wrote {_dat_filepath}', file=sys.stderr)
