@@ -23,6 +23,7 @@ autorun_index    = &023c  ; Running fill index into the keyboard buffer as the l
 ; &023c referenced 4 times by &3969, &3974, &3977, &397e
 kbd_buffer       = &0300  ; Base of the &0300 page holding the MOS keyboard buffer (&03E0-&03FF), written directly on the fast hand-off path.
 ; &0300 used as index base 1 time by &3971
+basic_page       = &0c00  ; PAGE the relocated BASIC runs at; the loader decrypts it in place here, then queues PAGE=&C00 / OLD / RUN.
 basic_line10_len = &0c03  ; Length byte of the relocated BASIC's line 10, patched from 0 back to &16 so the protected program lists and runs.
 ; &0c03 referenced 1 time by &3963
 os_signature     = &e8aa  ; OS ROM byte read (for 'O') to distinguish OS versions and choose the command hand-off path.
@@ -40,6 +41,7 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
 
 
     org &1900
+.image_base
 
 ; Move 1: &1900 to &0a00 for length 256
     org &0a00
@@ -222,14 +224,14 @@ saved_evntv_hi = saved_evntv+1
     ; Copy the newly assembled block of code back to it's proper place in the binary
     ; file.
     ; (Note the parameter order: 'copyblock <start>,<end>,<dest>')
-    copyblock install_driver, *, &1900
+    copyblock install_driver, *, image_base
 
     ; Clear the area of memory we just temporarily used to assemble the new block,
     ; allowing us to assemble there again if needed
     clear install_driver, &0b00
 
     ; Set the program counter to the next position in the binary file.
-    org &1900 + (* - install_driver)
+    org image_base + (* - install_driver)
 
 
     org &1900
@@ -315,9 +317,9 @@ saved_evntv_hi = saved_evntv+1
     sta decode_ptr_save                                               ; 391f: 8d 5f 39    ._9      ; save it
     lda decode_ptr_hi                                                 ; 3922: a5 81       ..       ; ...and high byte...
     sta decode_ptr_save_hi                                            ; 3924: 8d 60 39    .`9      ; ...at decode_ptr_save
-    ldx #0                                                            ; 3927: a2 00       ..       ; Point decode_ptr at PAGE &0C00: low byte 0...
+    ldx #<(basic_page)                                                ; 3927: a2 00       ..       ; Point decode_ptr at basic_page (&0C00): low byte...
     stx decode_ptr                                                    ; 3929: 86 80       ..       ; set it
-    ldx #&0c                                                          ; 392b: a2 0c       ..       ; ...high byte &0C...
+    ldx #>(basic_page)                                                ; 392b: a2 0c       ..       ; ...high byte...
     ldy #0                                                            ; 392d: a0 00       ..       ; byte index 0
 ; &392f referenced 1 time by &3941
 .decode_next_page
@@ -445,13 +447,13 @@ decode_ptr_save_hi = decode_ptr_save+1
     sta copy_rem                                                      ; 39b4: 85 74       .t       ; store it
     lda #&20 ; ' '                                                    ; 39b6: a9 20       .        ; Copy &20 = 32 pages...
     sta copy_pages                                                    ; 39b8: 85 75       .u       ; store it
-    lda #0                                                            ; 39ba: a9 00       ..       ; Destination = &0A00: low byte...
+    lda #<(install_driver)                                            ; 39ba: a9 00       ..       ; Destination = install_driver (&0A00): low byte...
     sta copy_dst                                                      ; 39bc: 85 70       .p       ; store it
-    lda #&0a                                                          ; 39be: a9 0a       ..       ; ...high byte...
+    lda #>(install_driver)                                            ; 39be: a9 0a       ..       ; ...high byte...
     sta copy_dst_hi                                                   ; 39c0: 85 71       .q       ; store it
-    lda #0                                                            ; 39c2: a9 00       ..       ; Source = &1900 (the loaded image): low byte...
+    lda #<(image_base)                                                ; 39c2: a9 00       ..       ; Source = image_base (&1900, the loaded image): low byte...
     sta copy_src                                                      ; 39c4: 85 72       .r       ; store it
-    lda #&19                                                          ; 39c6: a9 19       ..       ; ...high byte...
+    lda #>(image_base)                                                ; 39c6: a9 19       ..       ; ...high byte...
     sta copy_src_hi                                                   ; 39c8: 85 73       .s       ; store it
     ldy #0                                                            ; 39ca: a0 00       ..       ; Byte index within the page
     ldx copy_pages                                                    ; 39cc: a6 75       .u       ; Page count...

@@ -165,6 +165,12 @@ d.label(0x0300, 'kbd_buffer', group='os_workspace', access='w',
 d.label(0xE8AA, 'os_signature', group='os_rom', access='r',
         description='OS ROM byte read (for \'O\') to distinguish OS versions '
                     'and choose the command hand-off path.')
+d.label(0x0C00, 'basic_page', group='basic_workspace',
+        description='PAGE the relocated BASIC runs at; the loader decrypts it in '
+                    'place here, then queues PAGE=&C00 / OLD / RUN.')
+d.label(0x1900, 'image_base',
+        description='DFS load address of the whole *RUN file; the relocator '
+                    'copies the resident driver down from here to &0A00.')
 d.label(0x0C03, 'basic_line10_len', group='basic_workspace', access='w',
         description='Length byte of the relocated BASIC\'s line 10, patched '
                     'from 0 back to &16 so the protected program lists and runs.')
@@ -395,9 +401,11 @@ ct(0x391D, 'Save the caller decode_ptr low byte...')
 ct(0x391F, 'save it')
 ct(0x3922, '...and high byte...')
 ct(0x3924, '...at decode_ptr_save')
-ct(0x3927, 'Point decode_ptr at PAGE &0C00: low byte 0...')
+d.expr(0x3928, lo(sym('basic_page')))
+d.expr(0x392C, hi(sym('basic_page')))
+ct(0x3927, 'Point decode_ptr at basic_page (&0C00): low byte...')
 ct(0x3929, 'set it')
-ct(0x392B, '...high byte &0C...')
+ct(0x392B, '...high byte...')
 ct(0x392D, 'byte index 0')
 d.label(0x392F, 'decode_next_page', move=None)
 ct(0x392F, 'Set the page being decrypted')
@@ -521,11 +529,15 @@ ct(0x39B2, 'Leftover byte count = 0 (whole pages only)...')
 ct(0x39B4, 'store it')
 ct(0x39B6, 'Copy &20 = 32 pages...')
 ct(0x39B8, 'store it')
-ct(0x39BA, 'Destination = &0A00: low byte...')
+d.expr(0x39BB, lo(sym('install_driver')))
+d.expr(0x39BF, hi(sym('install_driver')))
+ct(0x39BA, 'Destination = install_driver (&0A00): low byte...')
 ct(0x39BC, 'store it')
 ct(0x39BE, '...high byte...')
 ct(0x39C0, 'store it')
-ct(0x39C2, 'Source = &1900 (the loaded image): low byte...')
+d.expr(0x39C3, lo(sym('image_base')))
+d.expr(0x39C7, hi(sym('image_base')))
+ct(0x39C2, 'Source = image_base (&1900, the loaded image): low byte...')
 ct(0x39C4, 'store it')
 ct(0x39C6, '...high byte...')
 ct(0x39C8, 'store it')

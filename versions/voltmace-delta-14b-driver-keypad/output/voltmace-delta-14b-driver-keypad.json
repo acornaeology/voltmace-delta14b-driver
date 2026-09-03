@@ -87,6 +87,7 @@
     "evntv_hi": 545,
     "autorun_index": 572,
     "kbd_buffer": 768,
+    "basic_page": 3072,
     "basic_line10_len": 3075,
     "os_signature": 59562,
     "user_via_orb": 65120,
@@ -179,6 +180,12 @@
         "b"
       ],
       "description": "Base of the &0300 page holding the MOS keyboard buffer (&03E0-&03FF), written directly on the fast hand-off path."
+    },
+    {
+      "addr": 3072,
+      "name": "basic_page",
+      "group": "basic_workspace",
+      "description": "PAGE the relocated BASIC runs at; the loader decrypts it in place here, then queues PAGE=&C00 / OLD / RUN."
     },
     {
       "addr": 3075,
@@ -10674,10 +10681,19 @@
         162,
         0
       ],
-      "comment_inline": "Point decode_ptr at PAGE &0C00: low byte 0...",
+      "comment_inline": "Point decode_ptr at basic_page (&0C00): low byte...",
       "type": "code",
       "mnemonic": "ldx",
-      "operand": "#0"
+      "operand": "#<(basic_page)",
+      "expr": {
+        "text": "<(basic_page)",
+        "tree": {
+          "op": "lowbyte",
+          "operand": {
+            "sym": "basic_page"
+          }
+        }
+      }
     },
     {
       "addr": 14633,
@@ -10698,10 +10714,19 @@
         162,
         12
       ],
-      "comment_inline": "...high byte &0C...",
+      "comment_inline": "...high byte...",
       "type": "code",
       "mnemonic": "ldx",
-      "operand": "#&0c"
+      "operand": "#>(basic_page)",
+      "expr": {
+        "text": ">(basic_page)",
+        "tree": {
+          "op": "highbyte",
+          "operand": {
+            "sym": "basic_page"
+          }
+        }
+      }
     },
     {
       "addr": 14637,
@@ -11737,10 +11762,19 @@
         169,
         0
       ],
-      "comment_inline": "Destination = &0A00: low byte...",
+      "comment_inline": "Destination = install_driver (&0A00): low byte...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "#0"
+      "operand": "#<(install_driver)",
+      "expr": {
+        "text": "<(install_driver)",
+        "tree": {
+          "op": "lowbyte",
+          "operand": {
+            "sym": "install_driver"
+          }
+        }
+      }
     },
     {
       "addr": 14780,
@@ -11764,7 +11798,16 @@
       "comment_inline": "...high byte...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "#&0a"
+      "operand": "#>(install_driver)",
+      "expr": {
+        "text": ">(install_driver)",
+        "tree": {
+          "op": "highbyte",
+          "operand": {
+            "sym": "install_driver"
+          }
+        }
+      }
     },
     {
       "addr": 14784,
@@ -11785,10 +11828,19 @@
         169,
         0
       ],
-      "comment_inline": "Source = &1900 (the loaded image): low byte...",
+      "comment_inline": "Source = image_base (&1900, the loaded image): low byte...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "#0"
+      "operand": "#<(image_base)",
+      "expr": {
+        "text": "<(image_base)",
+        "tree": {
+          "op": "lowbyte",
+          "operand": {
+            "sym": "image_base"
+          }
+        }
+      }
     },
     {
       "addr": 14788,
@@ -11812,7 +11864,16 @@
       "comment_inline": "...high byte...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "#&19"
+      "operand": "#>(image_base)",
+      "expr": {
+        "text": ">(image_base)",
+        "tree": {
+          "op": "highbyte",
+          "operand": {
+            "sym": "image_base"
+          }
+        }
+      }
     },
     {
       "addr": 14792,
