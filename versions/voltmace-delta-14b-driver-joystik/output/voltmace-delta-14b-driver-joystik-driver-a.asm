@@ -198,10 +198,10 @@ osbyte   = &fff4
     equb &60, &00, &00                                                ; 0afa: 60 00 00    `..   
 ; &0afd referenced 1 time by &0a69
 .threshold_lo
-    equb &00                                                          ; 0afd: 00          .        ; Low sensitivity threshold (BASIC line 1850: SL%)
+    equb &00                                                          ; 0afd: 00          .        ; Low-threshold comparison value; BASIC line 1850 pokes SH% here
 ; &0afe referenced 1 time by &0a75
 .threshold_hi
-    equb &00                                                          ; 0afe: 00          .        ; High sensitivity threshold (BASIC line 1850: SH%)
+    equb &00                                                          ; 0afe: 00          .        ; High-threshold comparison value; BASIC line 1850 pokes SL% here
 .unused_a_end
     equb &00                                                          ; 0aff: 00          .        ; Unused
 .dasmos_end

@@ -1819,7 +1819,7 @@
       "labels": [
         "threshold_lo"
       ],
-      "comment_inline": "Low sensitivity threshold (BASIC line 1850: SL%)",
+      "comment_inline": "Low-threshold comparison value; BASIC line 1850 pokes SH% here",
       "xref_summaries": [
         "&0afd referenced 1 time by &0a69"
       ],
@@ -1842,7 +1842,7 @@
       "labels": [
         "threshold_hi"
       ],
-      "comment_inline": "High sensitivity threshold (BASIC line 1850: SH%)",
+      "comment_inline": "High-threshold comparison value; BASIC line 1850 pokes SL% here",
       "xref_summaries": [
         "&0afe referenced 1 time by &0a75"
       ],
