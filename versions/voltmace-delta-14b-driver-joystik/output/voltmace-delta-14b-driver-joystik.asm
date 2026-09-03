@@ -202,8 +202,8 @@ decode_ptr_save_hi = decode_ptr_save+1
     equb &0d                                                          ; 19ce: 0d          .        ; submit
     equs "RUN"                                                        ; 19cf: 52 55 4e    RUN      ; run it (RUN)
     equb &0d, &00                                                     ; 19d2: 0d 00       ..       ; submit; the &00 then stops the queue copy
-; Unused bytes after the command list, up to the resident driver at &1A00; referenced by nothing and inert.
-.loader_tail
+; Whatever occupied memory after the command list when the image was saved, up to the resident driver at &1A00: high-entropy noise, referenced by nothing and inert.
+.fossilised_memory
     equb &0d, &54, &67, &42, &cc, &6d, &f6, &b0, &c0, &ff, &38, &25   ; 19d4: 0d 54 67... .Tg...
     equb &4d, &05, &55, &06, &b7, &84, &20, &d6, &88, &b0, &40, &bd   ; 19e0: 4d 05 55... M.U...
     equb &d3, &fa, &c8, &10, &f8, &f1, &eb, &44, &1b, &4c, &01, &63   ; 19ec: d3 fa c8... ......

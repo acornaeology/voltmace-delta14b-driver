@@ -1863,10 +1863,10 @@
         134
       ],
       "labels": [
-        "loader_tail"
+        "fossilised_memory"
       ],
       "comments_before_label": [
-        "Unused bytes after the command list, up to the resident driver at &1A00; referenced by nothing and inert."
+        "Whatever occupied memory after the command list when the image was saved, up to the resident driver at &1A00: high-entropy noise, referenced by nothing and inert."
       ],
       "type": "byte",
       "values": [

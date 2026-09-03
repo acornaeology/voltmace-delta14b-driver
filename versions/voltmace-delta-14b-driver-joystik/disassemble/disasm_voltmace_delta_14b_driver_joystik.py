@@ -744,11 +744,12 @@ c(0x19CE, 'submit')
 c(0x19CF, 'run it (RUN)')
 c(0x19D2, 'submit; the &00 then stops the queue copy')
 
-# Uninitialised bytes between the loader and the resident drivers.
+# Captured leftover RAM between the loader and the resident drivers.
 d.byte(0x19D4, DRIVER_A_ADDR - 0x19D4)
-d.label(0x19D4, 'loader_tail')
-d.comment(0x19D4, 'Unused bytes after the command list, up to the resident driver at '
-                  '&1A00; referenced by nothing and inert.')
+d.label(0x19D4, 'fossilised_memory')
+d.comment(0x19D4, 'Whatever occupied memory after the command list when the image '
+                  'was saved, up to the resident driver at &1A00: high-entropy '
+                  'noise, referenced by nothing and inert.')
 
 # Entry point: the *RUN loader.
 d.entry(EXEC_ADDR)
