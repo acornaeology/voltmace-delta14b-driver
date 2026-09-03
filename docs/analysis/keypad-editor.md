@@ -198,8 +198,10 @@ it to the main loop.
   `?(&ADD+4*C%+R%+12*KP%)=KNUM%(3*R%+C%,KP%)`. `&ADD` is the resident driver's `key_codes`
   table (see the machine-code disassembly), indexed by `column*4 + row +
   12*handset` — this is the bridge between the editor and the resident driver.
-- Line 1300 patches the resident driver to enable auto-repeat if selected; line 1310
-  patches the sound block for the beep option.
+- Line 1300 (`IFA%=1THEN?&A67=&AD`) *disables* auto-repeat when the user has
+  switched AUTO off — it overwrites the `DEC debounce_counter` at `&A67` with an
+  `LDA`, so the counter never counts down. The default (`A%=0`, "ON") leaves the
+  `DEC`, so repeat is on. Line 1310 patches the sound block for the beep option.
 - Line 1330 `CALL &A00` runs the resident driver's install routine (enable the vsync
   event, set the port directions, hook `EVNTV`).
 
