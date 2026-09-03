@@ -225,8 +225,8 @@ returned; every other call chains to the previous BYTEV.""",
     dd.label(0x0A23, 'scan_next')
     ci(0x0A23, 'Step over the 2-byte entry...')
     ci(0x0A24, 'twice')
-    ci(0x0A25, 'first (button) block done?')
-    ci(0x0A27, 'yes -> jump to the direction block')
+    ci(0x0A25, "first joystick's direction entries (channels 1-2) done?")
+    ci(0x0A27, 'yes -> skip the second joystick and go to the fire buttons')
     dd.label(0x0A29, 'scan_more')
     ci(0x0A29, 'End of the map?')
     ci(0x0A2B, 'no -> keep scanning')
@@ -246,11 +246,11 @@ returned; every other call chains to the previous BYTEV.""",
     ci(0x0A3C, 'Restore A')
     dd.label(0x0A3D, 'chain')
     ci(0x0A3D, 'Pass the call to the previous BYTEV (chain slot below)')
-    dd.label(0x0A40, 'skip_to_directions')
+    dd.label(0x0A40, 'skip_to_buttons')
     for a in (0x0A40, 0x0A41, 0x0A42, 0x0A43, 0x0A44, 0x0A45, 0x0A46, 0x0A47):
-        ci(a, 'skip the 8-byte button block')
+        ci(a, "skip channels 3-4 (the second joystick's direction entries)")
     ci(0x0A48, 'clear carry for the branch')
-    ci(0x0A49, 'resume scanning the direction entries')
+    ci(0x0A49, 'resume scanning at the fire-button entries')
 
     dd.subroutine(
         0x0A4B, 'read_joystick',

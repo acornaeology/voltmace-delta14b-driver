@@ -50,8 +50,8 @@ osbyte   = &fff4
 .scan_next
     iny                                                               ; 0a23: c8          .        ; Step over the 2-byte entry...
     iny                                                               ; 0a24: c8          .        ; twice
-    cpy #8                                                            ; 0a25: c0 08       ..       ; first (button) block done?
-    beq skip_to_directions                                            ; 0a27: f0 17       ..       ; yes -> jump to the direction block
+    cpy #8                                                            ; 0a25: c0 08       ..       ; first joystick's direction entries (channels 1-2) done?
+    beq skip_to_buttons                                               ; 0a27: f0 17       ..       ; yes -> skip the second joystick and go to the fire buttons
 ; &0a29 referenced 1 time by &0a49
 .scan_more
     cpy #&18                                                          ; 0a29: c0 18       ..       ; End of the map?
@@ -75,17 +75,17 @@ osbyte   = &fff4
 .chain
     jmp chain_to_old_bytev                                            ; 0a3d: 4c fa 0a    L..      ; Pass the call to the previous BYTEV (chain slot below)
 ; &0a40 referenced 1 time by &0a27
-.skip_to_directions
-    iny                                                               ; 0a40: c8          .        ; skip the 8-byte button block
-    iny                                                               ; 0a41: c8          .        ; skip the 8-byte button block
-    iny                                                               ; 0a42: c8          .        ; skip the 8-byte button block
-    iny                                                               ; 0a43: c8          .        ; skip the 8-byte button block
-    iny                                                               ; 0a44: c8          .        ; skip the 8-byte button block
-    iny                                                               ; 0a45: c8          .        ; skip the 8-byte button block
-    iny                                                               ; 0a46: c8          .        ; skip the 8-byte button block
-    iny                                                               ; 0a47: c8          .        ; skip the 8-byte button block
+.skip_to_buttons
+    iny                                                               ; 0a40: c8          .        ; skip channels 3-4 (the second joystick's direction entries)
+    iny                                                               ; 0a41: c8          .        ; skip channels 3-4 (the second joystick's direction entries)
+    iny                                                               ; 0a42: c8          .        ; skip channels 3-4 (the second joystick's direction entries)
+    iny                                                               ; 0a43: c8          .        ; skip channels 3-4 (the second joystick's direction entries)
+    iny                                                               ; 0a44: c8          .        ; skip channels 3-4 (the second joystick's direction entries)
+    iny                                                               ; 0a45: c8          .        ; skip channels 3-4 (the second joystick's direction entries)
+    iny                                                               ; 0a46: c8          .        ; skip channels 3-4 (the second joystick's direction entries)
+    iny                                                               ; 0a47: c8          .        ; skip channels 3-4 (the second joystick's direction entries)
     clc                                                               ; 0a48: 18          .        ; clear carry for the branch
-    bcc scan_more                                                     ; 0a49: 90 de       ..       ; resume scanning the direction entries
+    bcc scan_more                                                     ; 0a49: 90 de       ..       ; resume scanning at the fire-button entries
 ; ***************************************************************************************
 ; Test one analogue input
 ;
@@ -224,7 +224,7 @@ save dasmos_start, dasmos_end
 ;     scan_map:             1
 ;     scan_more:            1
 ;     scan_next:            1
-;     skip_to_directions:   1
+;     skip_to_buttons:      1
 ;     test_button:          1
 ;     test_high_threshold:  1
 ;     threshold_hi:         1

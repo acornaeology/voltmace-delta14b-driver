@@ -302,7 +302,7 @@
         192,
         8
       ],
-      "comment_inline": "first (button) block done?",
+      "comment_inline": "first joystick's direction entries (channels 1-2) done?",
       "type": "code",
       "mnemonic": "cpy",
       "operand": "#8"
@@ -313,12 +313,12 @@
         240,
         23
       ],
-      "comment_inline": "yes -> jump to the direction block",
+      "comment_inline": "yes -> skip the second joystick and go to the fire buttons",
       "type": "code",
       "mnemonic": "beq",
-      "operand": "skip_to_directions",
+      "operand": "skip_to_buttons",
       "target": 2624,
-      "target_label": "skip_to_directions"
+      "target_label": "skip_to_buttons"
     },
     {
       "addr": 2601,
@@ -526,9 +526,9 @@
         200
       ],
       "labels": [
-        "skip_to_directions"
+        "skip_to_buttons"
       ],
-      "comment_inline": "skip the 8-byte button block",
+      "comment_inline": "skip channels 3-4 (the second joystick's direction entries)",
       "xref_summaries": [
         "&0a40 referenced 1 time by &0a27"
       ],
@@ -546,7 +546,7 @@
       "bytes": [
         200
       ],
-      "comment_inline": "skip the 8-byte button block",
+      "comment_inline": "skip channels 3-4 (the second joystick's direction entries)",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -555,7 +555,7 @@
       "bytes": [
         200
       ],
-      "comment_inline": "skip the 8-byte button block",
+      "comment_inline": "skip channels 3-4 (the second joystick's direction entries)",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -564,7 +564,7 @@
       "bytes": [
         200
       ],
-      "comment_inline": "skip the 8-byte button block",
+      "comment_inline": "skip channels 3-4 (the second joystick's direction entries)",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -573,7 +573,7 @@
       "bytes": [
         200
       ],
-      "comment_inline": "skip the 8-byte button block",
+      "comment_inline": "skip channels 3-4 (the second joystick's direction entries)",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -582,7 +582,7 @@
       "bytes": [
         200
       ],
-      "comment_inline": "skip the 8-byte button block",
+      "comment_inline": "skip channels 3-4 (the second joystick's direction entries)",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -591,7 +591,7 @@
       "bytes": [
         200
       ],
-      "comment_inline": "skip the 8-byte button block",
+      "comment_inline": "skip channels 3-4 (the second joystick's direction entries)",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -600,7 +600,7 @@
       "bytes": [
         200
       ],
-      "comment_inline": "skip the 8-byte button block",
+      "comment_inline": "skip channels 3-4 (the second joystick's direction entries)",
       "type": "code",
       "mnemonic": "iny"
     },
@@ -619,7 +619,7 @@
         144,
         222
       ],
-      "comment_inline": "resume scanning the direction entries",
+      "comment_inline": "resume scanning at the fire-button entries",
       "type": "code",
       "mnemonic": "bcc",
       "operand": "scan_more",
