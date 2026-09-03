@@ -61,6 +61,8 @@ The listing includes the BASIC payload via a relative `incbin`, so run [beebasm]
 
 ## References
 
+- [Disc image (SSD) — the original KEYPAD and JOYSTIK](disc/voltmace-delta-14b-driver.ssd)
+  A single 40-track Acorn DFS disc image bundling the two original *RUN programs, ready to mount in a BBC Micro emulator (*RUN KEYPAD or *RUN JOYSTIK).
 - [SN74LS157 quad 2-line to 1-line data selector/multiplexer datasheet](docs/sn74ls157.pdf)
   The multiplexer in the Delta 14B/1 interface that strobes the two handsets under software control.
 

@@ -32,6 +32,13 @@
     ],
     "references": [
         {
+            "label": "Disc image (SSD) — the original KEYPAD and JOYSTIK",
+            "url": "disc/voltmace-delta-14b-driver.ssd",
+            "category": "download",
+            "icon": "disc",
+            "note": "A single 40-track Acorn DFS disc image bundling the two original *RUN programs, ready to mount in a BBC Micro emulator (*RUN KEYPAD or *RUN JOYSTIK)."
+        },
+        {
             "label": "SN74LS157 quad 2-line to 1-line data selector/multiplexer datasheet",
             "url": "docs/sn74ls157.pdf",
             "category": "related",
