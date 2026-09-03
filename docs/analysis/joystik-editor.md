@@ -79,11 +79,48 @@ compatible with games that read the keyboard via `INKEY(-key)`.
 
 ## Choosing a mapping (610–990)
 
-`PROCGAME` lists eight choices (line 610): **user-defined** plus seven Acornsoft
-games (named in the `T$` table, line 1150). Selecting one (line 640) `RESTORE`s
-to the matching `DATA` line (890–960 for single joystick, 810–880 for the adaptor
-configurations) and reads a preset list of `INKEY` key numbers into `V%()` — the
-key each joystick input should emulate for that game.
+`PROCGAME` lists eight choices (line 610): **user-defined** plus seven
+ready-made mappings for Acornsoft games, named in the `T$` table (line 1150).
+Selecting one (line 640) `RESTORE`s to the matching `DATA` line — 890–960 for
+the single joystick, 810–880 for the adaptor configurations — and reads a preset
+list of key codes into `V%()`, the key each joystick input should emulate for
+that game.
+
+The presets are stored as **negative-`INKEY` key codes**: the read loop (lines
+970–990) matches each `DATA` value against the `N%()` code table (line 1120) to
+recover a key, whose printable name comes from `K$()` (lines 1100–1110) and whose
+on-screen slot label comes from `C$()` (line 1170).
+
+### The seven game presets
+
+The `T$` entries are stored as the program spells them on screen — including
+`ACORNSOFT ARCADIAN` and `ACORNSOFT METEOR` (both singular), which are the
+program's labels for Acornsoft's **Arcadians** and **Meteors**:
+
+| # | Game (as stored) | ↑ Up | ↓ Down | ← Left | → Right | Fire 1 | Fire 2 |
+|---|------------------|------|--------|--------|---------|--------|--------|
+| 0 | USER DEFINED (default) | ↑ | ↓ | ← | → | RETURN | SPACE |
+| 1 | ACORNSOFT SNAPPER | `:` | `/` | Z | X | – | – |
+| 2 | ACORNSOFT MONSTERS | `:` | `/` | Z | X | F | D |
+| 3 | ACORNSOFT PLANETOID | A | Z | SPACE | SHIFT | RETURN | TAB |
+| 4 | ACORNSOFT METEOR | SHIFT | – | CAPSLOCK | CTRL | RETURN | SPACE |
+| 5 | ACORNSOFT ARCADIAN | – | – | CAPSLOCK | CTRL | RETURN | RETURN |
+| 6 | ACORNSOFT ROCKET RAID | A | Z | SPACE | SHIFT | RETURN | TAB |
+| 7 | ACORNSOFT SUPER INVADERS | – | – | Z | X | RETURN | RETURN |
+
+The table shows the **single-joystick** presets (`H%=7`, `DATA` 890–960). Each
+row has four directions plus two fire buttons; the driver reads each button as an
+`a`/`b` pair, and every preset sets both halves to the same key, so they collapse
+to Fire 1 / Fire 2 above. A dash (`–`) is the `-` key, used as the placeholder
+for an input a game doesn't need — hence Snapper (a maze game) has no fire, and
+the left/right-only shooters (Arcadian, Super Invaders, Meteor) park the unused
+axis on `–`.
+
+The **adaptor** presets (`H%=35`, `DATA` 810–880) carry 36 slots for the two
+handsets. They drive the joystick on **handset B** with the same directions and
+fire keys as above, leave handset A unmapped, and for three games map the
+**keypad** keys to fire as well: Monsters → `F`/`D`, and Planetoid and Meteor →
+`TAB`/`SPACE`, so keypad presses double as fire buttons.
 
 ## Initialisation tables (1080–1190)
 
