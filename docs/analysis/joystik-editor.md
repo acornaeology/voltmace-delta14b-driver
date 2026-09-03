@@ -80,7 +80,7 @@ compatible with games that read the keyboard via `INKEY(-key)`.
 
 `PROCGAME` lists eight choices (line 610): **user-defined** plus seven Acornsoft
 games (named in the `T$` table, line 1150). Selecting one (line 640) `RESTORE`s
-to the matching `DATA` line (810–960 for single joystick, 890–960 for the adaptor
+to the matching `DATA` line (890–960 for single joystick, 810–880 for the adaptor
 configurations) and reads a preset list of `INKEY` key numbers into `V%()` — the
 key each joystick input should emulate for that game.
 
