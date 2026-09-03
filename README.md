@@ -10,8 +10,10 @@ Each program pairs a 6502 machine-code driver with a BBC BASIC front-end that is
 
 - **Voltmace Delta 14B/1 KEYPAD loader and resident driver**
   - [Formatted disassembly on acornaeology.uk](https://acornaeology.uk/voltmace-delta14b-driver/keypad.html)
+  - [Discuss this disassembly on Stardot](https://stardot.org.uk/forums/viewtopic.php?t=33535)
 - **Voltmace Delta 14B/1 JOYSTIK loader**
   - [Formatted disassembly on acornaeology.uk](https://acornaeology.uk/voltmace-delta14b-driver/joystik.html)
+  - [Discuss this disassembly on Stardot](https://stardot.org.uk/forums/viewtopic.php?t=33535)
 
 ## Documentation
 
