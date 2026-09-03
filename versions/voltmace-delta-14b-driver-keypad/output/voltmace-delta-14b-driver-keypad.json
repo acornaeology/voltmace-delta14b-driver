@@ -154,7 +154,12 @@
       "addr": 14598,
       "name": "main",
       "title": "*RUN entry: relocate, decode, and auto-run",
-      "description": "The file system execution address (*RUN entry-point) for this\nbinary. Relocates the whole image down to &0A00 (installing the resident driver\ncode and moving the encrypted BASIC to PAGE &0C00), decrypts the BASIC in place,\nthen queues 'PAGE=&C00 / OLD / RUN' so the now-plain BASIC front-end starts."
+      "description": "The file system execution address (*RUN entry-point) for this\nbinary. Relocates the whole image down to &0A00 (installing the resident driver\ncode and moving the encrypted BASIC to PAGE &0C00), decrypts the BASIC in place,\nthen queues 'PAGE=&C00 / OLD / RUN' so the now-plain BASIC front-end starts.\nPreserves A, X and Y (saved and restored around the body); the flags are not\nsaved.",
+      "on_exit": {
+        "A": "preserved",
+        "X": "preserved",
+        "Y": "preserved"
+      }
     },
     {
       "addr": 14621,

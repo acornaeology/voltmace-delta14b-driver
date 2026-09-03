@@ -394,7 +394,10 @@ d.subroutine(
     description="""The file system execution address (*RUN entry-point) for this
 binary. Relocates the whole image down to &0A00 (installing the resident driver
 code and moving the encrypted BASIC to PAGE &0C00), decrypts the BASIC in place,
-then queues 'PAGE=&C00 / OLD / RUN' so the now-plain BASIC front-end starts.""",
+then queues 'PAGE=&C00 / OLD / RUN' so the now-plain BASIC front-end starts.
+Preserves A, X and Y (saved and restored around the body); the flags are not
+saved.""",
+    on_exit={'A': 'preserved', 'X': 'preserved', 'Y': 'preserved'},
 )
 ct(0x3906, 'Preserve A')
 ct(0x3907, 'Preserve X...')

@@ -322,7 +322,13 @@ basic_decode_end = basic_encoded+4096
 ; The file system execution address (*RUN entry-point) for this binary. Relocates the
 ; whole image down to &0A00 (installing the resident driver code and moving the encrypted
 ; BASIC to PAGE &0C00), decrypts the BASIC in place, then queues 'PAGE=&C00 / OLD / RUN'
-; so the now-plain BASIC front-end starts.
+; so the now-plain BASIC front-end starts. Preserves A, X and Y (saved and restored
+; around the body); the flags are not saved.
+;
+; On Exit:
+;     A: preserved
+;     X: preserved
+;     Y: preserved
 .main
     pha                                                               ; 3906: 48          H        ; Preserve A
     txa                                                               ; 3907: 8a          .        ; Preserve X...
