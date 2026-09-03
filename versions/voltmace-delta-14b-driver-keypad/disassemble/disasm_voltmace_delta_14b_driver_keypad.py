@@ -98,6 +98,7 @@ driver = d.add_move(DRIVER_RUNTIME, LOAD_ADDR, DRIVER_LEN, name='driver')
 # Page &0B image (soft-key buffer): the relocator skips it, so these are just
 # filler bytes in the file, not code and not relocated.
 d.byte(FILLER_START, FILLER_END - FILLER_START)
+d.label(FILLER_START, 'softkey_buffer_image')
 d.comment(FILLER_START, 'Image of page &0B (the MOS soft-key/function-key '
                         'buffer). The relocator skips page &0B so the user keys '
                         'survive, making these bytes inert filler.')
@@ -105,6 +106,7 @@ d.comment(FILLER_START, 'Image of page &0B (the MOS soft-key/function-key '
 # The ROL-encoded BASIC program is carried as detokenised source
 # (basic/*.bas) and re-encoded to the .dat at build time; include it verbatim.
 d.include_binary(BASIC_START, BASIC_END - BASIC_START, BASIC_DAT_NAME)
+d.label(BASIC_START, 'basic_encoded')
 d.comment(BASIC_START, 'ROL-encoded tokenised BASIC (the keypad-definition '
                        'editor); relocates to PAGE=&0C00 and is decrypted in '
                        'place. Source: basic/voltmace-delta-14b-driver-keypad.bas.')

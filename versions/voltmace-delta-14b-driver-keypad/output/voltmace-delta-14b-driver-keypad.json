@@ -2296,6 +2296,9 @@
         16,
         16
       ],
+      "labels": [
+        "softkey_buffer_image"
+      ],
       "comments_before_label": [
         "Image of page &0B (the MOS soft-key/function-key buffer). The relocator skips page &0B so the user keys survive, making these bytes inert filler."
       ],
@@ -10091,6 +10094,9 @@
         112,
         134,
         255
+      ],
+      "labels": [
+        "basic_encoded"
       ],
       "comments_before_label": [
         "ROL-encoded tokenised BASIC (the keypad-definition editor); relocates to PAGE=&0C00 and is decrypted in place. Source: basic/voltmace-delta-14b-driver-keypad.bas."
