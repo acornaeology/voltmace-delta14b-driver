@@ -23,7 +23,13 @@ osbyte           = &fff4
 ;
 ; Point BYTEV at the OSBYTE intercept at &0A0D. Called from the BASIC via CALL &A00,
 ; after it has saved the previous BYTEV (line 50) and patched the chain slot (line 1840)
-; and sensitivity thresholds (line 1850).
+; and sensitivity thresholds (line 1850). Preserves A (saved and restored); X and Y are
+; untouched.
+;
+; On Exit:
+;     A: preserved
+;     X: preserved
+;     Y: preserved
 .install
     pha                                                               ; 0a00: 48          H        ; Preserve A
     lda #&0d                                                          ; 0a01: a9 0d       ..       ; BYTEV low byte -> &0D...
@@ -81,7 +87,13 @@ osbyte           = &fff4
 ;
 ; For the matched entry: entries below &10 read an analogue channel (OSBYTE &80 / ADVAL)
 ; against the thresholds; entries >= &10 strobe a keypad column through User VIA port B
-; and test a row bit. A hit sets result_flag.
+; and test a row bit. A hit sets result_flag. Preserves A and Y (Y is the caller's
+; map-scan index) but corrupts X.
+;
+; On Exit:
+;     A: preserved
+;     Y: preserved
+;     X: corrupted
 ; &0a3c referenced 1 time by &0a20
 .read_input
     pha                                                               ; 0a3c: 48          H        ; Preserve A...

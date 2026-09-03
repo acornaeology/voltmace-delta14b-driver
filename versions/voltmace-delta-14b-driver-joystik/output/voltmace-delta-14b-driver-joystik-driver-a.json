@@ -104,20 +104,30 @@
       "addr": 2560,
       "name": "install",
       "title": "Install the resident joystick driver",
-      "description": "Point BYTEV at the OSBYTE intercept at &0A0D. Called from\nthe BASIC via CALL &A00, after it has saved the previous BYTEV (line 50) and\npatched the chain slot (line 1840) and sensitivity thresholds (line 1850)."
+      "description": "Point BYTEV at the OSBYTE intercept at &0A0D. Called from\nthe BASIC via CALL &A00, after it has saved the previous BYTEV (line 50) and\npatched the chain slot (line 1840) and sensitivity thresholds (line 1850).\nPreserves A (saved and restored); X and Y are untouched.",
+      "on_exit": {
+        "A": "preserved",
+        "X": "preserved",
+        "Y": "preserved"
+      }
     },
     {
       "addr": 2573,
       "name": "osbyte_intercept",
       "title": "BYTEV handler: map the joystick to INKEY",
-      "description": "Runs on every OSBYTE; only OSBYTE &81 (INKEY / read key) is\nintercepted. If the key being tested matches an entry in joystick_map, the\nmatching analogue input is read and, when active, a \"key pressed\" result is\nreturned; every other call chains to the previous BYTEV.",
+      "description": "Runs on every OSBYTE; only OSBYTE &81 (INKEY / read key) is\nintercepted. If the key being tested matches an entry in joystick_map, the\nmatching analogue input is read and, when active, a \"key pressed\" result is\nreturned; every other call chains to the previous BYTEV. Register effects are the\nOSBYTE ABI, not a blanket preserve: when it claims the INKEY it returns via RTS\nwith X=Y=&FF (\"pressed\") and A the reason code; otherwise \u2014 a non-&81 reason, or\n&81 with no active input \u2014 it passes the call through to the previous BYTEV with\nA, X and Y unchanged.",
       "fall_through": true
     },
     {
       "addr": 2635,
       "name": "read_joystick",
       "title": "Test one analogue input",
-      "description": "For the matched entry, read its analogue channel with\nOSBYTE &80 (ADVAL) and compare the value against the sensitivity thresholds\n(a direction) or AND the fire-button bits (a button); flag a hit in result_flag."
+      "description": "For the matched entry, read its analogue channel with\nOSBYTE &80 (ADVAL) and compare the value against the sensitivity thresholds\n(a direction) or AND the fire-button bits (a button); flag a hit in result_flag.\nPreserves A and Y (Y is the caller's map-scan index) but corrupts X.",
+      "on_exit": {
+        "A": "preserved",
+        "Y": "preserved",
+        "X": "corrupted"
+      }
     }
   ],
   "banners": [],

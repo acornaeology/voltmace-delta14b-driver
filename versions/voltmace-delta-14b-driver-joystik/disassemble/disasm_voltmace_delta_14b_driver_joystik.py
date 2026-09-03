@@ -200,7 +200,9 @@ def _annotate_driver_common(dd):
         title='Install the resident joystick driver',
         description="""Point BYTEV at the OSBYTE intercept at &0A0D. Called from
 the BASIC via CALL &A00, after it has saved the previous BYTEV (line 50) and
-patched the chain slot (line 1840) and sensitivity thresholds (line 1850).""",
+patched the chain slot (line 1840) and sensitivity thresholds (line 1850).
+Preserves A (saved and restored); X and Y are untouched.""",
+        on_exit={'A': 'preserved', 'X': 'preserved', 'Y': 'preserved'},
     )
     ci(0x0A00, 'Preserve A')
     ci(0x0A01, 'BYTEV low byte -> &0D...')
@@ -221,7 +223,11 @@ def annotate_driver_a(dd, driver_bytes):
         description="""Runs on every OSBYTE; only OSBYTE &81 (INKEY / read key) is
 intercepted. If the key being tested matches an entry in joystick_map, the
 matching analogue input is read and, when active, a "key pressed" result is
-returned; every other call chains to the previous BYTEV.""",
+returned; every other call chains to the previous BYTEV. Register effects are the
+OSBYTE ABI, not a blanket preserve: when it claims the INKEY it returns via RTS
+with X=Y=&FF ("pressed") and A the reason code; otherwise — a non-&81 reason, or
+&81 with no active input — it passes the call through to the previous BYTEV with
+A, X and Y unchanged.""",
     )
     ci(0x0A0D, 'Only intercept OSBYTE &81 (INKEY / read key)')
     ci(0x0A0F, 'other reason codes -> chain to the previous handler')
@@ -271,7 +277,9 @@ returned; every other call chains to the previous BYTEV.""",
         title='Test one analogue input',
         description="""For the matched entry, read its analogue channel with
 OSBYTE &80 (ADVAL) and compare the value against the sensitivity thresholds
-(a direction) or AND the fire-button bits (a button); flag a hit in result_flag.""",
+(a direction) or AND the fire-button bits (a button); flag a hit in result_flag.
+Preserves A and Y (Y is the caller's map-scan index) but corrupts X.""",
+        on_exit={'A': 'preserved', 'Y': 'preserved', 'X': 'corrupted'},
     )
     ci(0x0A4B, 'Preserve A...')
     ci(0x0A4C, 'Preserve Y...')
@@ -394,7 +402,8 @@ Delta 14B keypad matrix through the User VIA instead of an analogue channel.""",
         description="""For the matched entry: entries below &10 read an analogue
 channel (OSBYTE &80 / ADVAL) against the thresholds; entries >= &10 strobe a
 keypad column through User VIA port B and test a row bit. A hit sets
-result_flag.""",
+result_flag. Preserves A and Y (Y is the caller's map-scan index) but corrupts X.""",
+        on_exit={'A': 'preserved', 'Y': 'preserved', 'X': 'corrupted'},
     )
     ci(0x0A3C, 'Preserve A...')
     ci(0x0A3D, 'Preserve Y...')

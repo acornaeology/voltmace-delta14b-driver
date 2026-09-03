@@ -19,7 +19,13 @@ osbyte   = &fff4
 ;
 ; Point BYTEV at the OSBYTE intercept at &0A0D. Called from the BASIC via CALL &A00,
 ; after it has saved the previous BYTEV (line 50) and patched the chain slot (line 1840)
-; and sensitivity thresholds (line 1850).
+; and sensitivity thresholds (line 1850). Preserves A (saved and restored); X and Y are
+; untouched.
+;
+; On Exit:
+;     A: preserved
+;     X: preserved
+;     Y: preserved
 .install
     pha                                                               ; 0a00: 48          H        ; Preserve A
     lda #&0d                                                          ; 0a01: a9 0d       ..       ; BYTEV low byte -> &0D...
@@ -34,7 +40,10 @@ osbyte   = &fff4
 ; Runs on every OSBYTE; only OSBYTE &81 (INKEY / read key) is intercepted. If the key
 ; being tested matches an entry in joystick_map, the matching analogue input is read and,
 ; when active, a "key pressed" result is returned; every other call chains to the
-; previous BYTEV.
+; previous BYTEV. Register effects are the OSBYTE ABI, not a blanket preserve: when it
+; claims the INKEY it returns via RTS with X=Y=&FF ("pressed") and A the reason code;
+; otherwise — a non-&81 reason, or &81 with no active input — it passes the call through
+; to the previous BYTEV with A, X and Y unchanged.
 .osbyte_intercept
     cmp #osbyte_inkey                                                 ; 0a0d: c9 81       ..       ; Only intercept OSBYTE &81 (INKEY / read key)
     bne chain                                                         ; 0a0f: d0 2c       .,       ; other reason codes -> chain to the previous handler
@@ -95,7 +104,13 @@ osbyte   = &fff4
 ;
 ; For the matched entry, read its analogue channel with OSBYTE &80 (ADVAL) and compare
 ; the value against the sensitivity thresholds (a direction) or AND the fire-button bits
-; (a button); flag a hit in result_flag.
+; (a button); flag a hit in result_flag. Preserves A and Y (Y is the caller's map-scan
+; index) but corrupts X.
+;
+; On Exit:
+;     A: preserved
+;     Y: preserved
+;     X: corrupted
 ; &0a4b referenced 1 time by &0a20
 .read_joystick
     pha                                                               ; 0a4b: 48          H        ; Preserve A...
