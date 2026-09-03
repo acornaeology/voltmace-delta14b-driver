@@ -10763,7 +10763,7 @@
       "bytes": [
         24
       ],
-      "comment_inline": "clear carry for the rotate",
+      "comment_inline": "redundant CLC: the ASL below sets carry from bit 7 itself",
       "type": "code",
       "mnemonic": "clc"
     },
