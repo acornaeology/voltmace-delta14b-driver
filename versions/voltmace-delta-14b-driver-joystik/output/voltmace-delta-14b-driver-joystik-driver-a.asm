@@ -1,3 +1,7 @@
+; Constants
+osbyte_inkey                         = &81
+osbyte_read_adc_or_get_buffer_status = &80
+
 ; Memory locations
 bytev    = &020a
 ; &020a referenced 1 time by &0a03
@@ -32,7 +36,7 @@ osbyte   = &fff4
 ; when active, a "key pressed" result is returned; every other call chains to the
 ; previous BYTEV.
 .osbyte_intercept
-    cmp #&81                                                          ; 0a0d: c9 81       ..       ; Only intercept OSBYTE &81 (INKEY / read key)
+    cmp #osbyte_inkey                                                 ; 0a0d: c9 81       ..       ; Only intercept OSBYTE &81 (INKEY / read key)
     bne chain                                                         ; 0a0f: d0 2c       .,       ; other reason codes -> chain to the previous handler
     pha                                                               ; 0a11: 48          H        ; Preserve A (reason code)...
     tya                                                               ; 0a12: 98          .        ; Preserve Y (INKEY high byte)...
@@ -110,15 +114,15 @@ osbyte   = &fff4
     bcs test_button                                                   ; 0a5e: b0 1c       ..       ; offset >= &10 -> the fire-button path
     and #1                                                            ; 0a60: 29 01       ).       ; low bit picks which threshold (push vs pull)
     beq test_high_threshold                                           ; 0a62: f0 0c       ..       ; else test the high threshold
-    lda #&80                                                          ; 0a64: a9 80       ..       ; OSBYTE &80: read ADC channel X (ADVAL, Y=high byte)...
-    jsr osbyte                                                        ; 0a66: 20 f4 ff     ..      ; call OSBYTE
+    lda #osbyte_read_adc_or_get_buffer_status                         ; 0a64: a9 80       ..       ; OSBYTE &80: read ADC channel X (ADVAL, Y=high byte)...
+    jsr osbyte                                                        ; 0a66: 20 f4 ff     ..      ; call OSBYTE  Read ADC channel X or buffer status
     cpy threshold_lo                                                  ; 0a69: cc fd 0a    ...      ; past the low threshold?
     bcc read_done                                                     ; 0a6c: 90 25       .%       ; no -> not active
     bcs active                                                        ; 0a6e: b0 1e       ..       ; yes -> active
 ; &0a70 referenced 1 time by &0a62
 .test_high_threshold
-    lda #&80                                                          ; 0a70: a9 80       ..       ; OSBYTE &80: read ADC channel X...
-    jsr osbyte                                                        ; 0a72: 20 f4 ff     ..      ; call OSBYTE
+    lda #osbyte_read_adc_or_get_buffer_status                         ; 0a70: a9 80       ..       ; OSBYTE &80: read ADC channel X...
+    jsr osbyte                                                        ; 0a72: 20 f4 ff     ..      ; call OSBYTE  Read ADC channel X or buffer status
     cpy threshold_hi                                                  ; 0a75: cc fe 0a    ...      ; past the high threshold?
     bcc active                                                        ; 0a78: 90 14       ..       ; no -> active
     bcs read_done                                                     ; 0a7a: b0 17       ..       ; yes -> not active
@@ -126,8 +130,8 @@ osbyte   = &fff4
 .test_button
     and #3                                                            ; 0a7c: 29 03       ).       ; fire-button mask (low 2 bits)...
     sta button_mask                                                   ; 0a7e: 8d 97 0a    ...      ; ...saved
-    lda #&80                                                          ; 0a81: a9 80       ..       ; OSBYTE &80: read ADC channel X...
-    jsr osbyte                                                        ; 0a83: 20 f4 ff     ..      ; call OSBYTE
+    lda #osbyte_read_adc_or_get_buffer_status                         ; 0a81: a9 80       ..       ; OSBYTE &80: read ADC channel X...
+    jsr osbyte                                                        ; 0a83: 20 f4 ff     ..      ; call OSBYTE  Read ADC channel X or buffer status
     txa                                                               ; 0a86: 8a          .        ; the returned button bits...
     and button_mask                                                   ; 0a87: 2d 97 0a    -..      ; ...AND the mask
     beq read_done                                                     ; 0a8a: f0 07       ..       ; none set -> not active
@@ -216,6 +220,7 @@ save dasmos_start, dasmos_end
 ;     result_flag:          3
 ;     button_mask:          2
 ;     bytev:                1
+;     bytev + 1:            1
 ;     bytev_hi:             1
 ;     chain:                1
 ;     chain_to_old_bytev:   1

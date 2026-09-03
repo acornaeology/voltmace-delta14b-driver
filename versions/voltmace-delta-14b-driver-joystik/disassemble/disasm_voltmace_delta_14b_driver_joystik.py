@@ -100,6 +100,8 @@ def _make_driver_disassembler(decoded_bytes):
         auto_label_subroutine_prefix='sub_c', auto_label_loop_prefix='loop_c',
     )
     dd.load(tmp.name, DRIVER_RUNTIME)
+    dd.use_environment("acorn_mos")
+    dd.use_environment("acorn_model_b_hardware")
     os.unlink(tmp.name)
     return dd
 
@@ -181,9 +183,12 @@ def _map_comment_b(i, key, param):
 
 def _annotate_driver_common(dd):
     """Labels, install routine, and BYTEV-handler frame shared by both resident driver variants."""
-    dd.label(0x020A, 'bytev')            # BYTEV: the OSBYTE indirection vector
+    # bytev (&020A), osbyte (&FFF4) and the User VIA come from the acorn_mos /
+    # acorn_model_b_hardware environments; only the vector's high byte needs a name.
     dd.label(0x020B, 'bytev_hi')
-    dd.label(0xFFF4, 'osbyte')
+    # The reason code this driver claims off BYTEV; used by the cmp below.
+    dd.constant(0x81, 'osbyte_inkey')
+    dd.expr(0x0A0E, sym('osbyte_inkey'))
     dd.entry(0x0A00)                     # install (BASIC: CALL &A00)
     dd.entry(0x0A0D)                     # BYTEV handler (reached via the vector)
 
@@ -341,8 +346,7 @@ OSBYTE &80 (ADVAL) and compare the value against the sensitivity thresholds
 def annotate_driver_b(dd, driver_bytes):
     """Resident driver, variant B: joystick (analogue) plus keypad matrix (User VIA)."""
     ci = _annotate_driver_common(dd)
-    dd.label(0xFE60, 'user_via_orb')
-    dd.label(0xFE62, 'user_via_ddrb')
+    # user_via_orb_irb (&FE60) / user_via_ddrb (&FE62) come from acorn_model_b_hardware.
     dd.subroutine(
         0x0A0D, 'osbyte_intercept',
         title='BYTEV handler: map the joystick and keypad to INKEY',
@@ -480,6 +484,10 @@ d = dasmos.Disassembler.create(
     auto_label_loop_prefix='loop_c',
 )
 d.load(_binary_filepath, LOAD_ADDR)
+# MOS + Model B hardware knowledge: names the OS entry points and vectors, the
+# User VIA, and turns reason-code immediates before JSR osbyte/osword symbolic.
+d.use_environment("acorn_mos")
+d.use_environment("acorn_model_b_hardware")
 d.program(exec_addr=EXEC_ADDR, reload_addr=LOAD_ADDR)
 
 # Decoy stub BASIC line at the very start.

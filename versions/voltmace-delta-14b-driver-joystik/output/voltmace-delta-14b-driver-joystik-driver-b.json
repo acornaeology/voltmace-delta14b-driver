@@ -4,9 +4,102 @@
     "load_addr": 2560,
     "end_addr": 2816
   },
-  "constants": [],
+  "constants": [
+    {
+      "name": "osbyte_inkey",
+      "value": 129
+    },
+    {
+      "name": "osbyte_read_adc_or_get_buffer_status",
+      "value": 128
+    }
+  ],
   "macros": [],
   "subroutines": [
+    {
+      "addr": 65465,
+      "name": "osrdsc"
+    },
+    {
+      "addr": 65468,
+      "name": "vduchr"
+    },
+    {
+      "addr": 65471,
+      "name": "oseven"
+    },
+    {
+      "addr": 65474,
+      "name": "gsinit"
+    },
+    {
+      "addr": 65477,
+      "name": "gsread"
+    },
+    {
+      "addr": 65480,
+      "name": "nvrdch"
+    },
+    {
+      "addr": 65483,
+      "name": "nvwrch"
+    },
+    {
+      "addr": 65486,
+      "name": "osfind"
+    },
+    {
+      "addr": 65489,
+      "name": "osgbpb"
+    },
+    {
+      "addr": 65492,
+      "name": "osbput"
+    },
+    {
+      "addr": 65495,
+      "name": "osbget"
+    },
+    {
+      "addr": 65498,
+      "name": "osargs"
+    },
+    {
+      "addr": 65501,
+      "name": "osfile"
+    },
+    {
+      "addr": 65504,
+      "name": "osrdch"
+    },
+    {
+      "addr": 65507,
+      "name": "osasci"
+    },
+    {
+      "addr": 65511,
+      "name": "osnewl"
+    },
+    {
+      "addr": 65516,
+      "name": "oswrcr"
+    },
+    {
+      "addr": 65518,
+      "name": "oswrch"
+    },
+    {
+      "addr": 65521,
+      "name": "osword"
+    },
+    {
+      "addr": 65524,
+      "name": "osbyte"
+    },
+    {
+      "addr": 65527,
+      "name": "oscli"
+    },
     {
       "addr": 2560,
       "name": "install",
@@ -28,11 +121,122 @@
   ],
   "banners": [],
   "external_labels": {
+    "os_text_ptr": 242,
+    "romsel_copy": 244,
+    "osrdsc_ptr": 246,
+    "userv": 512,
+    "brkv": 514,
+    "irq1v": 516,
+    "irq2v": 518,
+    "cliv": 520,
     "bytev": 522,
     "bytev_hi": 523,
-    "user_via_orb": 65120,
+    "wordv": 524,
+    "wrchv": 526,
+    "rdchv": 528,
+    "filev": 530,
+    "argsv": 532,
+    "bgetv": 534,
+    "bputv": 536,
+    "gbpbv": 538,
+    "findv": 540,
+    "fscv": 542,
+    "evntv": 544,
+    "uptv": 546,
+    "netv": 548,
+    "vduv": 550,
+    "keyv": 552,
+    "insv": 554,
+    "remv": 556,
+    "cnpv": 558,
+    "ind1v": 560,
+    "ind2v": 562,
+    "ind3v": 564,
+    "scsi_data": 64576,
+    "scsi_status": 64577,
+    "scsi_select": 64578,
+    "scsi_irq_enable": 64579,
+    "crtc_address_register": 65024,
+    "crtc_register_data": 65025,
+    "acia_control_or_status": 65032,
+    "acia_data": 65033,
+    "serial_ula_set_baud_cassette_and_motor": 65040,
+    "station_id_disable_net_nmis": 65048,
+    "video_ula_control": 65056,
+    "video_ula_palette": 65057,
+    "video_ula_border_colour_and_palette_control": 65058,
+    "video_ula_palette_selection": 65059,
+    "romsel": 65072,
+    "acccon": 65076,
+    "system_via_orb_irb": 65088,
+    "system_via_ora_ira": 65089,
+    "system_via_ddrb": 65090,
+    "system_via_ddra": 65091,
+    "system_via_t1c_l": 65092,
+    "system_via_t1c_h": 65093,
+    "system_via_t1l_l": 65094,
+    "system_via_t1l_h": 65095,
+    "system_via_t2c_l": 65096,
+    "system_via_t2c_h": 65097,
+    "system_via_sr": 65098,
+    "system_via_acr": 65099,
+    "system_via_pcr": 65100,
+    "system_via_ifr": 65101,
+    "system_via_ier": 65102,
+    "user_via_orb_irb": 65120,
+    "user_via_ora_ira": 65121,
     "user_via_ddrb": 65122,
-    "osbyte": 65524
+    "user_via_ddra": 65123,
+    "user_via_t1c_l": 65124,
+    "user_via_t1c_h": 65125,
+    "user_via_t1l_l": 65126,
+    "user_via_t1l_h": 65127,
+    "user_via_t2c_l": 65128,
+    "user_via_t2c_h": 65129,
+    "user_via_sr": 65130,
+    "user_via_acr": 65131,
+    "user_via_pcr": 65132,
+    "user_via_ifr": 65133,
+    "user_via_ier": 65134,
+    "econet_control1_or_status1": 65184,
+    "econet_control23_or_status2": 65185,
+    "econet_data_continue_frame": 65186,
+    "econet_data_terminate_frame": 65187,
+    "adc_start_conversion_or_status": 65216,
+    "adc_read_data_high_byte": 65217,
+    "adc_read_data_low_byte": 65218,
+    "tube_status_1_and_tube_control": 65248,
+    "tube_data_register_1": 65249,
+    "tube_status_register_2": 65250,
+    "tube_data_register_2": 65251,
+    "tube_status_register_3": 65252,
+    "tube_data_register_3": 65253,
+    "tube_status_register_4_and_cpu_control": 65254,
+    "tube_data_register_4": 65255,
+    "cube_tube_data_out_from_host": 65264,
+    "cube_tube_data_in_to_host": 65265,
+    "cube_tube_status": 65277,
+    "osrdsc": 65465,
+    "vduchr": 65468,
+    "oseven": 65471,
+    "gsinit": 65474,
+    "gsread": 65477,
+    "nvrdch": 65480,
+    "nvwrch": 65483,
+    "osfind": 65486,
+    "osgbpb": 65489,
+    "osbput": 65492,
+    "osbget": 65495,
+    "osargs": 65498,
+    "osfile": 65501,
+    "osrdch": 65504,
+    "osasci": 65507,
+    "osnewl": 65511,
+    "oswrcr": 65516,
+    "oswrch": 65518,
+    "osword": 65521,
+    "osbyte": 65524,
+    "oscli": 65527
   },
   "memory_map": [],
   "regions": [],
@@ -129,7 +333,13 @@
       "comment_inline": "Only intercept OSBYTE &81 (INKEY / read key)",
       "type": "code",
       "mnemonic": "cmp",
-      "operand": "#&81"
+      "operand": "#osbyte_inkey",
+      "expr": {
+        "text": "osbyte_inkey",
+        "tree": {
+          "sym": "osbyte_inkey"
+        }
+      }
     },
     {
       "addr": 2575,
@@ -663,7 +873,13 @@
       "comment_inline": "OSBYTE &80: read ADC channel X (ADVAL, Y=high byte)...",
       "type": "code",
       "mnemonic": "lda",
-      "operand": "#&80"
+      "operand": "#osbyte_read_adc_or_get_buffer_status",
+      "expr": {
+        "text": "osbyte_read_adc_or_get_buffer_status",
+        "tree": {
+          "sym": "osbyte_read_adc_or_get_buffer_status"
+        }
+      }
     },
     {
       "addr": 2645,
@@ -672,7 +888,7 @@
         244,
         255
       ],
-      "comment_inline": "call OSBYTE",
+      "comment_inline": "call OSBYTE Read ADC channel X or buffer status",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "osbyte",
@@ -740,7 +956,13 @@
       ],
       "type": "code",
       "mnemonic": "lda",
-      "operand": "#&80"
+      "operand": "#osbyte_read_adc_or_get_buffer_status",
+      "expr": {
+        "text": "osbyte_read_adc_or_get_buffer_status",
+        "tree": {
+          "sym": "osbyte_read_adc_or_get_buffer_status"
+        }
+      }
     },
     {
       "addr": 2657,
@@ -749,7 +971,7 @@
         244,
         255
       ],
-      "comment_inline": "call OSBYTE",
+      "comment_inline": "call OSBYTE Read ADC channel X or buffer status",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "osbyte",
@@ -944,9 +1166,9 @@
       "comment_inline": "...onto port B",
       "type": "code",
       "mnemonic": "sty",
-      "operand": "user_via_orb",
+      "operand": "user_via_orb_irb",
       "target": 65120,
-      "target_label": "user_via_orb"
+      "target_label": "user_via_orb_irb"
     },
     {
       "addr": 2695,
@@ -958,9 +1180,9 @@
       "comment_inline": "Read the rows back...",
       "type": "code",
       "mnemonic": "ldy",
-      "operand": "user_via_orb",
+      "operand": "user_via_orb_irb",
       "target": 65120,
-      "target_label": "user_via_orb"
+      "target_label": "user_via_orb_irb"
     },
     {
       "addr": 2698,

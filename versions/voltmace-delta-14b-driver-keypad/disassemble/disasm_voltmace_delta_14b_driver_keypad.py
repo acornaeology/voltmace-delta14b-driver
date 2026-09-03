@@ -89,6 +89,12 @@ d = dasmos.Disassembler.create(
 )
 d.load(_binary_filepath, LOAD_ADDR)
 
+# MOS + Model B hardware knowledge: names the OS entry points and vectors, the
+# User VIA, and turns the reason-code immediates before JSR osbyte/osword into
+# symbolic osbyte_<name> / osword_<name> constants.
+d.use_environment("acorn_mos")
+d.use_environment("acorn_model_b_hardware")
+
 # Load-and-run metadata for a *RUN-able SAVE (DFS load &1900, exec &3906).
 d.program(exec_addr=EXEC_ADDR, reload_addr=LOAD_ADDR)
 
@@ -142,7 +148,7 @@ d.label(0xFFF7, 'oscli', group='os_entry_points',
                     'commands instead go through the keyboard buffer.')
 
 # Memory-mapped I/O -- the User 6522 VIA that strobes the keypad matrix.
-d.label(0xFE60, 'user_via_orb', group='hardware', access='rw',
+d.label(0xFE60, 'user_via_orb_irb', group='hardware', access='rw',
         description='User VIA port B: writes column strobes and the 74LS157 '
                     'handset-select bit (bit 7); reads the four matrix rows.')
 d.label(0xFE62, 'user_via_ddrb', group='hardware', access='w',

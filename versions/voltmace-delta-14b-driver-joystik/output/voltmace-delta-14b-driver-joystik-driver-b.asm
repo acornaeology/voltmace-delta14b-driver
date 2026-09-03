@@ -1,13 +1,17 @@
+; Constants
+osbyte_inkey                         = &81
+osbyte_read_adc_or_get_buffer_status = &80
+
 ; Memory locations
-bytev         = &020a
+bytev            = &020a
 ; &020a referenced 1 time by &0a03
-bytev_hi      = &020b
+bytev_hi         = &020b
 ; &020b referenced 1 time by &0a08
-user_via_orb  = &fe60
+user_via_orb_irb = &fe60
 ; &fe60 referenced 2 times by &0a84, &0a87
-user_via_ddrb = &fe62
+user_via_ddrb    = &fe62
 ; &fe62 referenced 1 time by &0a7b
-osbyte        = &fff4
+osbyte           = &fff4
 ; &fff4 referenced 2 times by &0a55, &0a61
 
 
@@ -34,7 +38,7 @@ osbyte        = &fff4
 ; As variant A, but joystick_map entries >= &10 test the Delta 14B keypad matrix through
 ; the User VIA instead of an analogue channel.
 .osbyte_intercept
-    cmp #&81                                                          ; 0a0d: c9 81       ..       ; Only intercept OSBYTE &81 (INKEY / read key)
+    cmp #osbyte_inkey                                                 ; 0a0d: c9 81       ..       ; Only intercept OSBYTE &81 (INKEY / read key)
     bne chain                                                         ; 0a0f: d0 28       .(       ; other reason codes -> chain to the previous handler
     pha                                                               ; 0a11: 48          H        ; Preserve A (reason code)...
     tya                                                               ; 0a12: 98          .        ; Preserve Y (INKEY high byte)...
@@ -95,15 +99,15 @@ osbyte        = &fff4
     lda joystick_map,y                                                ; 0a4c: b9 b0 0a    ...      ; reload the parameter
     and #1                                                            ; 0a4f: 29 01       ).       ; low bit picks which threshold (push vs pull)
     beq test_high_threshold                                           ; 0a51: f0 0c       ..       ; else test the high threshold
-    lda #&80                                                          ; 0a53: a9 80       ..       ; OSBYTE &80: read ADC channel X (ADVAL, Y=high byte)...
-    jsr osbyte                                                        ; 0a55: 20 f4 ff     ..      ; call OSBYTE
+    lda #osbyte_read_adc_or_get_buffer_status                         ; 0a53: a9 80       ..       ; OSBYTE &80: read ADC channel X (ADVAL, Y=high byte)...
+    jsr osbyte                                                        ; 0a55: 20 f4 ff     ..      ; call OSBYTE  Read ADC channel X or buffer status
     cpy threshold_lo                                                  ; 0a58: cc fd 0a    ...      ; past the low threshold?
     bcc read_done                                                     ; 0a5b: 90 3a       .:       ; no -> not active
     bcs active                                                        ; 0a5d: b0 33       .3       ; yes -> active
 ; &0a5f referenced 1 time by &0a51
 .test_high_threshold
-    lda #&80                                                          ; 0a5f: a9 80       ..       ; OSBYTE &80: read ADC channel X...
-    jsr osbyte                                                        ; 0a61: 20 f4 ff     ..      ; call OSBYTE
+    lda #osbyte_read_adc_or_get_buffer_status                         ; 0a5f: a9 80       ..       ; OSBYTE &80: read ADC channel X...
+    jsr osbyte                                                        ; 0a61: 20 f4 ff     ..      ; call OSBYTE  Read ADC channel X or buffer status
     cpy threshold_hi                                                  ; 0a64: cc fe 0a    ...      ; past the high threshold?
     bcc active                                                        ; 0a67: 90 29       .)       ; no -> active
     bcs read_done                                                     ; 0a69: b0 2c       .,       ; yes -> not active
@@ -119,8 +123,8 @@ osbyte        = &fff4
     sty user_via_ddrb                                                 ; 0a7b: 8c 62 fe    .b.      ; set it
     sta row_mask                                                      ; 0a7e: 8d 9b 0a    ...      ; save the row mask
     ldy col_strobe                                                    ; 0a81: ac 9c 0a    ...      ; Drive the column strobe...
-    sty user_via_orb                                                  ; 0a84: 8c 60 fe    .`.      ; ...onto port B
-    ldy user_via_orb                                                  ; 0a87: ac 60 fe    .`.      ; Read the rows back...
+    sty user_via_orb_irb                                              ; 0a84: 8c 60 fe    .`.      ; ...onto port B
+    ldy user_via_orb_irb                                              ; 0a87: ac 60 fe    .`.      ; Read the rows back...
     tya                                                               ; 0a8a: 98          .        ; into A
     and row_mask                                                      ; 0a8b: 2d 9b 0a    -..      ; ...and mask this row bit
     beq active                                                        ; 0a8e: f0 02       ..       ; low (pressed) -> not-active path...
@@ -212,8 +216,9 @@ save dasmos_start, dasmos_end
 ;     col_strobe:           2
 ;     osbyte:               2
 ;     row_mask:             2
-;     user_via_orb:         2
+;     user_via_orb_irb:     2
 ;     bytev:                1
+;     bytev + 1:            1
 ;     bytev_hi:             1
 ;     chain:                1
 ;     chain_to_old_bytev:   1

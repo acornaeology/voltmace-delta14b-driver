@@ -1,3 +1,8 @@
+; Constants
+osbyte_escape_break_effect = &c8
+osbyte_insert_buffer       = &8a
+buffer_keyboard            = &00
+
 ; Memory locations
 decode_ptr     = &80  ; ROL-decode cursor sweeping the encrypted drivers and BASIC in place.
 ; &80 referenced 5 times by &191d, &1929, &1931, &1937, &1946
@@ -164,9 +169,9 @@ decode_ptr_save_hi = decode_ptr_save+1
 ; insert each autorun_commands byte with OSBYTE &8A.
 ; &199b referenced 1 time by &196c
 .setup_keys
-    lda #&c8                                                          ; 199b: a9 c8       ..       ; OSBYTE 200: set the BREAK/ESCAPE behaviour...
+    lda #osbyte_escape_break_effect                                   ; 199b: a9 c8       ..       ; OSBYTE 200: set the BREAK/ESCAPE behaviour...
     ldx #3                                                            ; 199d: a2 03       ..       ; ...
-    jsr osbyte                                                        ; 199f: 20 f4 ff     ..      ; call OSBYTE
+    jsr osbyte                                                        ; 199f: 20 f4 ff     ..      ; call OSBYTE  osbyte: escape break effect
     ldx #0                                                            ; 19a2: a2 00       ..       ; Start at the first command byte
 ; &19a4 referenced 1 time by &19ba
 .insert_next_key
@@ -175,9 +180,9 @@ decode_ptr_save_hi = decode_ptr_save+1
     tay                                                               ; 19a9: a8          .        ; The character to insert
     txa                                                               ; 19aa: 8a          .        ; Save the loop index...
     sta setup_key_index                                               ; 19ab: 8d be 19    ...      ; ...
-    ldx #0                                                            ; 19ae: a2 00       ..       ; OSBYTE &8A: insert Y into buffer 0 (keyboard)...
-    lda #&8a                                                          ; 19b0: a9 8a       ..       ; A = &8A
-    jsr osbyte                                                        ; 19b2: 20 f4 ff     ..      ; call OSBYTE
+    ldx #buffer_keyboard                                              ; 19ae: a2 00       ..       ; OSBYTE &8A: insert Y into buffer 0 (keyboard)...
+    lda #osbyte_insert_buffer                                         ; 19b0: a9 8a       ..       ; A = &8A
+    jsr osbyte                                                        ; 19b2: 20 f4 ff     ..      ; call OSBYTE  Insert character Y into buffer X
     lda setup_key_index                                               ; 19b5: ad be 19    ...      ; Restore the loop index...
     tax                                                               ; 19b8: aa          .        ; ...
     inx                                                               ; 19b9: e8          .        ; Next command byte

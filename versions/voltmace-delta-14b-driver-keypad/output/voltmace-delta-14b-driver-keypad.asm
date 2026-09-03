@@ -1,3 +1,12 @@
+; Constants
+osbyte_enable_event          = &0e
+event_start_of_vertical_sync = &04
+osword_sound                 = &07
+osbyte_insert_input_buffer   = &99
+osbyte_escape_break_effect   = &c8
+osbyte_insert_buffer         = &8a
+buffer_keyboard              = &00
+
 ; Memory locations
 copy_dst         = &70  ; Block-copy destination pointer used by the relocator.
 ; &70 referenced 3 times by &39bc, &39d8, &39ea
@@ -28,7 +37,7 @@ basic_line10_len = &0c03  ; Length byte of the relocated BASIC's line 10, patche
 ; &0c03 referenced 1 time by &3963
 os_signature     = &e8aa  ; OS ROM byte read (for 'O') to distinguish OS versions and choose the command hand-off path.
 ; &e8aa referenced 1 time by &3950
-user_via_orb     = &fe60  ; User VIA port B: writes column strobes and the 74LS157 handset-select bit (bit 7); reads the four matrix rows.
+user_via_orb_irb = &fe60  ; User VIA port B: writes column strobes and the 74LS157 handset-select bit (bit 7); reads the four matrix rows.
 ; &fe60 referenced 8 times by &1939, &193c, &1945, &1948, &195c, &195f, &197f, &1982
 user_via_ddrb    = &fe62  ; User VIA data-direction register B: set to &F0 so the four strobe/select lines are outputs, the four rows inputs.
 ; &fe62 referenced 1 time by &190f
@@ -64,9 +73,9 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
     pha                                                               ; 1903: 48          H :0a03[1]          ; ...on the stack
     txa                                                               ; 1904: 8a          . :0a04[1]          ; Preserve X...
     pha                                                               ; 1905: 48          H :0a05[1]          ; ...on the stack
-    lda #&0e                                                          ; 1906: a9 0e       .. :0a06[1]         ; OSBYTE 14: enable an event...
-    ldx #4                                                            ; 1908: a2 04       .. :0a08[1]         ; ...event 4, the 50 Hz vertical sync
-    jsr osbyte                                                        ; 190a: 20 f4 ff     .. :0a0a[1]        ; call OSBYTE
+    lda #osbyte_enable_event                                          ; 1906: a9 0e       .. :0a06[1]         ; OSBYTE 14: enable an event...
+    ldx #event_start_of_vertical_sync                                 ; 1908: a2 04       .. :0a08[1]         ; ...event 4, the 50 Hz vertical sync
+    jsr osbyte                                                        ; 190a: 20 f4 ff     .. :0a0a[1]        ; call OSBYTE  Enable event
     lda #&f0                                                          ; 190d: a9 f0       .. :0a0d[1]         ; DDRB = &F0: bits 4-7 drive the column strobes + 74LS157 select...
     sta user_via_ddrb                                                 ; 190f: 8d 62 fe    .b. :0a0f[1]        ; ...bits 0-3 sense the four row lines
     sei                                                               ; 1912: 78          x :0a12[1]          ; Block IRQs while re-pointing the vector
@@ -102,13 +111,13 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
     txa                                                               ; 1935: 8a          . :0a35[1]          ; Preserve X...
     pha                                                               ; 1936: 48          H :0a36[1]          ; ...on the stack
     lda #0                                                            ; 1937: a9 00       .. :0a37[1]         ; Quick probe: drive every column low on handset 0...
-    sta user_via_orb                                                  ; 1939: 8d 60 fe    .`. :0a39[1]        ; ...write it
-    lda user_via_orb                                                  ; 193c: ad 60 fe    .`. :0a3c[1]        ; ...and read the rows back
+    sta user_via_orb_irb                                              ; 1939: 8d 60 fe    .`. :0a39[1]        ; ...write it
+    lda user_via_orb_irb                                              ; 193c: ad 60 fe    .`. :0a3c[1]        ; ...and read the rows back
     cmp #&0f                                                          ; 193f: c9 0f       .. :0a3f[1]         ; All four rows high (&0F) => nothing down on handset 0
     bne check_held_key                                                ; 1941: d0 0c       .. :0a41[1]         ; Something is down -> go locate it
     lda #&80                                                          ; 1943: a9 80       .. :0a43[1]         ; Probe handset 1 (bit 7 selects it)...
-    sta user_via_orb                                                  ; 1945: 8d 60 fe    .`. :0a45[1]        ; ...write it
-    lda user_via_orb                                                  ; 1948: ad 60 fe    .`. :0a48[1]        ; ...read the rows
+    sta user_via_orb_irb                                              ; 1945: 8d 60 fe    .`. :0a45[1]        ; ...write it
+    lda user_via_orb_irb                                              ; 1948: ad 60 fe    .`. :0a48[1]        ; ...read the rows
     cmp #&8f                                                          ; 194b: c9 8f       .. :0a4b[1]         ; &8F = handset-1 select set, all rows high = no key
     beq no_key_down                                                   ; 194d: f0 73       .s :0a4d[1]         ; Nothing on either handset -> idle
 ; &0a4f referenced 1 time by &1941
@@ -118,8 +127,8 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
     beq scan_matrix                                                   ; 1954: f0 1e       .. :0a54[1]         ; No held key -> full matrix scan
     ldx current_col                                                   ; 1956: ae d2 0a    ... :0a56[1]        ; Re-test the held key: fetch its column strobe...
     lda col_strobes,x                                                 ; 1959: bd d7 0a    ... :0a59[1]        ; from the strobe table
-    sta user_via_orb                                                  ; 195c: 8d 60 fe    .`. :0a5c[1]        ; ...drive it
-    lda user_via_orb                                                  ; 195f: ad 60 fe    .`. :0a5f[1]        ; ...read the rows...
+    sta user_via_orb_irb                                              ; 195c: 8d 60 fe    .`. :0a5c[1]        ; ...drive it
+    lda user_via_orb_irb                                              ; 195f: ad 60 fe    .`. :0a5f[1]        ; ...read the rows...
     and row_masks,y                                                   ; 1962: 39 d3 0a    9.. :0a62[1]        ; ...and mask its row bit
     bne scan_matrix                                                   ; 1965: d0 0d       .. :0a65[1]         ; Released (bit high now) -> rescan for a new key
     dec debounce_counter                                              ; 1967: ce d0 0a    ... :0a67[1]        ; Still held: count down to the next auto-repeat (patched to LDA by the editor to disable auto-repeat)
@@ -139,10 +148,10 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
     cpy #0                                                            ; 1978: c0 00       .. :0a78[1]         ; Only (re)strobe the column when starting at row 0...
     bne test_row                                                      ; 197a: d0 06       .. :0a7a[1]         ; ...otherwise the strobe already stands
     lda col_strobes,x                                                 ; 197c: bd d7 0a    ... :0a7c[1]        ; Drive column X (its handset bit included)...
-    sta user_via_orb                                                  ; 197f: 8d 60 fe    .`. :0a7f[1]        ; write it
+    sta user_via_orb_irb                                              ; 197f: 8d 60 fe    .`. :0a7f[1]        ; write it
 ; &0a82 referenced 1 time by &197a
 .test_row
-    lda user_via_orb                                                  ; 1982: ad 60 fe    .`. :0a82[1]        ; Read the rows...
+    lda user_via_orb_irb                                              ; 1982: ad 60 fe    .`. :0a82[1]        ; Read the rows...
     and row_masks,y                                                   ; 1985: 39 d3 0a    9.. :0a85[1]        ; ...test this row bit
     beq key_pressed                                                   ; 1988: f0 0d       .. :0a88[1]         ; Bit low -> key at (column X, row Y) is pressed
     iny                                                               ; 198a: c8          . :0a8a[1]          ; Next row...
@@ -161,10 +170,10 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
     sty current_row                                                   ; 199f: 8c d1 0a    ... :0a9f[1]        ; ...and row
 ; &0aa2 referenced 1 time by &1972
 .emit_key
-    lda #7                                                            ; 19a2: a9 07       .. :0aa2[1]         ; OSWORD 7: play the key-click sound...
-    ldx #&f6                                                          ; 19a4: a2 f6       .. :0aa4[1]         ; ...parameter block at sound_block (&0AF6)...
-    ldy #&0a                                                          ; 19a6: a0 0a       .. :0aa6[1]         ; block high byte &0A
-    jsr osword                                                        ; 19a8: 20 f1 ff     .. :0aa8[1]        ; call OSWORD
+    lda #osword_sound                                                 ; 19a2: a9 07       .. :0aa2[1]         ; OSWORD 7: play the key-click sound...
+    ldx #<(sound_block)                                               ; 19a4: a2 f6       .. :0aa4[1]         ; ...parameter block at sound_block (&0AF6)...
+    ldy #>(sound_block)                                               ; 19a6: a0 0a       .. :0aa6[1]         ; block high byte &0A
+    jsr osword                                                        ; 19a8: 20 f1 ff     .. :0aa8[1]        ; call OSWORD  SOUND command
     clc                                                               ; 19ab: 18          . :0aab[1]          ; Key-table index = col*4 + row:
     lda current_col                                                   ; 19ac: ad d2 0a    ... :0aac[1]        ; take the column...
     asl a                                                             ; 19af: 0a          . :0aaf[1]          ; ...times 4...
@@ -172,9 +181,9 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
     adc current_row                                                   ; 19b1: 6d d1 0a    m.. :0ab1[1]        ; ...plus the row
     tax                                                               ; 19b4: aa          . :0ab4[1]          ; ...as an index
     ldy key_codes,x                                                   ; 19b5: bc dd 0a    ... :0ab5[1]        ; Fetch that cell character into Y
-    lda #&99                                                          ; 19b8: a9 99       .. :0ab8[1]         ; OSBYTE &99: insert Y into buffer 0 (keyboard)...
+    lda #osbyte_insert_input_buffer                                   ; 19b8: a9 99       .. :0ab8[1]         ; OSBYTE &99: insert Y into buffer 0 (keyboard)...
     ldx #0                                                            ; 19ba: a2 00       .. :0aba[1]         ; X=0 selects the keyboard buffer
-    jsr osbyte                                                        ; 19bc: 20 f4 ff     .. :0abc[1]        ; ...as if the key were typed
+    jsr osbyte                                                        ; 19bc: 20 f4 ff     .. :0abc[1]        ; ...as if the key were typed  Insert byte Y into input buffer X
     clc                                                               ; 19bf: 18          . :0abf[1]          ; clear carry for the branch
     bcc handler_exit                                                  ; 19c0: 90 05       .. :0ac0[1]         ; Done
 ; &0ac2 referenced 1 time by &194d
@@ -408,9 +417,9 @@ decode_ptr_save_hi = decode_ptr_save+1
 ; each autorun_commands byte with OSBYTE &8A.
 ; &3986 referenced 1 time by &3957
 .setup_keys
-    lda #&c8                                                          ; 3986: a9 c8       ..       ; OSBYTE 200: set the BREAK/ESCAPE behaviour...
+    lda #osbyte_escape_break_effect                                   ; 3986: a9 c8       ..       ; OSBYTE 200: set the BREAK/ESCAPE behaviour...
     ldx #3                                                            ; 3988: a2 03       ..       ; value 3
-    jsr osbyte                                                        ; 398a: 20 f4 ff     ..      ; call OSBYTE
+    jsr osbyte                                                        ; 398a: 20 f4 ff     ..      ; call OSBYTE  osbyte: escape break effect
     ldx #0                                                            ; 398d: a2 00       ..       ; Start at the first command byte
 ; &398f referenced 1 time by &39a5
 .insert_next_key
@@ -419,9 +428,9 @@ decode_ptr_save_hi = decode_ptr_save+1
     tay                                                               ; 3994: a8          .        ; The character to insert
     txa                                                               ; 3995: 8a          .        ; Save the loop index...
     sta setup_key_index                                               ; 3996: 8d a9 39    ..9      ; save it
-    ldx #0                                                            ; 3999: a2 00       ..       ; OSBYTE &8A: insert Y into buffer 0 (keyboard)...
-    lda #&8a                                                          ; 399b: a9 8a       ..       ; A = &8A
-    jsr osbyte                                                        ; 399d: 20 f4 ff     ..      ; call OSBYTE
+    ldx #buffer_keyboard                                              ; 3999: a2 00       ..       ; OSBYTE &8A: insert Y into buffer 0 (keyboard)...
+    lda #osbyte_insert_buffer                                         ; 399b: a9 8a       ..       ; A = &8A
+    jsr osbyte                                                        ; 399d: 20 f4 ff     ..      ; call OSBYTE  Insert character Y into buffer X
     lda setup_key_index                                               ; 39a0: ad a9 39    ..9      ; Restore the loop index...
     tax                                                               ; 39a3: aa          .        ; into X
     inx                                                               ; 39a4: e8          .        ; Next command byte
@@ -517,7 +526,7 @@ decode_ptr_save_hi = decode_ptr_save+1
 save dasmos_start, dasmos_end, &3906, &1900
 
 ; Label references by decreasing frequency:
-;     user_via_orb:         8
+;     user_via_orb_irb:     8
 ;     decode_ptr:           5
 ;     autorun_index:        4
 ;     current_row:          4
@@ -538,6 +547,7 @@ save dasmos_start, dasmos_end, &3906, &1900
 ;     decode_ptr_save:      2
 ;     decode_ptr_save_hi:   2
 ;     evntv:                2
+;     evntv + 1:            2
 ;     evntv_hi:             2
 ;     row_masks:            2
 ;     saved_evntv:          2
