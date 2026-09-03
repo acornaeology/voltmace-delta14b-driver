@@ -40,7 +40,8 @@ Each program is modelled as its own fantasm "version" (ids `keypad`, `joystik`):
 ```
 versions/voltmace-delta-14b-driver-<id>/
   binary/
-    voltmace-delta-14b-driver-<id>        # the program binary (no extension)
+    KEYPAD | JOYSTIK                       # the program binary (DFS name, no extension)
+    KEYPAD.inf | JOYSTIK.inf               # DFS load/exec/attributes sidecar
     binary.json                           # title, size, load/exec, md5, sha256
   basic/
     voltmace-delta-14b-driver-<id>.bas    # detokenised BASIC front-end (editable source)
