@@ -26,7 +26,7 @@ prefixes = ["voltmace-delta-14b-driver"]
 # Python identifier, so map hyphens to underscores explicitly.
 driver_filename = "disasm_voltmace_delta_14b_driver_{version_id_no_dots}.py"
 
-# The Delta 14B driver disc (release 1) ships two distinct programs; each is
+# The Delta 14B driver software (release 1) ships two distinct programs; each is
 # modelled as its own fantasm "version".
 [[versions.entry]]
 id = "keypad"

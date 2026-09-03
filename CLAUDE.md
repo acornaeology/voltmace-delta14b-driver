@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-Annotated disassemblies of the driver software for the **Voltmace Delta 14B** joystick/keypad handset system on the BBC Microcomputer. Unlike the sibling ROM projects, these are **load-and-run programs**: `*RUN` files extracted from a DFS disc that load into main memory at `&1900`, each pairing a 6502 driver with a tokenised BBC BASIC front-end held under a rotate-left-one-bit protection. The disc ships two programs — **KEYPAD** and **JOYSTIK** — modelled as fantasm "versions" with ids `keypad` and `joystik`.
+Annotated disassemblies of the driver software for the **Voltmace Delta 14B** joystick/keypad handset system on the BBC Microcomputer. Unlike the sibling ROM projects, these are **load-and-run programs**: `*RUN` files extracted from a DFS disc image that load into main memory at `&1900`, each pairing a 6502 driver with a tokenised BBC BASIC front-end held under a rotate-left-one-bit protection. The software ships two programs — **KEYPAD** and **JOYSTIK** — modelled as fantasm "versions" with ids `keypad` and `joystik`.
 
 ## Build commands
 

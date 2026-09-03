@@ -2,7 +2,7 @@
 
 [![Verify disassembly](https://github.com/acornaeology/voltmace-delta14b-driver/actions/workflows/verify.yml/badge.svg)](https://github.com/acornaeology/voltmace-delta14b-driver/actions/workflows/verify.yml)
 
-Annotated disassemblies of the driver software for the Voltmace Delta 14B joystick/keypad handset system on the BBC Microcomputer. The Delta 14B/1 interface unit connects up to two handsets (each a 3x4 keypad plus a two-axis analogue joystick) to the BBC Micro's analogue and user ports, multiplexed by a 74LS157. The disc ships two programs — JOYSTIK and KEYPAD — each pairing a 6502 driver with a BBC BASIC front-end held under a rudimentary bit-rotation protection. The original driver software is © 1983 Custom Video Productions; the annotations and disassembly scripts here are © 2026 Acornaeology.
+Annotated disassemblies of the driver software for the Voltmace Delta 14B joystick/keypad handset system on the BBC Microcomputer. The Delta 14B/1 interface unit connects up to two handsets (each a 3x4 keypad plus a two-axis analogue joystick) to the BBC Micro's analogue and user ports, multiplexed by a 74LS157. The software ships two programs — JOYSTIK and KEYPAD — each pairing a 6502 driver with a BBC BASIC front-end held under a rudimentary bit-rotation protection. The original driver software is © 1983 Custom Video Productions; the annotations and disassembly scripts here are © 2026 Acornaeology.
 
 Each program pairs a 6502 machine-code driver with a BBC BASIC front-end that is held under a rudimentary bit-rotation protection. The disassembly names and comments the machine code, and carries the BASIC as editable source that is re-encoded to the original bytes at build time.
 
