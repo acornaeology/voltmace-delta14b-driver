@@ -56,7 +56,7 @@ For each program the *source of truth* a person edits is:
 - the **dasmos driver script** — the annotations (every instruction commented,
   every label meaningful) live here as Python calls;
 - a **`.bas` file** — the BASIC front-end as detokenised, editable text;
-- for JOYSTIK, the two **resident driver variants** are additionally re-emitted as their
+- for JOYSTIK, the two **resident-driver templates** are additionally re-emitted as their
   own annotated `.asm` listings (`…-driver-a.asm`, `…-driver-b.asm`) which the
   build assembles.
 
@@ -85,7 +85,7 @@ it reads at its `&0A00` runtime address.
 `[driver A][driver B][encrypted part of the BASIC]`, followed by the BASIC's raw
 tail. The build
 
-1. disassembles and annotates each 256-byte resident driver variant at its `&0A00`
+1. disassembles and annotates each 256-byte resident-driver template at its `&0A00`
    runtime address, renders its `.asm`, and **assembles it back to bytes** with
    beebasm (which also *proves* the disassembly round-trips);
 2. greedy-tokenises `joystik.bas` and reverses the first-line repair;

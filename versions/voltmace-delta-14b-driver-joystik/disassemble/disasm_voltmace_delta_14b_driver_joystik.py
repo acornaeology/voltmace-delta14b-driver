@@ -8,9 +8,11 @@ The file loads at &1900 and executes at &1909. Its layout:
   &1900-&1908  decoy: a stub BASIC line so a naive *LOAD/LIST sees junk.
   &1909-&19FF  head loader (plain 6502): ROL-decrypts &1A00-&4AFF in place,
                repairs the BASIC's first line, and queues PAGE=&1C00/OLD/RUN.
-  &1A00-&1AFF  joystick resident driver, variant A (6502, ROL-encoded here; runs at
-               &0A00 -- hooks BYTEV and intercepts OSBYTE &81).
-  &1B00-&1BFF  joystick resident driver, variant B (same, an alternate build).
+  &1A00-&1AFF  joystick resident-driver template, variant A (6502, ROL-encoded here;
+               runs at &0A00 -- hooks BYTEV and intercepts OSBYTE &81). Its
+               joystick_map keys, thresholds and BYTEV chain slot are blank until
+               the BASIC configures a copy at &0A00 and installs it.
+  &1B00-&1BFF  joystick resident-driver template, variant B (same, an alternate build).
   &1C00-&4AFF  the configuration/demo program, tokenised BBC BASIC (PAGE),
                ROL-encoded; the loader decrypts it up to page &4B.
   &4B00-&4C92  the rest of that BASIC, stored RAW (beyond the decode range).
@@ -738,7 +740,7 @@ json_filepath = _output_dirpath / 'voltmace-delta-14b-driver-joystik.json'
 json_filepath.write_text(str(ir.render('json')), encoding='utf-8')
 print(f'Wrote {json_filepath}', file=sys.stderr)
 
-# Disassemble and annotate the two decrypted resident driver variants at their &0A00
+# Disassemble and annotate the two decrypted resident-driver templates at their &0A00
 # runtime address, write their listings, and assemble them back to bytes.
 _image = open(_binary_filepath, 'rb').read()
 _driver_bytes = {}

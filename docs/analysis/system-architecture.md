@@ -138,16 +138,21 @@ calls the handler every frame. The handler:
 The **BASIC front-end** ([`keypad-editor.md`](keypad-editor.md))
 is an interactive editor: you press a key *on the handset* to select it, then a
 key *on the BBC keyboard* to assign its character, for two handsets. On finishing
-it pokes the 24-entry `key_codes` table inside the resident driver (at `&ADD`),
+it overwrites the 24-entry `key_codes` table inside the resident driver (at
+`&ADD`) — which the image ships pre-filled with a default layout, so KEYPAD's
+driver is a template carrying working defaults rather than a blank one —
 sets the driver's two behaviour options — whether a keypress sounds the
 key-click (the OSWORD 7 call above) and whether keys auto-repeat — and `CALL &A00`
 installs it.
 
 ## 6. JOYSTIK: an INKEY the MOS asks
 
-JOYSTIK is more elaborate. Here the resident drivers are themselves **inside the
-encrypted region** — two 256-byte variants at `&1A00` and `&1B00`, both
-ROL-encoded and both written to run at `&0A00`. See
+JOYSTIK is more elaborate. Here the resident drivers ship as **configurable
+templates inside the encrypted region** — two 256-byte variants at `&1A00` and
+`&1B00`, both ROL-encoded and both written to run at `&0A00`. They are stored
+with their `joystick_map` keys, thresholds and BYTEV chain slot blank; the BASIC
+front-end copies the chosen template to `&0A00`, pokes those fields, and installs
+the result. See
 [`driver-a.asm`](../../versions/voltmace-delta-14b-driver-joystik/output/voltmace-delta-14b-driver-joystik-driver-a.asm)
 and [`driver-b.asm`](../../versions/voltmace-delta-14b-driver-joystik/output/voltmace-delta-14b-driver-joystik-driver-b.asm).
 
@@ -173,11 +178,11 @@ is 0 in the file; the BASIC pokes it with the user's chosen `INKEY` value. The
 
 The **BASIC front-end** ([`joystik-editor.md`](joystik-editor.md))
 lets you pick a joystick configuration (which selects the joystick-only or
-joystick + keypad resident driver, `H%=7` vs. `H%=35`), choose a ready-made
+joystick + keypad template, `H%=7` vs. `H%=35`), choose a ready-made
 mapping for an Acornsoft game or define your own, test it live, tune the
-sensitivity, and finish. `PROCASSEM` copies the chosen resident driver to
+sensitivity, and finish. `PROCASSEM` copies the chosen template to
 `&A00`, pokes `joystick_map` with the mapping, patches the chain slot and
-thresholds, and `CALL &A00` installs it.
+thresholds, and `CALL &A00` installs the configured resident driver.
 
 ## 7. Two ways to fake a keyboard
 

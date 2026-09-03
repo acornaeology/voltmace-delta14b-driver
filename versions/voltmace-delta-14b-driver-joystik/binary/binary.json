@@ -6,7 +6,7 @@
     "dfs_attributes": "03",
     "md5": "fc1cc382691e338e176537d4d3b68157",
     "sha256": "325c63c5c6eeead35e01a60dbee41c698bebc67adc86ad2cc35fdd06a0c76544",
-    "notes": "Extracted from a disc image of the Voltmace Delta 14B driver software (release 1) with oaknut-disc. A *RUN program that loads at &1900 and executes at &1909. Head loader (plain) at &1909 decodes &1A00-&4AFF in place (ROL-1) and starts the BASIC at PAGE=&1C00. The ROL-encoded region holds two 256-byte machine-code driver variants (&1A00, &1B00; both run relocated at &0A00, hooking BYTEV to intercept OSBYTE &81) followed by the tokenised BASIC configuration/demo. The BASIC extends past the decode boundary (page &4B00), so its tail is stored raw ('partly protected').",
+    "notes": "Extracted from a disc image of the Voltmace Delta 14B driver software (release 1) with oaknut-disc. A *RUN program that loads at &1900 and executes at &1909. Head loader (plain) at &1909 decodes &1A00-&4AFF in place (ROL-1) and starts the BASIC at PAGE=&1C00. The ROL-encoded region holds two 256-byte resident-driver templates (&1A00, &1B00; both run relocated at &0A00, hooking BYTEV to intercept OSBYTE &81) followed by the tokenised BASIC configuration/demo. The BASIC extends past the decode boundary (page &4B00), so its tail is stored raw ('partly protected').",
     "links": [],
     "memory_map_groups": {
         "zero_page": "Zero page",
@@ -16,16 +16,16 @@
     },
     "disassemblies": [
         {
-            "label": "Resident driver — joystick only",
+            "label": "Resident driver template — joystick only",
             "slug": "driver-a",
             "json": "output/voltmace-delta-14b-driver-joystik-driver-a.json",
-            "runtime": "Runs relocated at &0A00; joystick only, read through the analogue port (OSBYTE &80 / ADVAL)."
+            "runtime": "The configurable template the BASIC copies to &0A00, pokes with joystick_map, thresholds and the BYTEV chain slot, then installs; joystick only, read through the analogue port (OSBYTE &80 / ADVAL)."
         },
         {
-            "label": "Resident driver — joystick + keypad",
+            "label": "Resident driver template — joystick + keypad",
             "slug": "driver-b",
             "json": "output/voltmace-delta-14b-driver-joystik-driver-b.json",
-            "runtime": "Runs relocated at &0A00; joystick plus the keypad matrix scanned through the User VIA."
+            "runtime": "The configurable template the BASIC copies to &0A00, pokes and installs; joystick plus the keypad matrix scanned through the User VIA."
         }
     ],
     "source_files": [

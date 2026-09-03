@@ -18,7 +18,7 @@ You pick a joystick configuration, choose a ready-made mapping for an Acornsoft
 game (or define your own), optionally test and tune it, and finish. The resident driver
 then stays at `&A00–&AFF` while your game is loaded and run.
 
-The companion machine code — the two resident driver variants this program installs — is
+The companion machine code — the two resident-driver templates this program configures and installs — is
 covered by the disassemblies in
 [`driver-a.asm`](../../versions/voltmace-delta-14b-driver-joystik/output/voltmace-delta-14b-driver-joystik-driver-a.asm)
 and
@@ -113,7 +113,7 @@ value in `V%()`. `PROCDEFAULTPRINT` (line 1040) shows the current mapping.
 - Line 1740 points `TBL%` at `&AB0` — the resident driver's `joystick_map`.
 - Line 1750 chooses the resident driver **source**: `&1A00` (variant A) when `H%=7`, else
   `&1B00` (variant B).
-- Line 1760 copies that 256-byte resident driver down to `&A00`.
+- Line 1760 copies that 256-byte template down to `&A00`.
 - Lines 1780–1830 poke the mapping into `joystick_map`: each 2-byte entry gets the
   negated `INKEY` value (`-V%(...)`) the resident driver should respond to.
 - Line 1840 patches the chain slot: `?&AFA=&4C` (a `JMP` opcode) with `&AFB/&AFC`
