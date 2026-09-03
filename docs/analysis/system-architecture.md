@@ -9,6 +9,11 @@
 > byte-identically to the original files. A companion article,
 > [Reproducing the originals](build-and-verification.md), explains how the
 > modern build regenerates those files from editable sources.
+>
+> **Revision.** Both programs identify themselves as **Rev 2.0** (© 1983 Custom
+> Video Productions) on their title screens — the `REV$` string the BASIC
+> front-ends print — so that is the revision this disassembly describes. Later
+> revisions are known to exist.
 
 ---
 
