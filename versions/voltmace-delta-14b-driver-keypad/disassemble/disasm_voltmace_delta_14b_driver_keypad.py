@@ -610,7 +610,7 @@ d.label(0x3900, 'loader_preamble')
 d.comment(0x3900, 'Filler ahead of the loader entry; reads as a stub BASIC line '
                   '(&0D, line 13, then RTS bytes)')
 d.byte(0x3A08, 0x3A80 - 0x3A08)
-d.label(0x3A08, 'trailing_data')
+d.label(0x3A08, 'fossilised_memory')
 d.comment(0x3A08, 'Uninitialised tail of the saved image. The file is a memory '
                   'dump &1900-&3A80 (the BASIC clears exactly TO &3A80); the '
                   "loader's code and tables end ~120 bytes short, so this holds "

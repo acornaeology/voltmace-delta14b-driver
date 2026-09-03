@@ -515,7 +515,7 @@ d.comment(ENC_END, 'The loader stops decrypting here (page &4B): the rest of the
 
 # Tail after the BASIC: BBC BASIC's own variable heap, saved with the image.
 d.byte(TAIL_START, 0x1900 + len(open(_binary_filepath, 'rb').read()) - TAIL_START)
-d.label(TAIL_START, 'basic_variables')
+d.label(TAIL_START, 'fossilised_basic_heap')
 d.comment(TAIL_START, "BBC BASIC's variable heap as it stood when the author saved "
                       'the &1900-&4D00 image: variable-name/value records for the '
                       "program globals (e.g. REV$=\"Rev 2.0\", and LR%, R1%, EV$, "

@@ -15031,7 +15031,7 @@
         0
       ],
       "labels": [
-        "basic_variables"
+        "fossilised_basic_heap"
       ],
       "comments_before_label": [
         "BBC BASIC's variable heap as it stood when the author saved the &1900-&4D00 image: variable-name/value records for the program globals (e.g. REV$=\"Rev 2.0\", and LR%, R1%, EV$, LVL%, LVH%, S% ...). Not used by the loader; PAGE=&1C00 sits below it, so BASIC rebuilds its own variables on RUN."
