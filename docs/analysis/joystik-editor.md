@@ -34,8 +34,9 @@ and
 | 280–520 | `PROCINTRO` — copyright, joystick-configuration choice, help |
 | 530–600 | Screen furniture (`PROCCONT`, `PROCWARN`, `PROCSCREEN`, `PROCFUNCTION`) |
 | 610–990 | `PROCGAME` — pick a preset game mapping or user-define; the `DATA` tables |
-| 1000–1240 | Key display/entry (`PROCEDIT`, `PROCKEY`, `PROCDEFAULTPRINT`) |
+| 1020–1070 | Key display/entry (`PROCEDIT`, `PROCDEFAULTPRINT`) |
 | 1080–1190 | `PROCINIT` — key-name, `INKEY`-value, sensitivity and channel tables |
+| 1200–1240 | `PROCKEY` — read a key definition |
 | 1250–1370 | `PROCFINI` — how to save the resident driver and load your game |
 | 1380–1460 | `PROCTERM` — the Edit / Test / Sensitivity / Finish menu |
 | 1470–1710 | `PROCTEST` — live display of joystick, buttons and keypad |
