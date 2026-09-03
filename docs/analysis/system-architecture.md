@@ -94,7 +94,8 @@ protected behaviour always runs; the `Z%=1` paths are effectively dead code.
 
 ## 4. The driver loader (plain 6502)
 
-The **driver loader** is the only part that runs as stored, un-encoded code. Its
+The **driver loader** is the only part that runs in place — without first being
+decrypted or (as the resident driver is) relocated. Its
 job is identical in both programs, though it sits at opposite ends of the file (KEYPAD's
 is a *tail* at `&3906`, JOYSTIK's is a *head* at `&1909`, matching each file's
 execution (`*RUN`) address):
