@@ -498,17 +498,20 @@ d.label(0x1900, 'decoy')
 # own incbin, all carried as editable source and regenerated at build time.
 d.include_binary(DRIVER_A_ADDR, DRIVER_LEN, DRIVER_A_DAT_NAME)
 d.label(DRIVER_A_ADDR, 'driver_a_template_encoded')
-d.comment(DRIVER_A_ADDR, 'Resident-driver template A, ROL-encoded (256 bytes; '
-                         'runs at &0A00). Disassembled in driver-a.asm.')
+d.banner(DRIVER_A_ADDR, title='Resident-driver template A (encoded)',
+         description='ROL-encoded, 256 bytes; runs at &0A00. Disassembled in '
+                     'driver-a.asm.')
 d.include_binary(DRIVER_B_ADDR, DRIVER_LEN, DRIVER_B_DAT_NAME)
 d.label(DRIVER_B_ADDR, 'driver_b_template_encoded')
-d.comment(DRIVER_B_ADDR, 'Resident-driver template B, ROL-encoded (256 bytes; '
-                         'runs at &0A00). Disassembled in driver-b.asm.')
+d.banner(DRIVER_B_ADDR, title='Resident-driver template B (encoded)',
+         description='ROL-encoded, 256 bytes; runs at &0A00. Disassembled in '
+                     'driver-b.asm.')
 d.include_binary(BASIC_PAGE, BASIC_END - BASIC_PAGE, BASIC_DAT_NAME)
 d.label(BASIC_PAGE, 'basic_encoded')
-d.comment(BASIC_PAGE, 'Tokenised BASIC configuration program (PAGE=&1C00), '
-                      'ROL-encoded up to basic_raw_tail then stored raw. Source: '
-                      'basic/voltmace-delta-14b-driver-joystik.bas.')
+d.banner(BASIC_PAGE, title='Tokenised BASIC front-end (encoded)',
+         description='The configuration program (PAGE=&1C00), ROL-encoded up to '
+                     'basic_raw_tail then stored raw. Source: '
+                     'basic/voltmace-delta-14b-driver-joystik.bas.')
 d.label(ENC_END, 'basic_raw_tail')
 d.comment(ENC_END, 'The loader stops decrypting here (page &4B): the rest of the '
                    'BASIC is stored raw, beyond the decode range.')
@@ -516,11 +519,12 @@ d.comment(ENC_END, 'The loader stops decrypting here (page &4B): the rest of the
 # Tail after the BASIC: BBC BASIC's own variable heap, saved with the image.
 d.byte(TAIL_START, 0x1900 + len(open(_binary_filepath, 'rb').read()) - TAIL_START)
 d.label(TAIL_START, 'fossilised_basic_heap')
-d.comment(TAIL_START, "BBC BASIC's variable heap as it stood when the author saved "
-                      'the &1900-&4D00 image: variable-name/value records for the '
-                      "program globals (e.g. REV$=\"Rev 2.0\", and LR%, R1%, EV$, "
-                      'LVL%, LVH%, S% ...). Not used by the loader; PAGE=&1C00 sits '
-                      'below it, so BASIC rebuilds its own variables on RUN.')
+d.banner(TAIL_START, title='Fossilised BASIC heap',
+         description="BBC BASIC's variable heap as it stood when the author saved "
+                     'the &1900-&4D00 image: variable-name/value records for the '
+                     'program globals (e.g. REV$="Rev 2.0", and LR%, R1%, EV$, '
+                     'LVL%, LVH%, S% ...). Not used by the loader; PAGE=&1C00 sits '
+                     'below it, so BASIC rebuilds its own variables on RUN.')
 
 # ---------------------------------------------------------------------------
 # Annotation of the plain head loader (&1909-&19FF)
@@ -747,9 +751,10 @@ c(0x19D2, 'submit; the &00 then stops the queue copy')
 # Captured leftover RAM between the loader and the resident drivers.
 d.byte(0x19D4, DRIVER_A_ADDR - 0x19D4)
 d.label(0x19D4, 'fossilised_memory')
-d.comment(0x19D4, 'Whatever occupied memory after the command list when the image '
-                  'was saved, up to the resident driver at &1A00: high-entropy '
-                  'noise, referenced by nothing and inert.')
+d.banner(0x19D4, title='Fossilised memory',
+         description='Whatever occupied memory after the command list when the '
+                     'image was saved, up to the resident driver at &1A00: '
+                     'high-entropy noise, referenced by nothing and inert.')
 
 # Entry point: the *RUN loader.
 d.entry(EXEC_ADDR)

@@ -248,7 +248,11 @@ saved_evntv_hi = saved_evntv+1
 .dasmos_start
 
     org &1a00
-; Image of page &0B (the MOS soft-key/function-key buffer). The relocator skips page &0B so the user keys survive, making these bytes inert filler.
+; ***************************************************************************************
+; Soft-key buffer image (page &0B)
+;
+; Image of page &0B (the MOS soft-key/function-key buffer). The relocator skips page &0B
+; so the user keys survive, making these bytes inert filler.
 .softkey_buffer_image
     equb &10, &10, &10, &10, &10, &10, &10, &10, &10, &10, &10, &10   ; 1a00: 10 10 10... ......
     equb &10, &10, &10, &10, &10, &10, &10, &10, &10, &10, &10, &10   ; 1a0c: 10 10 10... ......
@@ -272,7 +276,11 @@ saved_evntv_hi = saved_evntv+1
     equb &10, &10, &10, &10, &10, &10, &10, &10, &10, &10, &10, &10   ; 1ae4: 10 10 10... ......
     equb &10, &10, &10, &10, &10, &10, &10, &10, &10, &10, &10, &10   ; 1af0: 10 10 10... ......
     equb &10, &10, &10, &10                                           ; 1afc: 10 10 10... ......
-; ROL-encoded tokenised BASIC (the keypad-definition editor); relocates to PAGE=&0C00 and is decrypted in place. Source: basic/voltmace-delta-14b-driver-keypad.bas.
+; ***************************************************************************************
+; Tokenised BASIC front-end (encoded)
+;
+; ROL-encoded tokenised BASIC (the keypad-definition editor); relocates to PAGE=&0C00 and
+; is decrypted in place. Source: basic/voltmace-delta-14b-driver-keypad.bas.
 .basic_encoded
 basic_decode_end = basic_encoded+4096
     incbin "voltmace-delta-14b-driver-keypad-basic.dat"               ; 1b00: 86 00 05... ......
@@ -509,7 +517,14 @@ decode_ptr_save_hi = decode_ptr_save+1
     equb &0d                                                          ; 3a02: 0d          .        ; submit
     equs "RUN"                                                        ; 3a03: 52 55 4e    RUN      ; run it (RUN)
     equb &0d, &00                                                     ; 3a06: 0d 00       ..       ; submit; the &00 then stops the queue copy
-; Uninitialised tail of the saved image. The file is a memory dump &1900-&3A80 (the BASIC clears exactly TO &3A80); the loader's code and tables end ~120 bytes short, so this holds whatever occupied the memory at save time. It is referenced by nothing and decodes as neither 6502, tokenised BASIC (raw or bit-rotated), nor text; its byte statistics are those of noise. Inert: the BASIC memory-clear overwrites it at startup.
+; ***************************************************************************************
+; Fossilised memory
+;
+; Uninitialised tail of the saved image. The file is a memory dump &1900-&3A80 (the BASIC
+; clears exactly TO &3A80); the loader's code and tables end ~120 bytes short, so this
+; holds whatever occupied the memory at save time. It is referenced by nothing and
+; decodes as neither 6502, tokenised BASIC (raw or bit-rotated), nor text; its byte
+; statistics are those of noise. Inert: the BASIC memory-clear overwrites it at startup.
 .fossilised_memory
     equb &0d, &83, &fc, &a6, &9a, &0e, &ef, &7c, &d1, &53, &48, &0a   ; 3a08: 0d 83 fc... ......
     equb &df, &19, &6b, &a3, &c5, &a4, &06, &e7, &f8, &19, &48, &da   ; 3a14: df 19 6b... ..k...

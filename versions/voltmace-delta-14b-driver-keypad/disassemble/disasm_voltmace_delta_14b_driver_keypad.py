@@ -106,17 +106,19 @@ driver = d.add_move(DRIVER_RUNTIME, LOAD_ADDR, DRIVER_LEN, name='driver')
 # filler bytes in the file, not code and not relocated.
 d.byte(FILLER_START, FILLER_END - FILLER_START)
 d.label(FILLER_START, 'softkey_buffer_image')
-d.comment(FILLER_START, 'Image of page &0B (the MOS soft-key/function-key '
-                        'buffer). The relocator skips page &0B so the user keys '
-                        'survive, making these bytes inert filler.')
+d.banner(FILLER_START, title='Soft-key buffer image (page &0B)',
+         description='Image of page &0B (the MOS soft-key/function-key buffer). '
+                     'The relocator skips page &0B so the user keys survive, '
+                     'making these bytes inert filler.')
 
 # The ROL-encoded BASIC program is carried as detokenised source
 # (basic/*.bas) and re-encoded to the .dat at build time; include it verbatim.
 d.include_binary(BASIC_START, BASIC_END - BASIC_START, BASIC_DAT_NAME)
 d.label(BASIC_START, 'basic_encoded')
-d.comment(BASIC_START, 'ROL-encoded tokenised BASIC (the keypad-definition '
-                       'editor); relocates to PAGE=&0C00 and is decrypted in '
-                       'place. Source: basic/voltmace-delta-14b-driver-keypad.bas.')
+d.banner(BASIC_START, title='Tokenised BASIC front-end (encoded)',
+         description='ROL-encoded tokenised BASIC (the keypad-definition editor); '
+                     'relocates to PAGE=&0C00 and is decrypted in place. Source: '
+                     'basic/voltmace-delta-14b-driver-keypad.bas.')
 
 # Inline-comment helpers: cm() annotates the relocated resident driver (&0A00),
 # ct() annotates the in-place loader tail (&3900).
@@ -611,13 +613,14 @@ d.comment(0x3900, 'Filler ahead of the loader entry; reads as a stub BASIC line 
                   '(&0D, line 13, then RTS bytes)')
 d.byte(0x3A08, 0x3A80 - 0x3A08)
 d.label(0x3A08, 'fossilised_memory')
-d.comment(0x3A08, 'Uninitialised tail of the saved image. The file is a memory '
-                  'dump &1900-&3A80 (the BASIC clears exactly TO &3A80); the '
-                  "loader's code and tables end ~120 bytes short, so this holds "
-                  'whatever occupied the memory at save time. It is referenced by '
-                  'nothing and decodes as neither 6502, tokenised BASIC (raw or '
-                  'bit-rotated), nor text; its byte statistics are those of noise. '
-                  'Inert: the BASIC memory-clear overwrites it at startup.')
+d.banner(0x3A08, title='Fossilised memory',
+         description='Uninitialised tail of the saved image. The file is a memory '
+                     'dump &1900-&3A80 (the BASIC clears exactly TO &3A80); the '
+                     "loader's code and tables end ~120 bytes short, so this holds "
+                     'whatever occupied the memory at save time. It is referenced '
+                     'by nothing and decodes as neither 6502, tokenised BASIC (raw '
+                     'or bit-rotated), nor text; its byte statistics are those of '
+                     'noise. Inert: the BASIC memory-clear overwrites it at startup.')
 
 # Entry points.
 d.entry(EXEC_ADDR)                     # *RUN entry: relocator-installer

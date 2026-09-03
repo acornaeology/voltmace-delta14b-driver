@@ -186,7 +186,29 @@
       "description": "OSCLI the startup command, then block-copy the image from\n&1900 down to &0A00 (copy_pages pages via copy_src -> copy_dst), skipping\ndestination page &0B so the soft-key buffer survives."
     }
   ],
-  "banners": [],
+  "banners": [
+    {
+      "addr": 6656,
+      "name": "softkey_buffer_image",
+      "title": "Soft-key buffer image (page &0B)",
+      "description": "Image of page &0B (the MOS soft-key/function-key buffer). The relocator skips page &0B so the user keys survive, making these bytes inert filler.",
+      "align": "before_label"
+    },
+    {
+      "addr": 6912,
+      "name": "basic_encoded",
+      "title": "Tokenised BASIC front-end (encoded)",
+      "description": "ROL-encoded tokenised BASIC (the keypad-definition editor); relocates to PAGE=&0C00 and is decrypted in place. Source: basic/voltmace-delta-14b-driver-keypad.bas.",
+      "align": "before_label"
+    },
+    {
+      "addr": 14856,
+      "name": "fossilised_memory",
+      "title": "Fossilised memory",
+      "description": "Uninitialised tail of the saved image. The file is a memory dump &1900-&3A80 (the BASIC clears exactly TO &3A80); the loader's code and tables end ~120 bytes short, so this holds whatever occupied the memory at save time. It is referenced by nothing and decodes as neither 6502, tokenised BASIC (raw or bit-rotated), nor text; its byte statistics are those of noise. Inert: the BASIC memory-clear overwrites it at startup.",
+      "align": "before_label"
+    }
+  ],
   "external_labels": {
     "copy_dst": 112,
     "copy_dst_hi": 113,
@@ -2569,9 +2591,6 @@
       ],
       "labels": [
         "softkey_buffer_image"
-      ],
-      "comments_before_label": [
-        "Image of page &0B (the MOS soft-key/function-key buffer). The relocator skips page &0B so the user keys survive, making these bytes inert filler."
       ],
       "type": "byte",
       "values": [
@@ -10374,9 +10393,6 @@
           "basic_decode_end"
         ]
       },
-      "comments_before_label": [
-        "ROL-encoded tokenised BASIC (the keypad-definition editor); relocates to PAGE=&0C00 and is decrypted in place. Source: basic/voltmace-delta-14b-driver-keypad.bas."
-      ],
       "type": "incbin",
       "path": "voltmace-delta-14b-driver-keypad-basic.dat",
       "length": 7529
@@ -12761,9 +12777,6 @@
       ],
       "labels": [
         "fossilised_memory"
-      ],
-      "comments_before_label": [
-        "Uninitialised tail of the saved image. The file is a memory dump &1900-&3A80 (the BASIC clears exactly TO &3A80); the loader's code and tables end ~120 bytes short, so this holds whatever occupied the memory at save time. It is referenced by nothing and decodes as neither 6502, tokenised BASIC (raw or bit-rotated), nor text; its byte statistics are those of noise. Inert: the BASIC memory-clear overwrites it at startup."
       ],
       "type": "byte",
       "values": [

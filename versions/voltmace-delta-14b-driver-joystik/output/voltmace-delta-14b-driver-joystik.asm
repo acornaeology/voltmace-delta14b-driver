@@ -202,26 +202,46 @@ decode_ptr_save_hi = decode_ptr_save+1
     equb &0d                                                          ; 19ce: 0d          .        ; submit
     equs "RUN"                                                        ; 19cf: 52 55 4e    RUN      ; run it (RUN)
     equb &0d, &00                                                     ; 19d2: 0d 00       ..       ; submit; the &00 then stops the queue copy
-; Whatever occupied memory after the command list when the image was saved, up to the resident driver at &1A00: high-entropy noise, referenced by nothing and inert.
+; ***************************************************************************************
+; Fossilised memory
+;
+; Whatever occupied memory after the command list when the image was saved, up to the
+; resident driver at &1A00: high-entropy noise, referenced by nothing and inert.
 .fossilised_memory
     equb &0d, &54, &67, &42, &cc, &6d, &f6, &b0, &c0, &ff, &38, &25   ; 19d4: 0d 54 67... .Tg...
     equb &4d, &05, &55, &06, &b7, &84, &20, &d6, &88, &b0, &40, &bd   ; 19e0: 4d 05 55... M.U...
     equb &d3, &fa, &c8, &10, &f8, &f1, &eb, &44, &1b, &4c, &01, &63   ; 19ec: d3 fa c8... ......
     equb &f6, &50, &74, &21, &39, &71, &c0, &86                       ; 19f8: f6 50 74... .Pt...
-; Resident-driver template A, ROL-encoded (256 bytes; runs at &0A00). Disassembled in driver-a.asm.
+; ***************************************************************************************
+; Resident-driver template A (encoded)
+;
+; ROL-encoded, 256 bytes; runs at &0A00. Disassembled in driver-a.asm.
 .driver_a_template_encoded
     incbin "voltmace-delta-14b-driver-joystik-driver-a-encoded.dat"   ; 1a00: 24 d4 86... $.....
-; Resident-driver template B, ROL-encoded (256 bytes; runs at &0A00). Disassembled in driver-b.asm.
+; ***************************************************************************************
+; Resident-driver template B (encoded)
+;
+; ROL-encoded, 256 bytes; runs at &0A00. Disassembled in driver-b.asm.
 .driver_b_template_encoded
     incbin "voltmace-delta-14b-driver-joystik-driver-b-encoded.dat"   ; 1b00: 24 d4 86... $.....
-; Tokenised BASIC configuration program (PAGE=&1C00), ROL-encoded up to basic_raw_tail then stored raw. Source: basic/voltmace-delta-14b-driver-joystik.bas.
+; ***************************************************************************************
+; Tokenised BASIC front-end (encoded)
+;
+; The configuration program (PAGE=&1C00), ROL-encoded up to basic_raw_tail then stored
+; raw. Source: basic/voltmace-delta-14b-driver-joystik.bas.
 .basic_encoded
 ; &1c03 referenced 1 time by &1978
 basic_line10_len = basic_encoded+3
 ; The loader stops decrypting here (page &4B): the rest of the BASIC is stored raw, beyond the decode range.
 basic_raw_tail = basic_encoded+12032
     incbin "voltmace-delta-14b-driver-joystik-basic-encoded.dat"      ; 1c00: 86 00 05... ......
-; BBC BASIC's variable heap as it stood when the author saved the &1900-&4D00 image: variable-name/value records for the program globals (e.g. REV$="Rev 2.0", and LR%, R1%, EV$, LVL%, LVH%, S% ...). Not used by the loader; PAGE=&1C00 sits below it, so BASIC rebuilds its own variables on RUN.
+; ***************************************************************************************
+; Fossilised BASIC heap
+;
+; BBC BASIC's variable heap as it stood when the author saved the &1900-&4D00 image:
+; variable-name/value records for the program globals (e.g. REV$="Rev 2.0", and LR%, R1%,
+; EV$, LVL%, LVH%, S% ...). Not used by the loader; PAGE=&1C00 sits below it, so BASIC
+; rebuilds its own variables on RUN.
 .fossilised_basic_heap
     equb &e5, &e5, &e5, &e5, &e5, &a1, &4c, &52, &25, &00, &00, &00   ; 4c93: e5 e5 e5... ......
     equb &00, &00, &e5, &00, &52, &31, &25, &00, &00, &00, &00, &00   ; 4c9f: 00 00 e5... ......

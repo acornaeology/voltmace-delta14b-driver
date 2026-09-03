@@ -145,7 +145,43 @@
       "description": "The non-\"OS \"-signature variant of queue_autorun: set the\nBREAK/ESCAPE behaviour, then insert each autorun_commands byte with OSBYTE &8A."
     }
   ],
-  "banners": [],
+  "banners": [
+    {
+      "addr": 6612,
+      "name": "fossilised_memory",
+      "title": "Fossilised memory",
+      "description": "Whatever occupied memory after the command list when the image was saved, up to the resident driver at &1A00: high-entropy noise, referenced by nothing and inert.",
+      "align": "before_label"
+    },
+    {
+      "addr": 6656,
+      "name": "driver_a_template_encoded",
+      "title": "Resident-driver template A (encoded)",
+      "description": "ROL-encoded, 256 bytes; runs at &0A00. Disassembled in driver-a.asm.",
+      "align": "before_label"
+    },
+    {
+      "addr": 6912,
+      "name": "driver_b_template_encoded",
+      "title": "Resident-driver template B (encoded)",
+      "description": "ROL-encoded, 256 bytes; runs at &0A00. Disassembled in driver-b.asm.",
+      "align": "before_label"
+    },
+    {
+      "addr": 7168,
+      "name": "basic_encoded",
+      "title": "Tokenised BASIC front-end (encoded)",
+      "description": "The configuration program (PAGE=&1C00), ROL-encoded up to basic_raw_tail then stored raw. Source: basic/voltmace-delta-14b-driver-joystik.bas.",
+      "align": "before_label"
+    },
+    {
+      "addr": 19603,
+      "name": "fossilised_basic_heap",
+      "title": "Fossilised BASIC heap",
+      "description": "BBC BASIC's variable heap as it stood when the author saved the &1900-&4D00 image: variable-name/value records for the program globals (e.g. REV$=\"Rev 2.0\", and LR%, R1%, EV$, LVL%, LVH%, S% ...). Not used by the loader; PAGE=&1C00 sits below it, so BASIC rebuilds its own variables on RUN.",
+      "align": "before_label"
+    }
+  ],
   "external_labels": {
     "decode_ptr": 128,
     "decode_ptr_hi": 129,
@@ -1865,9 +1901,6 @@
       "labels": [
         "fossilised_memory"
       ],
-      "comments_before_label": [
-        "Whatever occupied memory after the command list when the image was saved, up to the resident driver at &1A00: high-entropy noise, referenced by nothing and inert."
-      ],
       "type": "byte",
       "values": [
         13,
@@ -2179,9 +2212,6 @@
       "labels": [
         "driver_a_template_encoded"
       ],
-      "comments_before_label": [
-        "Resident-driver template A, ROL-encoded (256 bytes; runs at &0A00). Disassembled in driver-a.asm."
-      ],
       "type": "incbin",
       "path": "voltmace-delta-14b-driver-joystik-driver-a-encoded.dat",
       "length": 256
@@ -2448,9 +2478,6 @@
       ],
       "labels": [
         "driver_b_template_encoded"
-      ],
-      "comments_before_label": [
-        "Resident-driver template B, ROL-encoded (256 bytes; runs at &0A00). Disassembled in driver-b.asm."
       ],
       "type": "incbin",
       "path": "voltmace-delta-14b-driver-joystik-driver-b-encoded.dat",
@@ -14907,7 +14934,6 @@
         ]
       },
       "comments_before_label": [
-        "Tokenised BASIC configuration program (PAGE=&1C00), ROL-encoded up to basic_raw_tail then stored raw. Source: basic/voltmace-delta-14b-driver-joystik.bas.",
         "The loader stops decrypting here (page &4B): the rest of the BASIC is stored raw, beyond the decode range."
       ],
       "xref_summaries": [
@@ -15032,9 +15058,6 @@
       ],
       "labels": [
         "fossilised_basic_heap"
-      ],
-      "comments_before_label": [
-        "BBC BASIC's variable heap as it stood when the author saved the &1900-&4D00 image: variable-name/value records for the program globals (e.g. REV$=\"Rev 2.0\", and LR%, R1%, EV$, LVL%, LVH%, S% ...). Not used by the loader; PAGE=&1C00 sits below it, so BASIC rebuilds its own variables on RUN."
       ],
       "type": "byte",
       "values": [
