@@ -37,7 +37,8 @@ and [`JOYSTIK`](../../versions/voltmace-delta-14b-driver-joystik/binary/JOYSTIK)
 
 1. a small **loader** in plain 6502;
 2. one or more **resident drivers** in 6502, and a **tokenised BBC BASIC**
-   configuration program, both stored **bit-rotated** as protection;
+   configuration program stored **bit-rotated** as protection (in KEYPAD only the
+   BASIC is rotated; the resident driver is stored plain — see §5/§6);
 3. some **leftover / padding bytes** — and, in JOYSTIK, a **decoy** stub at the
    very start (see §3).
 
