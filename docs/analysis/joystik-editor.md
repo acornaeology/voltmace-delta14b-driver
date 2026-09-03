@@ -86,10 +86,26 @@ the single joystick, 810–880 for the adaptor configurations — and reads a pr
 list of key codes into `V%()`, the key each joystick input should emulate for
 that game.
 
-The presets are stored as **negative-`INKEY` key codes**: the read loop (lines
-970–990) matches each `DATA` value against the `N%()` code table (line 1120) to
-recover a key, whose printable name comes from `K$()` (lines 1100–1110) and whose
-on-screen slot label comes from `C$()` (line 1170).
+### How a preset row is encoded
+
+Each preset is a **positional list of key codes**, read one value per input by
+`PROCGAME`'s loop `FOR E%=0 TO H%: READ L%` (line 970) — so `H%+1` values in all:
+**8** for the single joystick, **36** for the adaptor. The *position* `E%` is the
+input, and its on-screen label is `C$(E%)` (line 1170):
+
+- **Single joystick** (`H%=7`): `RIGHT, LEFT, DOWN, UP`, then the two fire
+  buttons. The driver reads each fire button as an `a`/`b` pair, so slots 4–7 are
+  `F1a, F1b, F2a, F2b` — line 1160 overrides `C$(4..7)` for this config.
+- **Adaptor** (`H%=35`): the same 18-input block *repeated for the two handsets*
+  (slots 0–17 and 18–35). Each block is the four directions followed by the
+  fire/keypad-cell labels `---F3, ---F2, 10-F1, 11, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0`
+  — one entry per keypad key.
+
+The *value* `L%` at each position is the magnitude of the **negative-`INKEY`
+code** for the key that input should emulate. The reader recovers the key by
+scanning the `N%()` code table (line 1120) for a matching code (line 980, last
+match wins) and names it through `K$()` (lines 1100–1110). The code `24` — the
+`-` key — serves as the **"unused" filler** for inputs a game leaves unmapped.
 
 ### The seven game presets
 
@@ -108,13 +124,11 @@ program's labels for Acornsoft's **Arcadians** and **Meteors**:
 | 6 | ACORNSOFT ROCKET RAID | A | Z | SPACE | SHIFT | RETURN | TAB |
 | 7 | ACORNSOFT SUPER INVADERS | – | – | Z | X | RETURN | RETURN |
 
-The table shows the **single-joystick** presets (`H%=7`, `DATA` 890–960). Each
-row has four directions plus two fire buttons; the driver reads each button as an
-`a`/`b` pair, and every preset sets both halves to the same key, so they collapse
-to Fire 1 / Fire 2 above. A dash (`–`) is the `-` key, used as the placeholder
-for an input a game doesn't need — hence Snapper (a maze game) has no fire, and
-the left/right-only shooters (Arcadian, Super Invaders, Meteor) park the unused
-axis on `–`.
+The table shows the **single-joystick** presets (`H%=7`, `DATA` 890–960), with
+each fire button's `a`/`b` pair collapsed to one column (every preset sets both
+halves alike). The `–` filler explains the shape of these rows: Snapper (a maze
+game) has no fire, and the left/right-only shooters (Arcadian, Super Invaders,
+Meteor) park the unused vertical axis on `–`.
 
 The **adaptor** presets (`H%=35`, `DATA` 810–880) carry 36 slots for the two
 handsets. They drive the joystick on **handset B** with the same directions and
