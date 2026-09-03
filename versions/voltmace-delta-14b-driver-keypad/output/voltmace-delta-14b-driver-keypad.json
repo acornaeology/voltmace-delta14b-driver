@@ -227,7 +227,7 @@
       "addr": 65524,
       "name": "osbyte",
       "group": "os_entry_points",
-      "description": "OSBYTE: used with A=&99 to insert a key into the buffer, A=&0E to enable the vsync event, and to read/set vectors."
+      "description": "OSBYTE: A=&99 inserts a key into the buffer, A=&0E enables the vsync event, A=&8A inserts the loader's auto-run commands, and A=&C8 (200) sets the BREAK/ESCAPE effect."
     },
     {
       "addr": 65527,

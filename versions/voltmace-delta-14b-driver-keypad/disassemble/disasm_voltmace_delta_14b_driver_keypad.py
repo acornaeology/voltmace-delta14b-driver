@@ -130,8 +130,9 @@ def ct(addr, text):
 d.label(0xFFF1, 'osword', group='os_entry_points',
         description='OSWORD: the resident driver calls OSWORD 7 to sound the key-click.')
 d.label(0xFFF4, 'osbyte', group='os_entry_points',
-        description='OSBYTE: used with A=&99 to insert a key into the buffer, '
-                    'A=&0E to enable the vsync event, and to read/set vectors.')
+        description='OSBYTE: A=&99 inserts a key into the buffer, A=&0E enables '
+                    'the vsync event, A=&8A inserts the loader\'s auto-run '
+                    'commands, and A=&C8 (200) sets the BREAK/ESCAPE effect.')
 d.label(0xFFF7, 'oscli', group='os_entry_points',
         description='OSCLI: issues the *KEY / *FX-style commands the loader '
                     'queues.')
