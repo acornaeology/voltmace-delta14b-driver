@@ -64,10 +64,12 @@ into the input as part of reset. Line 60 sets that string to a self-destruct —
 BASIC program. It only *arms* the trap (hence the "DO NOT PRESS BREAK" warning
 later); it does not run the wipe now, which would erase the running editor.
 
-Lines 70–120 guard against an incompatible operating system: `?&E8AA` is read
-as an OS signature (the expected value is `&4F`); on a mismatch the program
-displays "KEYPAD DRIVER WILL NOT WORK WITH OPERATING SYSTEM OS 0.1" (line 90)
-and stops. Line 130 issues `*FX200,2` — OSBYTE 200 bit 1, "clear user memory on
+Lines 70–120 guard against an incompatible operating system: `?&E8AA` is read as
+an OS signature. Line 70 is `IF?&E8AA<>&4F THEN 130` — any value *other than*
+`&4F` proceeds (to line 130), while `&4F` itself is the signature of the
+incompatible OS 0.1, so a **match** falls through to line 90, which displays
+"KEYPAD DRIVER WILL NOT WORK WITH OPERATING SYSTEM OS 0.1" and then hangs in a
+loop (lines 110–120, since `Z%=0`). Line 130 issues `*FX200,2` — OSBYTE 200 bit 1, "clear user memory on
 the next BREAK" — so a BREAK now wipes the program to the power-on state. It
 sets *only* bit 1, so ESCAPE (bit 0) stays enabled: the two exits are
 deliberately different, and the warnings say so — **BREAK** destroys the

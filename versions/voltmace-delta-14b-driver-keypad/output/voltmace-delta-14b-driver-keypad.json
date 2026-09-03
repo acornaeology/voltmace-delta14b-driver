@@ -10974,7 +10974,7 @@
         201,
         79
       ],
-      "comment_inline": "...'O' identifies the supported OS",
+      "comment_inline": "...'O' (&4F) is the OS 0.1 signature (the OS the BASIC rejects)",
       "type": "code",
       "mnemonic": "cmp",
       "operand": "#&4f"
@@ -10985,7 +10985,7 @@
         240,
         4
       ],
-      "comment_inline": "Supported OS -> poke the buffer directly",
+      "comment_inline": "OS 0.1 -> poke the buffer directly",
       "type": "code",
       "mnemonic": "beq",
       "operand": "use_direct_poke",
@@ -10999,7 +10999,7 @@
         134,
         57
       ],
-      "comment_inline": "Other OS -> insert via OSBYTE",
+      "comment_inline": "other (supported) OS -> insert via OSBYTE &8A",
       "type": "code",
       "mnemonic": "jsr",
       "operand": "setup_keys",

@@ -346,9 +346,9 @@ saved_evntv_hi = saved_evntv+1
 .os_dependent_setup
     ldy #0                                                            ; 394e: a0 00       ..       ; clear Y
     lda os_signature                                                  ; 3950: ad aa e8    ...      ; Read the OS ROM signature byte...
-    cmp #&4f ; 'O'                                                    ; 3953: c9 4f       .O       ; ...'O' identifies the supported OS
-    beq use_direct_poke                                               ; 3955: f0 04       ..       ; Supported OS -> poke the buffer directly
-    jsr setup_keys                                                    ; 3957: 20 86 39     .9      ; Other OS -> insert via OSBYTE
+    cmp #&4f ; 'O'                                                    ; 3953: c9 4f       .O       ; ...'O' (&4F) is the OS 0.1 signature (the OS the BASIC rejects)
+    beq use_direct_poke                                               ; 3955: f0 04       ..       ; OS 0.1 -> poke the buffer directly
+    jsr setup_keys                                                    ; 3957: 20 86 39     .9      ; other (supported) OS -> insert via OSBYTE &8A
     rts                                                               ; 395a: 60          `        ; Done
 ; &395b referenced 1 time by &3955
 .use_direct_poke
