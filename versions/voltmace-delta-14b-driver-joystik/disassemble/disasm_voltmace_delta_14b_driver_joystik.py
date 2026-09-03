@@ -30,6 +30,7 @@ import sys
 import tempfile
 from pathlib import Path
 import dasmos
+from dasmos.expr import lo, hi, sym
 
 _script_dirpath = Path(__file__).resolve().parent
 _version_dirpath = _script_dirpath.parent
@@ -587,9 +588,13 @@ c(0x191D, 'Save the caller decode_ptr low byte...')
 c(0x191F, '...')
 c(0x1922, '...and high byte...')
 c(0x1924, '...at decode_ptr_save')
-c(0x1927, 'Point decode_ptr at &1A00: low byte 0...')
+# decode_ptr starts at the encoded region (&1A00); render the immediates as its
+# low/high bytes so they track the label.
+d.expr(0x1928, lo(sym('driver_a_template_encoded')))
+d.expr(0x192C, hi(sym('driver_a_template_encoded')))
+c(0x1927, 'Point decode_ptr at the encoded region (&1A00): low byte...')
 c(0x1929, '...')
-c(0x192B, '...high byte &1A...')
+c(0x192B, '...high byte...')
 c(0x192D, 'byte index 0')
 d.label(0x192F, 'decode_next_page')
 c(0x192F, 'Set the page being decrypted')

@@ -358,10 +358,19 @@
         162,
         0
       ],
-      "comment_inline": "Point decode_ptr at &1A00: low byte 0...",
+      "comment_inline": "Point decode_ptr at the encoded region (&1A00): low byte...",
       "type": "code",
       "mnemonic": "ldx",
-      "operand": "#0"
+      "operand": "#<(driver_a_template_encoded)",
+      "expr": {
+        "text": "<(driver_a_template_encoded)",
+        "tree": {
+          "op": "lowbyte",
+          "operand": {
+            "sym": "driver_a_template_encoded"
+          }
+        }
+      }
     },
     {
       "addr": 6441,
@@ -382,10 +391,19 @@
         162,
         26
       ],
-      "comment_inline": "...high byte &1A...",
+      "comment_inline": "...high byte...",
       "type": "code",
       "mnemonic": "ldx",
-      "operand": "#&1a"
+      "operand": "#>(driver_a_template_encoded)",
+      "expr": {
+        "text": ">(driver_a_template_encoded)",
+        "tree": {
+          "op": "highbyte",
+          "operand": {
+            "sym": "driver_a_template_encoded"
+          }
+        }
+      }
     },
     {
       "addr": 6445,
