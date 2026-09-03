@@ -558,10 +558,19 @@
         224,
         75
       ],
-      "comment_inline": "...until page &4B (the BASIC raw tail is left alone)",
+      "comment_inline": "...until basic_raw_tail (page &4B); the raw tail is left alone",
       "type": "code",
       "mnemonic": "cpx",
-      "operand": "#&4b"
+      "operand": "#>(basic_raw_tail)",
+      "expr": {
+        "text": ">(basic_raw_tail)",
+        "tree": {
+          "op": "highbyte",
+          "operand": {
+            "sym": "basic_raw_tail"
+          }
+        }
+      }
     },
     {
       "addr": 6465,
@@ -14663,10 +14672,14 @@
       "sub_labels": {
         "7171": [
           "basic_line10_len"
+        ],
+        "19200": [
+          "basic_raw_tail"
         ]
       },
       "comments_before_label": [
-        "Tokenised BASIC configuration program (PAGE=&1C00), ROL-encoded up to &4B00 then stored raw. Source: basic/voltmace-delta-14b-driver-joystik.bas."
+        "Tokenised BASIC configuration program (PAGE=&1C00), ROL-encoded up to basic_raw_tail then stored raw. Source: basic/voltmace-delta-14b-driver-joystik.bas.",
+        "The loader stops decrypting here (page &4B): the rest of the BASIC is stored raw, beyond the decode range."
       ],
       "xref_summaries": [
         "&1c03 referenced 1 time by &1978"

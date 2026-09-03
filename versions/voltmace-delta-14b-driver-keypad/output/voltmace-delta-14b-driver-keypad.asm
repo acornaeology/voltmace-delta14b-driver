@@ -265,6 +265,7 @@ saved_evntv_hi = saved_evntv+1
     equb &10, &10, &10, &10                                           ; 1afc: 10 10 10... ......
 ; ROL-encoded tokenised BASIC (the keypad-definition editor); relocates to PAGE=&0C00 and is decrypted in place. Source: basic/voltmace-delta-14b-driver-keypad.bas.
 .basic_encoded
+basic_decode_end = basic_encoded+4096
     incbin "voltmace-delta-14b-driver-keypad-basic.dat"               ; 1b00: 86 00 05... ......
 ; Zero padding between the encrypted BASIC and the *RUN loader
     equb &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00, &00   ; 3869: 00 00 00... ......
@@ -335,7 +336,7 @@ saved_evntv_hi = saved_evntv+1
     bne decode_next_byte                                              ; 393a: d0 f5       ..       ; ...to the end of the page
     ldx decode_ptr_hi                                                 ; 393c: a6 81       ..       ; Next page...
     inx                                                               ; 393e: e8          .        ; increment the page
-    cpx #&2b ; '+'                                                    ; 393f: e0 2b       .+       ; ...until page &2B (end of the BASIC region)
+    cpx #>(basic_decode_end)                                          ; 393f: e0 2b       .+       ; ...until basic_decode_end (page &2B, end of the BASIC region)
     bne decode_next_page                                              ; 3941: d0 ec       ..       ; keep decrypting pages
     lda decode_ptr_save                                               ; 3943: ad 5f 39    ._9      ; Restore the caller decode_ptr...
     sta decode_ptr                                                    ; 3946: 85 80       ..       ; low byte

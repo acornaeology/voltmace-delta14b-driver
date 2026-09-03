@@ -499,8 +499,11 @@ d.comment(DRIVER_B_ADDR, 'Resident-driver template B, ROL-encoded (256 bytes; '
 d.include_binary(BASIC_PAGE, BASIC_END - BASIC_PAGE, BASIC_DAT_NAME)
 d.label(BASIC_PAGE, 'basic_encoded')
 d.comment(BASIC_PAGE, 'Tokenised BASIC configuration program (PAGE=&1C00), '
-                      'ROL-encoded up to &4B00 then stored raw. Source: '
+                      'ROL-encoded up to basic_raw_tail then stored raw. Source: '
                       'basic/voltmace-delta-14b-driver-joystik.bas.')
+d.label(ENC_END, 'basic_raw_tail')
+d.comment(ENC_END, 'The loader stops decrypting here (page &4B): the rest of the '
+                   'BASIC is stored raw, beyond the decode range.')
 
 # Tail after the BASIC: BBC BASIC's own variable heap, saved with the image.
 d.byte(TAIL_START, 0x1900 + len(open(_binary_filepath, 'rb').read()) - TAIL_START)
@@ -608,7 +611,8 @@ c(0x1939, 'Next byte...')
 c(0x193A, '...to the end of the page')
 c(0x193C, 'Next page...')
 c(0x193E, '...')
-c(0x193F, '...until page &4B (the BASIC raw tail is left alone)')
+d.expr(0x1940, hi(sym('basic_raw_tail')))
+c(0x193F, '...until basic_raw_tail (page &4B); the raw tail is left alone')
 c(0x1941, '...')
 c(0x1943, 'Restore the caller decode_ptr...')
 c(0x1946, '...')

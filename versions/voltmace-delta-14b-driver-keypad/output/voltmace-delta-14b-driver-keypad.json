@@ -10105,6 +10105,11 @@
       "labels": [
         "basic_encoded"
       ],
+      "sub_labels": {
+        "11008": [
+          "basic_decode_end"
+        ]
+      },
       "comments_before_label": [
         "ROL-encoded tokenised BASIC (the keypad-definition editor); relocates to PAGE=&0C00 and is decrypted in place. Source: basic/voltmace-delta-14b-driver-keypad.bas."
       ],
@@ -10881,10 +10886,19 @@
         224,
         43
       ],
-      "comment_inline": "...until page &2B (end of the BASIC region)",
+      "comment_inline": "...until basic_decode_end (page &2B, end of the BASIC region)",
       "type": "code",
       "mnemonic": "cpx",
-      "operand": "#&2b"
+      "operand": "#>(basic_decode_end)",
+      "expr": {
+        "text": ">(basic_decode_end)",
+        "tree": {
+          "op": "highbyte",
+          "operand": {
+            "sym": "basic_decode_end"
+          }
+        }
+      }
     },
     {
       "addr": 14657,

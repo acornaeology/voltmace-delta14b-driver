@@ -168,6 +168,7 @@ d.label(0xE8AA, 'os_signature', group='os_rom', access='r',
 d.label(0x0C00, 'basic_page', group='basic_workspace',
         description='PAGE the relocated BASIC runs at; the loader decrypts it in '
                     'place here, then queues PAGE=&C00 / OLD / RUN.')
+d.label(0x2B00, 'basic_decode_end')  # one page past the decoded BASIC (decode loop bound)
 d.label(0x1900, 'image_base',
         description='DFS load address of the whole *RUN file; the relocator '
                     'copies the resident driver down from here to &0A00.')
@@ -419,7 +420,8 @@ ct(0x3939, 'Next byte...')
 ct(0x393A, '...to the end of the page')
 ct(0x393C, 'Next page...')
 ct(0x393E, 'increment the page')
-ct(0x393F, '...until page &2B (end of the BASIC region)')
+d.expr(0x3940, hi(sym('basic_decode_end')))
+ct(0x393F, '...until basic_decode_end (page &2B, end of the BASIC region)')
 ct(0x3941, 'keep decrypting pages')
 ct(0x3943, 'Restore the caller decode_ptr...')
 ct(0x3946, 'low byte')
