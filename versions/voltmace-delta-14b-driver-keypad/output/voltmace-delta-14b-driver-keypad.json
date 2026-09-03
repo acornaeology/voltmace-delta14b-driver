@@ -129,11 +129,12 @@
       "binary_addr": 6400,
       "name": "install_driver",
       "title": "Install the resident keypad driver",
-      "description": "Enable the 50 Hz vertical-sync event and route it to the\nmatrix scanner. Sets User VIA port B to strobe the keypad (DDRB = &F0: top\nnibble out, bottom nibble in) and hooks EVNTV to point at the event handler,\nsaving the previous vector at saved_evntv. Called from the BASIC front-end\nvia CALL &A00.",
+      "description": "Enable the 50 Hz vertical-sync event and route it to the\nmatrix scanner. Sets User VIA port B to strobe the keypad (DDRB = &F0: top\nnibble out, bottom nibble in) and hooks EVNTV to point at the event handler,\nsaving the previous vector at saved_evntv. Called from the BASIC front-end\nvia CALL &A00. Preserves all registers and flags (saved and restored around\nthe body).",
       "on_exit": {
-        "A": "corrupted",
-        "X": "corrupted",
-        "Y": "corrupted"
+        "A": "preserved",
+        "X": "preserved",
+        "Y": "preserved",
+        "flags": "preserved"
       }
     },
     {

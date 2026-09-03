@@ -60,12 +60,14 @@ oscli            = &fff7  ; OSCLI: issues the single startup command "T." (*TAPE
 ; Enable the 50 Hz vertical-sync event and route it to the matrix scanner. Sets User VIA
 ; port B to strobe the keypad (DDRB = &F0: top nibble out, bottom nibble in) and hooks
 ; EVNTV to point at the event handler, saving the previous vector at saved_evntv. Called
-; from the BASIC front-end via CALL &A00.
+; from the BASIC front-end via CALL &A00. Preserves all registers and flags (saved and
+; restored around the body).
 ;
 ; On Exit:
-;     A: corrupted
-;     X: corrupted
-;     Y: corrupted
+;     A: preserved
+;     X: preserved
+;     Y: preserved
+;     FLAGS: preserved
 .install_driver
     php                                                               ; 1900: 08          . :0a00[1]          ; Preserve the caller flags
     pha                                                               ; 1901: 48          H :0a01[1]          ; Preserve A

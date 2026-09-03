@@ -209,8 +209,10 @@ d.subroutine(
 matrix scanner. Sets User VIA port B to strobe the keypad (DDRB = &F0: top
 nibble out, bottom nibble in) and hooks EVNTV to point at the event handler,
 saving the previous vector at saved_evntv. Called from the BASIC front-end
-via CALL &A00.""",
-    on_exit={'A': 'corrupted', 'X': 'corrupted', 'Y': 'corrupted'},
+via CALL &A00. Preserves all registers and flags (saved and restored around
+the body).""",
+    on_exit={'A': 'preserved', 'X': 'preserved', 'Y': 'preserved',
+             'flags': 'preserved'},
 )
 cm(0x0A00, 'Preserve the caller flags')
 cm(0x0A01, 'Preserve A')
