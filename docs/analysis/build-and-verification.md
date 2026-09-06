@@ -99,13 +99,30 @@ region — beebasm assembles them, and the build re-encrypts the result.
 
 ## 5. Why the greedy tokeniser
 
-BBC BASIC's ROM tokeniser and these programs' tokeniser disagree in three ways
-(a keyword may interrupt a hex constant or a name; a conditional keyword is
-suppressed only before a *non-keyword* name character). `oaknut-basic`'s default
-crunch is byte-exact to the ROM and therefore does **not** reproduce these files;
-`--crunch greedy` matches the tool that actually built them. Both programs'
-BASIC round-trips byte-for-byte under greedy crunch. (This was the finding behind
+BBC BASIC's ROM tokeniser and these programs' tokeniser disagree, and the
+clearest case is **keywords butted together with no space**. The programs are
+written compactly — `ENDPROCELSEPROCPAD` (KEYPAD line 640),
+`THENSTOPELSEGOTO1350` (line 210), `ENDPROCELSEGOTO540` (JOYSTIK line 540) — and
+the stock ROM tokeniser *will not tokenise a keyword that is immediately followed
+by another letter*: it can't tell `ENDPROC…` from the start of a longer variable
+name, so it gives up and stores the whole run as literal text. Put spaces in
+(`ENDPROC ELSE PROC`) and it tokenises fine. The greedier tokeniser tokenises the
+abutting form (`ENDPROC`+`ELSE`+`PROC` → `E1 8B F2`), which is what the stored
+files actually contain.
+
+That has a pointed consequence: **these files could not have been produced by
+typing the source into stock BBC BASIC** — the ROM would have left those keywords
+as inert text and the program would not run. They were tokenised by a different
+tool, a BASIC *cruncher*/compactor of the kind common in the early 1980s (strip
+spaces, tokenise everything to save memory). `oaknut-basic`'s default crunch is
+byte-exact to the ROM and therefore does **not** reproduce these files;
+`--crunch greedy` reproduces the cruncher's behaviour, and both programs' BASIC
+then round-trips byte-for-byte. (This was the finding behind
 [oaknut-basic issue #48](https://github.com/rob-smallshire/oaknut/issues/48).)
+
+It is *not* about line length: the longest tokenised line in either program is
+236 bytes (JOYSTIK line 1120), well under the 255-byte line limit, and the ROM
+tokeniser overflows on none of them.
 
 ## 6. The first-line length patch
 
