@@ -110,15 +110,23 @@ name, so it gives up and stores the whole run as literal text. Put spaces in
 abutting form (`ENDPROC`+`ELSE`+`PROC` → `E1 8B F2`), which is what the stored
 files actually contain.
 
-That has a pointed consequence: **these files could not have been produced by
-typing the source into stock BBC BASIC** — the ROM would have left those keywords
-as inert text and the program would not run. They were tokenised by a different
-tool, a BASIC *cruncher*/compactor of the kind common in the early 1980s (strip
-spaces, tokenise everything to save memory). `oaknut-basic`'s default crunch is
-byte-exact to the ROM and therefore does **not** reproduce these files;
-`--crunch greedy` reproduces the cruncher's behaviour, and both programs' BASIC
-then round-trips byte-for-byte. (This was the finding behind
-[oaknut-basic issue #48](https://github.com/rob-smallshire/oaknut/issues/48).)
+The mechanism is a **cruncher**, run to save memory. The author's source was
+ordinary spaced BASIC — `210 ENDPROC ELSE PROCPAD` — tokenised normally by the
+ROM (so `ENDPROC ELSE PROC` → `E1 20 8B 20 F2`, with the spaces as `&20`
+literals). A crunch utility then stripped the non-string spaces from the
+tokenised program, leaving `E1 8B F2` — the abutting-token form the stored files
+carry. (This was confirmed on the Stardot forums by J.G. Harston, author of a
+contemporary `CRUNCH`, whose passes are: remove non-string spaces; remove
+leading, trailing and multiple colons; remove `REM`s; remove empty lines.)
+
+So the shipped bytes can't be recovered by re-tokenising their de-crunched text
+with the stock ROM tokeniser: from the space-free text (`ENDPROCELSEPROC`) the ROM
+leaves the keywords as inert literal text — it will not tokenise a keyword
+immediately followed by another letter. `oaknut-basic`'s default crunch is
+byte-exact to that ROM behaviour and therefore does **not** reproduce these files;
+`--crunch greedy` lands on the crunched end-state (tokenising the abutting
+keywords), and both programs' BASIC then round-trips byte-for-byte. (This was the
+finding behind [oaknut-basic issue #48](https://github.com/rob-smallshire/oaknut/issues/48).)
 
 It is *not* about line length: the longest tokenised line in either program is
 236 bytes (JOYSTIK line 1120), well under the 255-byte line limit, and the ROM

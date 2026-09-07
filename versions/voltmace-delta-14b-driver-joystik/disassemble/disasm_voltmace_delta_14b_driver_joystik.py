@@ -74,10 +74,11 @@ def _tokenise_basic(bas_filepath):
     oaknut = shutil.which('oaknut-basic') or str(Path(sys.executable).parent / 'oaknut-basic')
     with tempfile.TemporaryDirectory() as tmp:
         tok_filepath = Path(tmp) / 'basic.tok'
-        # 'greedy' crunch, not the ROM tokeniser: the source butts keywords
-        # together with no space (e.g. ENDPROCELSEPROC), which the BBC BASIC ROM
-        # leaves as literal text but the cruncher that built these files
-        # tokenises. See build-and-verification.md section 5.
+        # 'greedy' crunch, not the ROM tokeniser: these files were crunched
+        # (normally tokenised, then non-string spaces stripped), leaving keywords
+        # butted together (e.g. ENDPROCELSEPROC) that the ROM will not
+        # re-tokenise. --crunch greedy reproduces that crunched end-state.
+        # See build-and-verification.md section 5.
         subprocess.run(
             [oaknut, 'tokenise', str(bas_filepath), str(tok_filepath), '--crunch', 'greedy'],
             check=True,
