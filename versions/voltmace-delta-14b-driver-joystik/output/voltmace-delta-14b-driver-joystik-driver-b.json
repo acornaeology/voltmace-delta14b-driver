@@ -2,7 +2,15 @@
   "meta": {
     "schema_version": 4,
     "load_addr": 2560,
-    "end_addr": 2816
+    "end_addr": 2816,
+    "images": [
+      {
+        "name": "tmppbrupvgs.bin",
+        "load_addr": 2560,
+        "end_addr": 2816
+      }
+    ],
+    "moves": []
   },
   "constants": [
     {

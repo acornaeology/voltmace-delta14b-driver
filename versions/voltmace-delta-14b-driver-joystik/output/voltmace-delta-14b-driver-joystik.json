@@ -6,7 +6,15 @@
     "program": {
       "exec_addr": 6409,
       "reload_addr": 6400
-    }
+    },
+    "images": [
+      {
+        "name": "JOYSTIK",
+        "load_addr": 6400,
+        "end_addr": 19712
+      }
+    ],
+    "moves": []
   },
   "constants": [
     {

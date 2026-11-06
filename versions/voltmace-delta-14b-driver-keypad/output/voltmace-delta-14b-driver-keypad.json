@@ -6,7 +6,22 @@
     "program": {
       "exec_addr": 14598,
       "reload_addr": 6400
-    }
+    },
+    "images": [
+      {
+        "name": "KEYPAD",
+        "load_addr": 6400,
+        "end_addr": 14976
+      }
+    ],
+    "moves": [
+      {
+        "name": "driver",
+        "dest": 2560,
+        "src": 6400,
+        "length": 256
+      }
+    ]
   },
   "constants": [
     {
@@ -127,6 +142,7 @@
     {
       "addr": 2560,
       "binary_addr": 6400,
+      "move": "driver",
       "name": "install_driver",
       "title": "Install the resident keypad driver",
       "description": "Enable the 50 Hz vertical-sync event and route it to the\nmatrix scanner. Sets User VIA port B to strobe the keypad (DDRB = &F0: top\nnibble out, bottom nibble in) and hooks EVNTV to point at the event handler,\nsaving the previous vector at saved_evntv. Called from the BASIC front-end\nvia CALL &A00. Preserves all registers and flags (saved and restored around\nthe body).",
@@ -140,6 +156,7 @@
     {
       "addr": 2609,
       "binary_addr": 6449,
+      "move": "driver",
       "name": "vsync_event_handler",
       "title": "Vertical-sync event handler: scan the keypad",
       "description": "Entered from the MOS every 50 Hz vsync event. Strobes the\n3x4 matrix through User VIA port B (bit 7 selects handset 0/1 via the 74LS157),\ndebounces and auto-repeats via debounce_counter, and on a pressed key sounds a\nshort key-click (OSWORD 7) and inserts the mapped character into the keyboard\nbuffer (OSBYTE &99). Every path exits through handler_exit, which restores the\nregisters and flags before chaining to the previous event vector, so all are\npreserved (as the MOS event convention requires).",
@@ -202,6 +219,7 @@
     {
       "addr": 2768,
       "binary_addr": 6608,
+      "move": "driver",
       "name": "debounce_counter",
       "title": "Driver data tables",
       "description": "End of the handler code (which exits at the JMP (saved_evntv) above); what follows is embedded data \u2014 the mutable scan state (debounce_counter, current_row / current_col) and the lookup tables (row_masks, col_strobes, key_codes, sound_block).",
@@ -515,6 +533,7 @@
         8
       ],
       "binary_addr": 6400,
+      "move": "driver",
       "labels": [
         "install_driver"
       ],
@@ -528,6 +547,7 @@
         72
       ],
       "binary_addr": 6401,
+      "move": "driver",
       "comment_inline": "Preserve A",
       "type": "code",
       "mnemonic": "pha"
@@ -538,6 +558,7 @@
         152
       ],
       "binary_addr": 6402,
+      "move": "driver",
       "comment_inline": "Preserve Y...",
       "type": "code",
       "mnemonic": "tya"
@@ -548,6 +569,7 @@
         72
       ],
       "binary_addr": 6403,
+      "move": "driver",
       "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
@@ -558,6 +580,7 @@
         138
       ],
       "binary_addr": 6404,
+      "move": "driver",
       "comment_inline": "Preserve X...",
       "type": "code",
       "mnemonic": "txa"
@@ -568,6 +591,7 @@
         72
       ],
       "binary_addr": 6405,
+      "move": "driver",
       "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
@@ -579,6 +603,7 @@
         14
       ],
       "binary_addr": 6406,
+      "move": "driver",
       "comment_inline": "OSBYTE 14: enable an event...",
       "type": "code",
       "mnemonic": "lda",
@@ -597,6 +622,7 @@
         4
       ],
       "binary_addr": 6408,
+      "move": "driver",
       "comment_inline": "...event 4, the 50 Hz vertical sync",
       "type": "code",
       "mnemonic": "ldx",
@@ -616,6 +642,7 @@
         255
       ],
       "binary_addr": 6410,
+      "move": "driver",
       "comment_inline": "call OSBYTE Enable event",
       "type": "code",
       "mnemonic": "jsr",
@@ -630,6 +657,7 @@
         240
       ],
       "binary_addr": 6413,
+      "move": "driver",
       "comment_inline": "DDRB = &F0: bits 4-7 drive the column strobes + 74LS157 select...",
       "type": "code",
       "mnemonic": "lda",
@@ -643,6 +671,7 @@
         254
       ],
       "binary_addr": 6415,
+      "move": "driver",
       "comment_inline": "...bits 0-3 sense the four row lines",
       "type": "code",
       "mnemonic": "sta",
@@ -656,6 +685,7 @@
         120
       ],
       "binary_addr": 6418,
+      "move": "driver",
       "comment_inline": "Block IRQs while re-pointing the vector",
       "type": "code",
       "mnemonic": "sei"
@@ -668,6 +698,7 @@
         2
       ],
       "binary_addr": 6419,
+      "move": "driver",
       "comment_inline": "Save the current event vector low byte...",
       "type": "code",
       "mnemonic": "lda",
@@ -683,11 +714,13 @@
         10
       ],
       "binary_addr": 6422,
+      "move": "driver",
       "comment_inline": "...at saved_evntv, to chain to on exit",
       "type": "code",
       "mnemonic": "sta",
       "operand": "saved_evntv",
       "target": 2814,
+      "target_move": "driver",
       "target_label": "saved_evntv"
     },
     {
@@ -698,6 +731,7 @@
         2
       ],
       "binary_addr": 6425,
+      "move": "driver",
       "comment_inline": "Save its high byte...",
       "type": "code",
       "mnemonic": "lda",
@@ -713,11 +747,13 @@
         10
       ],
       "binary_addr": 6428,
+      "move": "driver",
       "comment_inline": "...too",
       "type": "code",
       "mnemonic": "sta",
       "operand": "saved_evntv_hi",
       "target": 2815,
+      "target_move": "driver",
       "target_label": "saved_evntv_hi"
     },
     {
@@ -727,6 +763,7 @@
         49
       ],
       "binary_addr": 6431,
+      "move": "driver",
       "comment_inline": "Point EVNTV at vsync_event_handler: low byte &31...",
       "type": "code",
       "mnemonic": "lda",
@@ -740,6 +777,7 @@
         2
       ],
       "binary_addr": 6433,
+      "move": "driver",
       "comment_inline": "...store it",
       "type": "code",
       "mnemonic": "sta",
@@ -754,6 +792,7 @@
         10
       ],
       "binary_addr": 6436,
+      "move": "driver",
       "comment_inline": "...high byte &0A...",
       "type": "code",
       "mnemonic": "lda",
@@ -767,6 +806,7 @@
         2
       ],
       "binary_addr": 6438,
+      "move": "driver",
       "comment_inline": "...store it",
       "type": "code",
       "mnemonic": "sta",
@@ -780,6 +820,7 @@
         88
       ],
       "binary_addr": 6441,
+      "move": "driver",
       "comment_inline": "Re-enable IRQs",
       "type": "code",
       "mnemonic": "cli"
@@ -790,6 +831,7 @@
         104
       ],
       "binary_addr": 6442,
+      "move": "driver",
       "comment_inline": "Restore X...",
       "type": "code",
       "mnemonic": "pla"
@@ -800,6 +842,7 @@
         170
       ],
       "binary_addr": 6443,
+      "move": "driver",
       "comment_inline": "...from the stack",
       "type": "code",
       "mnemonic": "tax"
@@ -810,6 +853,7 @@
         104
       ],
       "binary_addr": 6444,
+      "move": "driver",
       "comment_inline": "Restore Y...",
       "type": "code",
       "mnemonic": "pla"
@@ -820,6 +864,7 @@
         168
       ],
       "binary_addr": 6445,
+      "move": "driver",
       "comment_inline": "...from the stack",
       "type": "code",
       "mnemonic": "tay"
@@ -830,6 +875,7 @@
         104
       ],
       "binary_addr": 6446,
+      "move": "driver",
       "comment_inline": "Restore A",
       "type": "code",
       "mnemonic": "pla"
@@ -840,6 +886,7 @@
         40
       ],
       "binary_addr": 6447,
+      "move": "driver",
       "comment_inline": "Restore the flags",
       "type": "code",
       "mnemonic": "plp"
@@ -850,6 +897,7 @@
         96
       ],
       "binary_addr": 6448,
+      "move": "driver",
       "comment_inline": "Return to the BASIC caller",
       "type": "code",
       "mnemonic": "rts"
@@ -860,6 +908,7 @@
         8
       ],
       "binary_addr": 6449,
+      "move": "driver",
       "labels": [
         "vsync_event_handler"
       ],
@@ -873,6 +922,7 @@
         72
       ],
       "binary_addr": 6450,
+      "move": "driver",
       "comment_inline": "Preserve A",
       "type": "code",
       "mnemonic": "pha"
@@ -883,6 +933,7 @@
         152
       ],
       "binary_addr": 6451,
+      "move": "driver",
       "comment_inline": "Preserve Y...",
       "type": "code",
       "mnemonic": "tya"
@@ -893,6 +944,7 @@
         72
       ],
       "binary_addr": 6452,
+      "move": "driver",
       "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
@@ -903,6 +955,7 @@
         138
       ],
       "binary_addr": 6453,
+      "move": "driver",
       "comment_inline": "Preserve X...",
       "type": "code",
       "mnemonic": "txa"
@@ -913,6 +966,7 @@
         72
       ],
       "binary_addr": 6454,
+      "move": "driver",
       "comment_inline": "...on the stack",
       "type": "code",
       "mnemonic": "pha"
@@ -924,6 +978,7 @@
         0
       ],
       "binary_addr": 6455,
+      "move": "driver",
       "comment_inline": "Quick probe: drive every column low on handset 0...",
       "type": "code",
       "mnemonic": "lda",
@@ -937,6 +992,7 @@
         254
       ],
       "binary_addr": 6457,
+      "move": "driver",
       "comment_inline": "...write it",
       "type": "code",
       "mnemonic": "sta",
@@ -952,6 +1008,7 @@
         254
       ],
       "binary_addr": 6460,
+      "move": "driver",
       "comment_inline": "...and read the rows back",
       "type": "code",
       "mnemonic": "lda",
@@ -966,6 +1023,7 @@
         15
       ],
       "binary_addr": 6463,
+      "move": "driver",
       "comment_inline": "All four rows high (&0F) => nothing down on handset 0",
       "type": "code",
       "mnemonic": "cmp",
@@ -978,11 +1036,13 @@
         12
       ],
       "binary_addr": 6465,
+      "move": "driver",
       "comment_inline": "Something is down -> go locate it",
       "type": "code",
       "mnemonic": "bne",
       "operand": "check_held_key",
       "target": 2639,
+      "target_move": "driver",
       "target_label": "check_held_key"
     },
     {
@@ -992,6 +1052,7 @@
         128
       ],
       "binary_addr": 6467,
+      "move": "driver",
       "comment_inline": "Probe handset 1 (bit 7 selects it)...",
       "type": "code",
       "mnemonic": "lda",
@@ -1005,6 +1066,7 @@
         254
       ],
       "binary_addr": 6469,
+      "move": "driver",
       "comment_inline": "...write it",
       "type": "code",
       "mnemonic": "sta",
@@ -1020,6 +1082,7 @@
         254
       ],
       "binary_addr": 6472,
+      "move": "driver",
       "comment_inline": "...read the rows",
       "type": "code",
       "mnemonic": "lda",
@@ -1034,6 +1097,7 @@
         143
       ],
       "binary_addr": 6475,
+      "move": "driver",
       "comment_inline": "&8F = handset-1 select set, all rows high = no key",
       "type": "code",
       "mnemonic": "cmp",
@@ -1046,11 +1110,13 @@
         115
       ],
       "binary_addr": 6477,
+      "move": "driver",
       "comment_inline": "Nothing on either handset -> idle",
       "type": "code",
       "mnemonic": "beq",
       "operand": "no_key_down",
       "target": 2754,
+      "target_move": "driver",
       "target_label": "no_key_down"
     },
     {
@@ -1061,6 +1127,7 @@
         10
       ],
       "binary_addr": 6479,
+      "move": "driver",
       "labels": [
         "check_held_key"
       ],
@@ -1072,6 +1139,7 @@
         {
           "addr": 2625,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -1079,6 +1147,7 @@
       "mnemonic": "ldy",
       "operand": "current_row",
       "target": 2769,
+      "target_move": "driver",
       "target_label": "current_row"
     },
     {
@@ -1088,6 +1157,7 @@
         5
       ],
       "binary_addr": 6482,
+      "move": "driver",
       "comment_inline": "against the \"none\" marker (5)",
       "type": "code",
       "mnemonic": "cpy",
@@ -1100,11 +1170,13 @@
         30
       ],
       "binary_addr": 6484,
+      "move": "driver",
       "comment_inline": "No held key -> full matrix scan",
       "type": "code",
       "mnemonic": "beq",
       "operand": "scan_matrix",
       "target": 2676,
+      "target_move": "driver",
       "target_label": "scan_matrix"
     },
     {
@@ -1115,11 +1187,13 @@
         10
       ],
       "binary_addr": 6486,
+      "move": "driver",
       "comment_inline": "Re-test the held key: fetch its column strobe...",
       "type": "code",
       "mnemonic": "ldx",
       "operand": "current_col",
       "target": 2770,
+      "target_move": "driver",
       "target_label": "current_col"
     },
     {
@@ -1130,11 +1204,13 @@
         10
       ],
       "binary_addr": 6489,
+      "move": "driver",
       "comment_inline": "from the strobe table",
       "type": "code",
       "mnemonic": "lda",
       "operand": "col_strobes,x",
       "target": 2775,
+      "target_move": "driver",
       "target_label": "col_strobes"
     },
     {
@@ -1145,6 +1221,7 @@
         254
       ],
       "binary_addr": 6492,
+      "move": "driver",
       "comment_inline": "...drive it",
       "type": "code",
       "mnemonic": "sta",
@@ -1160,6 +1237,7 @@
         254
       ],
       "binary_addr": 6495,
+      "move": "driver",
       "comment_inline": "...read the rows...",
       "type": "code",
       "mnemonic": "lda",
@@ -1175,11 +1253,13 @@
         10
       ],
       "binary_addr": 6498,
+      "move": "driver",
       "comment_inline": "...and mask its row bit",
       "type": "code",
       "mnemonic": "and",
       "operand": "row_masks,y",
       "target": 2771,
+      "target_move": "driver",
       "target_label": "row_masks"
     },
     {
@@ -1189,11 +1269,13 @@
         13
       ],
       "binary_addr": 6501,
+      "move": "driver",
       "comment_inline": "Released (bit high now) -> rescan for a new key",
       "type": "code",
       "mnemonic": "bne",
       "operand": "scan_matrix",
       "target": 2676,
+      "target_move": "driver",
       "target_label": "scan_matrix"
     },
     {
@@ -1204,11 +1286,13 @@
         10
       ],
       "binary_addr": 6503,
+      "move": "driver",
       "comment_inline": "Still held: count down to the next auto-repeat (patched to LDA by the editor to disable auto-repeat)",
       "type": "code",
       "mnemonic": "dec",
       "operand": "debounce_counter",
       "target": 2768,
+      "target_move": "driver",
       "target_label": "debounce_counter"
     },
     {
@@ -1218,11 +1302,13 @@
         91
       ],
       "binary_addr": 6506,
+      "move": "driver",
       "comment_inline": "Not time to repeat yet -> exit",
       "type": "code",
       "mnemonic": "bne",
       "operand": "handler_exit",
       "target": 2759,
+      "target_move": "driver",
       "target_label": "handler_exit"
     },
     {
@@ -1232,6 +1318,7 @@
         4
       ],
       "binary_addr": 6508,
+      "move": "driver",
       "comment_inline": "Reload the repeat interval (4 frames)...",
       "type": "code",
       "mnemonic": "lda",
@@ -1245,11 +1332,13 @@
         10
       ],
       "binary_addr": 6510,
+      "move": "driver",
       "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "debounce_counter",
       "target": 2768,
+      "target_move": "driver",
       "target_label": "debounce_counter"
     },
     {
@@ -1258,6 +1347,7 @@
         24
       ],
       "binary_addr": 6513,
+      "move": "driver",
       "comment_inline": "clear carry for the branch",
       "type": "code",
       "mnemonic": "clc"
@@ -1269,11 +1359,13 @@
         46
       ],
       "binary_addr": 6514,
+      "move": "driver",
       "comment_inline": "Re-emit the held key",
       "type": "code",
       "mnemonic": "bcc",
       "operand": "emit_key",
       "target": 2722,
+      "target_move": "driver",
       "target_label": "emit_key"
     },
     {
@@ -1283,6 +1375,7 @@
         0
       ],
       "binary_addr": 6516,
+      "move": "driver",
       "labels": [
         "scan_matrix"
       ],
@@ -1294,11 +1387,13 @@
         {
           "addr": 2644,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2661,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -1313,6 +1408,7 @@
         0
       ],
       "binary_addr": 6518,
+      "move": "driver",
       "labels": [
         "scan_next_column"
       ],
@@ -1324,6 +1420,7 @@
         {
           "addr": 2706,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -1338,6 +1435,7 @@
         0
       ],
       "binary_addr": 6520,
+      "move": "driver",
       "labels": [
         "scan_next_row"
       ],
@@ -1349,6 +1447,7 @@
         {
           "addr": 2701,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -1363,11 +1462,13 @@
         6
       ],
       "binary_addr": 6522,
+      "move": "driver",
       "comment_inline": "...otherwise the strobe already stands",
       "type": "code",
       "mnemonic": "bne",
       "operand": "test_row",
       "target": 2690,
+      "target_move": "driver",
       "target_label": "test_row"
     },
     {
@@ -1378,11 +1479,13 @@
         10
       ],
       "binary_addr": 6524,
+      "move": "driver",
       "comment_inline": "Drive column X (its handset bit included)...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "col_strobes,x",
       "target": 2775,
+      "target_move": "driver",
       "target_label": "col_strobes"
     },
     {
@@ -1393,6 +1496,7 @@
         254
       ],
       "binary_addr": 6527,
+      "move": "driver",
       "comment_inline": "write it",
       "type": "code",
       "mnemonic": "sta",
@@ -1408,6 +1512,7 @@
         254
       ],
       "binary_addr": 6530,
+      "move": "driver",
       "labels": [
         "test_row"
       ],
@@ -1419,6 +1524,7 @@
         {
           "addr": 2682,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -1436,11 +1542,13 @@
         10
       ],
       "binary_addr": 6533,
+      "move": "driver",
       "comment_inline": "...test this row bit",
       "type": "code",
       "mnemonic": "and",
       "operand": "row_masks,y",
       "target": 2771,
+      "target_move": "driver",
       "target_label": "row_masks"
     },
     {
@@ -1450,11 +1558,13 @@
         13
       ],
       "binary_addr": 6536,
+      "move": "driver",
       "comment_inline": "Bit low -> key at (column X, row Y) is pressed",
       "type": "code",
       "mnemonic": "beq",
       "operand": "key_pressed",
       "target": 2711,
+      "target_move": "driver",
       "target_label": "key_pressed"
     },
     {
@@ -1463,6 +1573,7 @@
         200
       ],
       "binary_addr": 6538,
+      "move": "driver",
       "comment_inline": "Next row...",
       "type": "code",
       "mnemonic": "iny"
@@ -1474,6 +1585,7 @@
         4
       ],
       "binary_addr": 6539,
+      "move": "driver",
       "comment_inline": "all four rows done?",
       "type": "code",
       "mnemonic": "cpy",
@@ -1486,11 +1598,13 @@
         233
       ],
       "binary_addr": 6541,
+      "move": "driver",
       "comment_inline": "...until all 4 rows tested",
       "type": "code",
       "mnemonic": "bne",
       "operand": "scan_next_row",
       "target": 2680,
+      "target_move": "driver",
       "target_label": "scan_next_row"
     },
     {
@@ -1499,6 +1613,7 @@
         232
       ],
       "binary_addr": 6543,
+      "move": "driver",
       "comment_inline": "Next column...",
       "type": "code",
       "mnemonic": "inx"
@@ -1510,6 +1625,7 @@
         6
       ],
       "binary_addr": 6544,
+      "move": "driver",
       "comment_inline": "...6 columns = 3 per handset",
       "type": "code",
       "mnemonic": "cpx",
@@ -1522,11 +1638,13 @@
         226
       ],
       "binary_addr": 6546,
+      "move": "driver",
       "comment_inline": "loop back for the next column",
       "type": "code",
       "mnemonic": "bne",
       "operand": "scan_next_column",
       "target": 2678,
+      "target_move": "driver",
       "target_label": "scan_next_column"
     },
     {
@@ -1535,6 +1653,7 @@
         24
       ],
       "binary_addr": 6548,
+      "move": "driver",
       "comment_inline": "clear carry for the branch",
       "type": "code",
       "mnemonic": "clc"
@@ -1546,11 +1665,13 @@
         48
       ],
       "binary_addr": 6549,
+      "move": "driver",
       "comment_inline": "Nothing pressed -> exit",
       "type": "code",
       "mnemonic": "bcc",
       "operand": "handler_exit",
       "target": 2759,
+      "target_move": "driver",
       "target_label": "handler_exit"
     },
     {
@@ -1560,6 +1681,7 @@
         24
       ],
       "binary_addr": 6551,
+      "move": "driver",
       "labels": [
         "key_pressed"
       ],
@@ -1571,6 +1693,7 @@
         {
           "addr": 2696,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -1586,11 +1709,13 @@
         10
       ],
       "binary_addr": 6553,
+      "move": "driver",
       "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "debounce_counter",
       "target": 2768,
+      "target_move": "driver",
       "target_label": "debounce_counter"
     },
     {
@@ -1601,11 +1726,13 @@
         10
       ],
       "binary_addr": 6556,
+      "move": "driver",
       "comment_inline": "Remember which key is now held: column...",
       "type": "code",
       "mnemonic": "stx",
       "operand": "current_col",
       "target": 2770,
+      "target_move": "driver",
       "target_label": "current_col"
     },
     {
@@ -1616,11 +1743,13 @@
         10
       ],
       "binary_addr": 6559,
+      "move": "driver",
       "comment_inline": "...and row",
       "type": "code",
       "mnemonic": "sty",
       "operand": "current_row",
       "target": 2769,
+      "target_move": "driver",
       "target_label": "current_row"
     },
     {
@@ -1630,6 +1759,7 @@
         7
       ],
       "binary_addr": 6562,
+      "move": "driver",
       "labels": [
         "emit_key"
       ],
@@ -1641,6 +1771,7 @@
         {
           "addr": 2674,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -1661,6 +1792,7 @@
         246
       ],
       "binary_addr": 6564,
+      "move": "driver",
       "comment_inline": "...parameter block at sound_block (&0AF6)...",
       "type": "code",
       "mnemonic": "ldx",
@@ -1682,6 +1814,7 @@
         10
       ],
       "binary_addr": 6566,
+      "move": "driver",
       "comment_inline": "block high byte &0A",
       "type": "code",
       "mnemonic": "ldy",
@@ -1704,6 +1837,7 @@
         255
       ],
       "binary_addr": 6568,
+      "move": "driver",
       "comment_inline": "call OSWORD SOUND command",
       "type": "code",
       "mnemonic": "jsr",
@@ -1717,6 +1851,7 @@
         24
       ],
       "binary_addr": 6571,
+      "move": "driver",
       "comment_inline": "Key-table index = col*4 + row:",
       "type": "code",
       "mnemonic": "clc"
@@ -1729,11 +1864,13 @@
         10
       ],
       "binary_addr": 6572,
+      "move": "driver",
       "comment_inline": "take the column...",
       "type": "code",
       "mnemonic": "lda",
       "operand": "current_col",
       "target": 2770,
+      "target_move": "driver",
       "target_label": "current_col"
     },
     {
@@ -1742,6 +1879,7 @@
         10
       ],
       "binary_addr": 6575,
+      "move": "driver",
       "comment_inline": "...times 4...",
       "type": "code",
       "mnemonic": "asl"
@@ -1752,6 +1890,7 @@
         10
       ],
       "binary_addr": 6576,
+      "move": "driver",
       "comment_inline": "shifted twice = x4",
       "type": "code",
       "mnemonic": "asl"
@@ -1764,11 +1903,13 @@
         10
       ],
       "binary_addr": 6577,
+      "move": "driver",
       "comment_inline": "...plus the row",
       "type": "code",
       "mnemonic": "adc",
       "operand": "current_row",
       "target": 2769,
+      "target_move": "driver",
       "target_label": "current_row"
     },
     {
@@ -1777,6 +1918,7 @@
         170
       ],
       "binary_addr": 6580,
+      "move": "driver",
       "comment_inline": "...as an index",
       "type": "code",
       "mnemonic": "tax"
@@ -1789,11 +1931,13 @@
         10
       ],
       "binary_addr": 6581,
+      "move": "driver",
       "comment_inline": "Fetch that cell character into Y",
       "type": "code",
       "mnemonic": "ldy",
       "operand": "key_codes,x",
       "target": 2781,
+      "target_move": "driver",
       "target_label": "key_codes"
     },
     {
@@ -1803,6 +1947,7 @@
         153
       ],
       "binary_addr": 6584,
+      "move": "driver",
       "comment_inline": "OSBYTE &99: insert Y into buffer 0 (keyboard)...",
       "type": "code",
       "mnemonic": "lda",
@@ -1821,6 +1966,7 @@
         0
       ],
       "binary_addr": 6586,
+      "move": "driver",
       "comment_inline": "X=0 selects the keyboard buffer",
       "type": "code",
       "mnemonic": "ldx",
@@ -1834,6 +1980,7 @@
         255
       ],
       "binary_addr": 6588,
+      "move": "driver",
       "comment_inline": "...as if the key were typed Insert byte Y into input buffer X",
       "type": "code",
       "mnemonic": "jsr",
@@ -1847,6 +1994,7 @@
         24
       ],
       "binary_addr": 6591,
+      "move": "driver",
       "comment_inline": "clear carry for the branch",
       "type": "code",
       "mnemonic": "clc"
@@ -1858,11 +2006,13 @@
         5
       ],
       "binary_addr": 6592,
+      "move": "driver",
       "comment_inline": "Done",
       "type": "code",
       "mnemonic": "bcc",
       "operand": "handler_exit",
       "target": 2759,
+      "target_move": "driver",
       "target_label": "handler_exit"
     },
     {
@@ -1872,6 +2022,7 @@
         5
       ],
       "binary_addr": 6594,
+      "move": "driver",
       "labels": [
         "no_key_down"
       ],
@@ -1883,6 +2034,7 @@
         {
           "addr": 2637,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -1898,11 +2050,13 @@
         10
       ],
       "binary_addr": 6596,
+      "move": "driver",
       "comment_inline": "store it",
       "type": "code",
       "mnemonic": "sta",
       "operand": "current_row",
       "target": 2769,
+      "target_move": "driver",
       "target_label": "current_row"
     },
     {
@@ -1911,6 +2065,7 @@
         104
       ],
       "binary_addr": 6599,
+      "move": "driver",
       "labels": [
         "handler_exit"
       ],
@@ -1922,16 +2077,19 @@
         {
           "addr": 2666,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2709,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2752,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -1944,6 +2102,7 @@
         170
       ],
       "binary_addr": 6600,
+      "move": "driver",
       "comment_inline": "into X",
       "type": "code",
       "mnemonic": "tax"
@@ -1954,6 +2113,7 @@
         104
       ],
       "binary_addr": 6601,
+      "move": "driver",
       "comment_inline": "Restore Y...",
       "type": "code",
       "mnemonic": "pla"
@@ -1964,6 +2124,7 @@
         168
       ],
       "binary_addr": 6602,
+      "move": "driver",
       "comment_inline": "into Y",
       "type": "code",
       "mnemonic": "tay"
@@ -1974,6 +2135,7 @@
         104
       ],
       "binary_addr": 6603,
+      "move": "driver",
       "comment_inline": "Restore A",
       "type": "code",
       "mnemonic": "pla"
@@ -1984,6 +2146,7 @@
         40
       ],
       "binary_addr": 6604,
+      "move": "driver",
       "comment_inline": "Restore the flags",
       "type": "code",
       "mnemonic": "plp"
@@ -1996,11 +2159,13 @@
         10
       ],
       "binary_addr": 6605,
+      "move": "driver",
       "comment_inline": "Chain to the event handler we displaced",
       "type": "code",
       "mnemonic": "jmp",
       "operand": "(saved_evntv)",
       "target": 2814,
+      "target_move": "driver",
       "target_label": "saved_evntv"
     },
     {
@@ -2009,6 +2174,7 @@
         16
       ],
       "binary_addr": 6608,
+      "move": "driver",
       "labels": [
         "debounce_counter"
       ],
@@ -2020,16 +2186,19 @@
         {
           "addr": 2663,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2670,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2713,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -2044,6 +2213,7 @@
         4
       ],
       "binary_addr": 6609,
+      "move": "driver",
       "labels": [
         "current_row"
       ],
@@ -2055,21 +2225,25 @@
         {
           "addr": 2639,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2719,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2737,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2756,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -2084,6 +2258,7 @@
         0
       ],
       "binary_addr": 6610,
+      "move": "driver",
       "labels": [
         "current_col"
       ],
@@ -2095,16 +2270,19 @@
         {
           "addr": 2646,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2716,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2732,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -2122,6 +2300,7 @@
         1
       ],
       "binary_addr": 6611,
+      "move": "driver",
       "labels": [
         "row_masks"
       ],
@@ -2133,11 +2312,13 @@
         {
           "addr": 2658,
           "kind": "indexed",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2693,
           "kind": "indexed",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -2160,6 +2341,7 @@
         176
       ],
       "binary_addr": 6615,
+      "move": "driver",
       "labels": [
         "col_strobes"
       ],
@@ -2171,11 +2353,13 @@
         {
           "addr": 2649,
           "kind": "indexed",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2684,
           "kind": "indexed",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -2195,6 +2379,7 @@
         127
       ],
       "binary_addr": 6621,
+      "move": "driver",
       "labels": [
         "key_codes"
       ],
@@ -2206,6 +2391,7 @@
         {
           "addr": 2741,
           "kind": "indexed",
+          "move": "driver",
           "move_id": 1
         }
       ],
@@ -2226,6 +2412,7 @@
         56
       ],
       "binary_addr": 6622,
+      "move": "driver",
       "type": "string",
       "string": "1470258"
     },
@@ -2235,6 +2422,7 @@
         13
       ],
       "binary_addr": 6629,
+      "move": "driver",
       "type": "byte",
       "values": [
         13
@@ -2260,6 +2448,7 @@
         76
       ],
       "binary_addr": 6630,
+      "move": "driver",
       "type": "string",
       "string": "369ADGJBEHKCFIL"
     },
@@ -2269,6 +2458,7 @@
         0
       ],
       "binary_addr": 6645,
+      "move": "driver",
       "comment_inline": "Spare byte",
       "type": "byte",
       "values": [
@@ -2288,6 +2478,7 @@
         0
       ],
       "binary_addr": 6646,
+      "move": "driver",
       "labels": [
         "sound_block"
       ],
@@ -2319,6 +2510,7 @@
         0
       ],
       "binary_addr": 6654,
+      "move": "driver",
       "labels": [
         "saved_evntv"
       ],
@@ -2336,11 +2528,13 @@
         {
           "addr": 2582,
           "kind": "direct",
+          "move": "driver",
           "move_id": 1
         },
         {
           "addr": 2765,
           "kind": "pointer",
+          "move": "driver",
           "move_id": 1
         }
       ],
