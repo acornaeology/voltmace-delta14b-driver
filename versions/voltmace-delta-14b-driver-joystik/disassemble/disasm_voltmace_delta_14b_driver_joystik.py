@@ -96,18 +96,19 @@ def _decoded(image, addr):
     return bytes(_rol(b) for b in image[lo:lo + DRIVER_LEN])
 
 
-def _make_driver_disassembler(decoded_bytes):
-    tmp = tempfile.NamedTemporaryFile(suffix='.bin', delete=False)
-    tmp.write(decoded_bytes)
-    tmp.close()
+def _make_driver_disassembler(decoded_bytes, image_filename):
+    # The bytes are loaded through a file named `image_filename` (dasmos
+    # records the loaded file's name in the JSON), in a temporary directory.
     dd = dasmos.Disassembler.create(
         cpu='6502', auto_label_data_prefix='l', auto_label_code_prefix='c',
         auto_label_subroutine_prefix='sub_c', auto_label_loop_prefix='loop_c',
     )
-    dd.load(tmp.name, DRIVER_RUNTIME)
+    with tempfile.TemporaryDirectory() as tmp:
+        image_filepath = Path(tmp) / image_filename
+        image_filepath.write_bytes(decoded_bytes)
+        dd.load(image_filepath, DRIVER_RUNTIME)
     dd.use_environment("acorn_mos")
     dd.use_environment("acorn_model_b_hardware")
-    os.unlink(tmp.name)
     return dd
 
 
@@ -800,10 +801,10 @@ for _name, _addr, _annotate in (
     ('b', DRIVER_B_ADDR, annotate_driver_b),
 ):
     _bytes = _decoded(_image, _addr)
-    _dd = _make_driver_disassembler(_bytes)
+    _stem = f'voltmace-delta-14b-driver-joystik-driver-{_name}'
+    _dd = _make_driver_disassembler(_bytes, f'{_stem}.bin')
     _annotate(_dd, _bytes)
     _driver_ir = _dd.disassemble()
-    _stem = f'voltmace-delta-14b-driver-joystik-driver-{_name}'
     _asm = _render_driver(_driver_ir)
     _asm_filepath = _output_dirpath / f'{_stem}.asm'
     _asm_filepath.write_text(_asm, encoding='utf-8')

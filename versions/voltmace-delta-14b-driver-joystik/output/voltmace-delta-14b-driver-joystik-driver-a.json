@@ -5,7 +5,7 @@
     "end_addr": 2816,
     "images": [
       {
-        "name": "tmp1k7cdasm.bin",
+        "name": "voltmace-delta-14b-driver-joystik-driver-a.bin",
         "load_addr": 2560,
         "end_addr": 2816
       }
